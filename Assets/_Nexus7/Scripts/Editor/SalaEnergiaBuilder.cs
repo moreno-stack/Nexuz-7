@@ -54,8 +54,8 @@ namespace Nexus7.EditorTools
         private const float H = 10f, T = 0.3f, WallH = 4f, CatwalkY = 4.2f;
         private const int IgnoreRaycastLayer = 2;
 
-        private static Material panelMat, transformerMat, cableMat, coreMat, cameraMat, screenMat, sparkMat, arcMat;
-        private static readonly Color ArcBlue = new Color(0.55f, 0.8f, 1f);
+        internal static Material panelMat, transformerMat, cableMat, coreMat, cameraMat, screenMat, sparkMat, arcMat;
+        internal static readonly Color ArcBlue = new Color(0.55f, 0.8f, 1f);
 
         [MenuItem("Nexus-7/Fase 3/Construir Sala de Energía")]
         public static void Build()
@@ -221,7 +221,7 @@ namespace Nexus7.EditorTools
             var exitMsg = exit.AddComponent<TutorialTrigger>();
             B.SetStrings(exitMsg, "messages", new[] { "IA NEXUS-7: Reactor estable. Montacargas hacia el puente de mando en marcha..." });
             var exitTrig = exit.AddComponent<SceneExitTrigger>();
-            B.SetString(exitTrig, "sceneName", "");                  // Fase 4 pendiente
+            B.SetString(exitTrig, "sceneName", "Laboratorio");       // Fase 4
             B.SetString(exitTrig, "fallbackMessage", "— FIN DE LA FASE 3 —");
 
             // ---------- 12. HUD ----------
@@ -315,13 +315,13 @@ namespace Nexus7.EditorTools
         //  ESTRUCTURA
         // =====================================================================
 
-        private struct Bx
+        internal struct Bx
         {
             public Vector3 pos, size;
             public Bx(Vector3 pos, Vector3 size) { this.pos = pos; this.size = size; }
         }
 
-        private static void BuildShell(Transform env)
+        internal static void BuildShell(Transform env)
         {
             // Suelo con dos huecos: bocas del foso de mantenimiento.
             FloorWithHoles(env, -18.3f, 18.3f, -T, 40f + T, new[]
@@ -366,7 +366,7 @@ namespace Nexus7.EditorTools
                 B.NoCollider(B.Box("Conducto", env, new Vector3(x, 7f, 20f), new Vector3(0.5f, 0.5f, 40f), cableMat));
         }
 
-        private static void BuildInteriorWalls(Transform env)
+        internal static void BuildInteriorWalls(Transform env)
         {
             var root = new GameObject("MurosInteriores").transform;
             root.SetParent(env);
@@ -387,7 +387,7 @@ namespace Nexus7.EditorTools
                 B.NoCollider(B.Box("FranjaAltoVoltaje", root, new Vector3(x, 1f, 25f), new Vector3(0.02f, 0.25f, 30f), A.warningMat));
         }
 
-        private static void BuildCatwalks(Transform env)
+        internal static void BuildCatwalks(Transform env)
         {
             var root = new GameObject("Pasarelas").transform;
             root.SetParent(env);
@@ -418,13 +418,13 @@ namespace Nexus7.EditorTools
             B.Box("CajasCaida", root, new Vector3(-9.85f, 1f, 28.8f), new Vector3(1.9f, 2f, 1.9f), A.crateGreen);
         }
 
-        private static void RailZ(Transform p, float x, float z0, float z1) =>
+        internal static void RailZ(Transform p, float x, float z0, float z1) =>
             B.Box("Barandilla", p, new Vector3(x, CatwalkY + 0.5f, (z0 + z1) / 2f), new Vector3(0.1f, 1f, z1 - z0), A.metalMat);
 
-        private static void RailX(Transform p, float z, float x0, float x1) =>
+        internal static void RailX(Transform p, float z, float x0, float x1) =>
             B.Box("Barandilla", p, new Vector3((x0 + x1) / 2f, CatwalkY + 0.5f, z), new Vector3(x1 - x0, 1f, 0.1f), A.metalMat);
 
-        private static void BuildTrench(Transform env, Transform gameplay, ItemData wrench)
+        internal static void BuildTrench(Transform env, Transform gameplay, ItemData wrench)
         {
             // Foso de 1.4 m de profundidad (x -13.2..-11.8, z 6..14.5). Bajo el suelo hay 1.2 m libres → solo agachado.
             var root = new GameObject("FosoMantenimiento_RutaAlternativa").transform;
@@ -449,7 +449,7 @@ namespace Nexus7.EditorTools
             A.SetFloat(hatch, "doorNoiseRadius", 3f);
         }
 
-        private static (PowerConsole, DoorController) BuildReactor(Transform env, Transform gameplay, ItemData circuit)
+        internal static (PowerConsole, DoorController) BuildReactor(Transform env, Transform gameplay, ItemData circuit)
         {
             var root = new GameObject("PlataformaReactor").transform;
             root.SetParent(env);
@@ -491,7 +491,7 @@ namespace Nexus7.EditorTools
             return (console, door);
         }
 
-        private static void BuildTransformers(Transform env)
+        internal static void BuildTransformers(Transform env)
         {
             var root = new GameObject("Transformadores").transform;
             root.SetParent(env);
@@ -513,7 +513,7 @@ namespace Nexus7.EditorTools
             }
         }
 
-        private static void BuildLights(Transform env)
+        internal static void BuildLights(Transform env)
         {
             var root = new GameObject("IluminacionDinamica").transform;
             root.SetParent(env);
@@ -538,7 +538,7 @@ namespace Nexus7.EditorTools
             }
         }
 
-        private static void ConfigureLighting()
+        internal static void ConfigureLighting()
         {
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Flat;
@@ -553,7 +553,7 @@ namespace Nexus7.EditorTools
         //  ENERGÍA
         // =====================================================================
 
-        private static GameObject Socket(string name, Transform parent, Vector3 pos, float rotY, ItemData battery, string label)
+        internal static GameObject Socket(string name, Transform parent, Vector3 pos, float rotY, ItemData battery, string label)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent);
@@ -580,7 +580,7 @@ namespace Nexus7.EditorTools
             return root;
         }
 
-        private static void Breaker(Transform parent, Vector3 pos)
+        internal static void Breaker(Transform parent, Vector3 pos)
         {
             var body = B.Box("InterruptorGeneral", parent, pos, new Vector3(0.35f, 1.4f, 0.9f), panelMat);
             var lever = B.NoCollider(B.Box("Palanca", parent, pos + new Vector3(-0.3f, 0.2f, 0f), new Vector3(0.25f, 0.6f, 0.08f), A.warningMat));
@@ -594,7 +594,7 @@ namespace Nexus7.EditorTools
             B.SetRef(console, "statusLight", light);
         }
 
-        private static void PoweredDoor(DoorController door, int requiredPower, string lockedPrompt, string lockedMessage)
+        internal static void PoweredDoor(DoorController door, int requiredPower, string lockedPrompt, string lockedMessage)
         {
             B.SetString(door, "lockedPrompt", lockedPrompt);
             B.SetString(door, "lockedMessage", lockedMessage);
@@ -603,7 +603,7 @@ namespace Nexus7.EditorTools
             A.SetObjectArray(consumer, "doors", new Object[] { door });
         }
 
-        private static (Renderer, Light) Indicator(Transform parent, Vector3 pos)
+        internal static (Renderer, Light) Indicator(Transform parent, Vector3 pos)
         {
             var cube = B.NoCollider(B.Box("Indicador", parent, pos, new Vector3(0.14f, 0.14f, 0.05f), A.statusMat));
             var l = A.PointLight("LuzIndicador", parent, pos + new Vector3(0f, 0f, -0.3f), Color.red, 2f, 1f, false);
@@ -614,7 +614,7 @@ namespace Nexus7.EditorTools
         //  PELIGROS Y SEGURIDAD
         // =====================================================================
 
-        private static ElectricHazard Hazard(string name, Transform parent, Vector3 center, Vector3 size,
+        internal static ElectricHazard Hazard(string name, Transform parent, Vector3 center, Vector3 size,
             ElectricHazard.HazardEffect effect, ElectricHazard.HazardPattern pattern, float damage, float hitInterval,
             float onTime, float offTime, float offset, int requiredPower, bool floorCable)
         {
@@ -661,7 +661,7 @@ namespace Nexus7.EditorTools
             return hz;
         }
 
-        private static void RepairPanelAt(string name, Transform parent, Vector3 pos, Vector3 size, ElectricHazard target, ItemData scrap)
+        internal static void RepairPanelAt(string name, Transform parent, Vector3 pos, Vector3 size, ElectricHazard target, ItemData scrap)
         {
             var body = B.Box(name, parent, pos, size, panelMat);
             // La pantalla sobresale por las dos caras del eje fino del panel (escala local relativa al panel).
@@ -673,7 +673,7 @@ namespace Nexus7.EditorTools
             B.SetRef(rp, "screenRenderer", screen.GetComponent<Renderer>());
         }
 
-        private static ElectricBarrier Barrier(Transform parent, Vector3 center)
+        internal static ElectricBarrier Barrier(Transform parent, Vector3 center)
         {
             var root = new GameObject("BarreraElectrica") { layer = IgnoreRaycastLayer };
             root.transform.SetParent(parent);
@@ -706,7 +706,7 @@ namespace Nexus7.EditorTools
             return barrier;
         }
 
-        private static SecurityCamera SecurityCam(Transform parent, Vector3 basePos, float yaw)
+        internal static SecurityCamera SecurityCam(Transform parent, Vector3 basePos, float yaw)
         {
             B.Box("PosteCamara", parent, basePos + new Vector3(0f, 1.4f, 0f), new Vector3(0.15f, 2.8f, 0.15f), A.metalMat);
             var root = new GameObject("CamaraSeguridad");
@@ -751,7 +751,7 @@ namespace Nexus7.EditorTools
             return cam;
         }
 
-        private static void Terminal(string name, Transform parent, Vector3 floorPos, float rotY, MonoBehaviour target, ItemData circuit, float duration)
+        internal static void Terminal(string name, Transform parent, Vector3 floorPos, float rotY, MonoBehaviour target, ItemData circuit, float duration)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent);
@@ -769,14 +769,14 @@ namespace Nexus7.EditorTools
             B.SetRef(hack, "screenRenderer", screen.GetComponent<Renderer>());
         }
 
-        private static void Checkpoint(string name, Transform parent, Vector3 pos, Vector3 size) =>
+        internal static void Checkpoint(string name, Transform parent, Vector3 pos, Vector3 size) =>
             A.Zone(name, parent, pos, size).AddComponent<Gameplay.Checkpoint>();
 
         // =====================================================================
         //  EFECTOS
         // =====================================================================
 
-        private static SparkEmitter Sparks(string name, Transform parent, Vector3 localPos)
+        internal static SparkEmitter Sparks(string name, Transform parent, Vector3 localPos)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -805,7 +805,7 @@ namespace Nexus7.EditorTools
             return se;
         }
 
-        private static ElectricArc Arc(string name, Transform parent, Vector3 localPos, Vector3 end, float jitter, float width)
+        internal static ElectricArc Arc(string name, Transform parent, Vector3 localPos, Vector3 end, float jitter, float width)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -824,7 +824,7 @@ namespace Nexus7.EditorTools
         }
 
         /// <summary>Rampa sólida entre (z0,y0) y (z1,y1). 'thick' grande = sin huecos debajo.</summary>
-        private static void Ramp(string name, Transform parent, float x, float width, float z0, float y0, float z1, float y1, float thick, Material mat)
+        internal static void Ramp(string name, Transform parent, float x, float width, float z0, float y0, float z1, float y1, float thick, Material mat)
         {
             if (z1 < z0) { float tz = z0; z0 = z1; z1 = tz; float ty = y0; y0 = y1; y1 = ty; }
             float dz = z1 - z0, dy = y1 - y0;
@@ -837,7 +837,7 @@ namespace Nexus7.EditorTools
         }
 
         /// <summary>Suelo en losetas (≤6 m) dejando huecos rectangulares (x, z, ancho, largo).</summary>
-        private static void FloorWithHoles(Transform parent, float x0, float x1, float z0, float z1, Rect[] holes)
+        internal static void FloorWithHoles(Transform parent, float x0, float x1, float z0, float z1, Rect[] holes)
         {
             var root = new GameObject("Suelo").transform;
             root.SetParent(parent);
@@ -852,7 +852,7 @@ namespace Nexus7.EditorTools
                 }
         }
 
-        private static List<float> Cuts(float a, float b, IEnumerable<float> extra)
+        internal static List<float> Cuts(float a, float b, IEnumerable<float> extra)
         {
             var set = new SortedSet<float> { a, b };
             for (float v = Mathf.Ceil(a / 6f) * 6f; v < b; v += 6f) set.Add(v);
@@ -864,7 +864,7 @@ namespace Nexus7.EditorTools
         //  UI DE LA FASE 3
         // =====================================================================
 
-        private static void BuildPhase3UI(Transform canvas, PlayerHealth health)
+        internal static void BuildPhase3UI(Transform canvas, PlayerHealth health)
         {
             // Destello de daño (pantalla completa)
             var flash = B.UIImage("DestelloDano", canvas, new Color(1f, 0.1f, 0.05f, 0f));
@@ -897,7 +897,7 @@ namespace Nexus7.EditorTools
             B.SetRef(pUi, "hackList", hacks);
         }
 
-        private static (Image fill, Image bg) Bar(string name, Transform canvas, Vector2 anchor, Vector2 pos)
+        internal static (Image fill, Image bg) Bar(string name, Transform canvas, Vector2 anchor, Vector2 pos)
         {
             var bg = B.UIImage(name, canvas, new Color(0f, 0f, 0f, 0.6f));
             bg.rectTransform.pivot = new Vector2(0f, anchor.y);
@@ -914,7 +914,7 @@ namespace Nexus7.EditorTools
         //  MATERIALES
         // =====================================================================
 
-        private static void CreateMaterials()
+        internal static void CreateMaterials()
         {
             panelMat       = B.CreateMat("M3_PanelIndustrial", new Color(0.2f, 0.21f, 0.2f), null, 0.35f, 0.7f);
             transformerMat = B.CreateMat("M3_Transformador",   new Color(0.16f, 0.22f, 0.18f), null, 0.4f, 0.6f);
@@ -927,7 +927,7 @@ namespace Nexus7.EditorTools
         }
 
         /// <summary>Material sin iluminación para partículas y rayos (URP o Built-in).</summary>
-        private static Material UnlitMat(string name, Color color)
+        internal static Material UnlitMat(string name, Color color)
         {
             Shader shader = null;
             if (GraphicsSettings.currentRenderPipeline != null) shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");

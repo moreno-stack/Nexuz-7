@@ -45,6 +45,14 @@ namespace Nexus7.Enemies
         public float ViewDistance => viewDistance;
         public float ViewAngle => viewAngle;
 
+        private float boostMultiplier = 1f;
+        private float boostUntil = -999f;
+        private bool blinded;
+
+        /// <summary>true mientras está "receloso" (tras un señuelo, un PEM o un banco manipulado).</summary>
+        public bool IsWary => Time.time < boostUntil;
+        public bool IsBlinded => blinded;
+
         private Transform player;
         private CharacterController playerController;
         private PlayerStealth playerStealth;
@@ -72,6 +80,8 @@ namespace Nexus7.Enemies
 
         private void Update()
         {
+            if (blinded) { CanSeePlayer = false; return; }
+
             CanSeePlayer = player != null && CheckLineOfSight(out float distance);
 
             if (CanSeePlayer)
@@ -79,7 +89,8 @@ namespace Nexus7.Enemies
                 LastSeenPosition = player.position;
                 float visibility = playerStealth != null ? playerStealth.Visibility : 1f;
                 float distanceFactor = Mathf.Lerp(2.5f, 0.4f, distance / viewDistance); // de cerca se detecta mucho antes
-                Awareness += detectionSpeed * visibility * distanceFactor * Time.deltaTime;
+                float wary = IsWary ? boostMultiplier : 1f;
+                Awareness += detectionSpeed * visibility * distanceFactor * wary * Time.deltaTime;
             }
             else
             {
@@ -127,6 +138,21 @@ namespace Nexus7.Enemies
         {
             Awareness = 1f;
             if (player != null) LastSeenPosition = player.position;
+        }
+
+        /// <summary>Multiplica temporalmente la velocidad de detección (el dron está "receloso").</summary>
+        public void BoostDetection(float multiplier, float duration)
+        {
+            boostMultiplier = Mathf.Max(1f, multiplier);
+            boostUntil = Mathf.Max(boostUntil, Time.time + duration);
+        }
+
+        /// <summary>Ceguera temporal (PEM): no ve nada y su foco se apaga.</summary>
+        public void SetBlinded(bool value)
+        {
+            blinded = value;
+            if (value) ResetAwareness();
+            if (visionLight != null) visionLight.enabled = !value;
         }
 
         public void ResetAwareness()

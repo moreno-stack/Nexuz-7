@@ -29,6 +29,19 @@ namespace Nexus7.Stealth
         public bool InShadow => shadowZoneCount > 0;
         public bool IsHidden => Visibility <= hiddenThreshold;
 
+        // ---- Camuflaje óptico (Fase 4) ----
+        private float cloakUntil = -999f;
+        private float cloakMultiplier = 1f;
+        public bool IsCloaked => Time.time < cloakUntil;
+        public float CloakRemaining => Mathf.Max(0f, cloakUntil - Time.time);
+
+        /// <summary>Multiplica la visibilidad por 'multiplier' durante 'duration' segundos.</summary>
+        public void ApplyCloak(float duration, float multiplier)
+        {
+            cloakUntil = Time.time + duration;
+            cloakMultiplier = Mathf.Clamp01(multiplier);
+        }
+
         private void Awake() => controller = GetComponent<PlayerController>();
 
         private void Update()
@@ -38,6 +51,7 @@ namespace Nexus7.Stealth
             if (controller.State == MovementState.Running) v *= runMultiplier;
             else if (controller.State == MovementState.Idle) v *= idleMultiplier;
             if (InShadow) v *= shadowMultiplier;
+            if (IsCloaked) v *= cloakMultiplier;
             Visibility = v;
         }
 

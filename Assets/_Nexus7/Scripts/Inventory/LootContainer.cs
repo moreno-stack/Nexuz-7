@@ -31,6 +31,7 @@ namespace Nexus7.Inventory
         private bool isOpen;
         private Quaternion closedRot, openRot;
 
+        public bool IsOpen => isOpen;
         public bool IsEmpty => contents.TrueForAll(s => !s.IsValid);
 
         public override string Prompt => !isOpen ? "Abrir contenedor" : (IsEmpty ? "Contenedor vacío" : "Recoger contenido restante");

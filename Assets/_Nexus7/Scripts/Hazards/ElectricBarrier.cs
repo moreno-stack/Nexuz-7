@@ -17,7 +17,7 @@ namespace Nexus7.Hazards
     ///   Hijos : haces con ElectricArc (jitter bajo) + Light
     /// </summary>
     [RequireComponent(typeof(Collider))]
-    public class ElectricBarrier : MonoBehaviour, IHackable
+    public class ElectricBarrier : MonoBehaviour, IHackable, IEmpTarget
     {
         [SerializeField] private string hackLabel = "Barrera eléctrica";
         [SerializeField] private Collider blockingCollider;
@@ -42,6 +42,11 @@ namespace Nexus7.Hazards
         public float RemainingDisabledTime => hacked ? Mathf.Max(0f, disabledUntil - Time.time) : 0f;
 
         private void Awake() => zone = GetComponent<Collider>();
+
+        public Vector3 EmpPosition => transform.position;
+        public void OnEmp(float duration) => Disable(duration);
+        private void OnEnable() => EmpRegistry.Register(this);
+        private void OnDisable() => EmpRegistry.Unregister(this);
 
         private void Start()
         {

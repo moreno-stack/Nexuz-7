@@ -8,7 +8,8 @@ namespace Nexus7.Inventory
         Part,       // Piezas / chatarra (ScrapMetal)
         Battery,    // Baterías (Battery)
         Component,  // Componentes electrónicos
-        Tool        // Herramientas (ToolComponent) — normalmente objetos clave
+        Tool,       // Herramientas (ToolComponent) — normalmente objetos clave
+        Device      // Dispositivos fabricados (Fase 4): señuelo, PEM, camuflaje
     }
 
     /// <summary>
@@ -56,6 +57,7 @@ namespace Nexus7.Inventory
                 case ItemCategory.Battery:   return "BATERÍAS";
                 case ItemCategory.Component: return "COMPONENTES";
                 case ItemCategory.Tool:      return "HERRAMIENTAS";
+                case ItemCategory.Device:    return "DISPOSITIVOS";
                 default:                     return c.ToString().ToUpperInvariant();
             }
         }

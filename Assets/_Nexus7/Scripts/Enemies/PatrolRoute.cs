@@ -1,4 +1,5 @@
 using UnityEngine;
+using Nexus7.Core;
 
 namespace Nexus7.Enemies
 {
@@ -28,6 +29,13 @@ namespace Nexus7.Enemies
         {
             var wp = transform.GetChild(index).GetComponent<Waypoint>();
             return wp != null ? wp.WaitTime : defaultWaitTime;
+        }
+
+        /// <summary>Punto que hay que inspeccionar en este waypoint (o null).</summary>
+        public IInspectable GetInspectTarget(int index)
+        {
+            var wp = transform.GetChild(index).GetComponent<Waypoint>();
+            return wp != null ? wp.InspectTarget : null;
         }
 
         /// <summary>Si el waypoint pide mirar en una dirección durante la espera, la devuelve.</summary>

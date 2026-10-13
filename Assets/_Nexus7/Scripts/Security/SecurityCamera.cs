@@ -15,7 +15,7 @@ namespace Nexus7.Security
     ///   Raíz (soporte, sin rotación) → "Pivote" (gira en Y, inclinado en X) → "Lente" (Eye de EnemyVision) → Spot Light
     ///   EnemyVision va en la raíz con Eye = Lente y Vision Light = el foco.
     /// </summary>
-    public class SecurityCamera : MonoBehaviour, IHackable
+    public class SecurityCamera : MonoBehaviour, IHackable, IEmpTarget
     {
         [SerializeField] private string hackLabel = "Cámara de seguridad";
         [SerializeField] private Transform pivot;
@@ -45,6 +45,11 @@ namespace Nexus7.Security
         public string HackLabel => hackLabel;
         public bool IsDisabled => hacked;
         public float RemainingDisabledTime => hacked ? Mathf.Max(0f, disabledUntil - Time.time) : 0f;
+
+        public Vector3 EmpPosition => transform.position;
+        public void OnEmp(float duration) => Disable(duration);
+        private void OnEnable() => EmpRegistry.Register(this);
+        private void OnDisable() => EmpRegistry.Unregister(this);
 
         private void Start()
         {
