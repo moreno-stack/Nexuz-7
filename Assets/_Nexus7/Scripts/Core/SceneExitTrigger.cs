@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Nexus7.Inventory;
 using Nexus7.Player;
 using Nexus7.UI;
 
@@ -42,6 +43,9 @@ namespace Nexus7.Core
             yield return new WaitForSeconds(delay);
             if (player != null) player.InputEnabled = false;
             if (HUDManager.Instance != null) yield return HUDManager.Instance.Fade(0f, 1f, fadeTime);
+            // El inventario viaja a la siguiente escena.
+            var inventory = player != null ? player.GetComponent<InventorySystem>() : null;
+            if (inventory != null) GameSession.SaveInventory(inventory);
             SceneManager.LoadScene(sceneName);
         }
     }

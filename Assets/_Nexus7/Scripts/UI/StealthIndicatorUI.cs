@@ -38,11 +38,10 @@ namespace Nexus7.UI
         {
             float maxAwareness = 0f;
             bool chased = false;
+            foreach (var eye in EnemyVision.All)          // drones y cámaras
+                maxAwareness = Mathf.Max(maxAwareness, eye.Awareness);
             foreach (var enemy in EnemyPatrol.All)
-            {
-                maxAwareness = Mathf.Max(maxAwareness, enemy.Vision.Awareness);
                 chased |= enemy.CurrentState == EnemyPatrol.EnemyState.Chase;
-            }
 
             string text = "";
             Color color = Color.white;

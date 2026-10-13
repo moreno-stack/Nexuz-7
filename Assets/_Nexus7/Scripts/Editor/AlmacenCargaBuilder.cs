@@ -50,7 +50,7 @@ namespace Nexus7.EditorTools
         private const int IgnoreRaycastLayer = 2;
 
         // Materiales compartidos durante la construcción
-        private static Material floorMat, wallMat, metalMat, shelfMat, crateOrange, crateGreen, lampMat,
+        internal static Material floorMat, wallMat, metalMat, shelfMat, crateOrange, crateGreen, lampMat,
                                 statusMat, batteryMat, scrapMat, toolMat, circuitMat, droneMat, droneEyeMat, warningMat;
 
         [MenuItem("Nexus-7/Fase 2/Construir Almacén de Carga")]
@@ -63,15 +63,8 @@ namespace Nexus7.EditorTools
             B.EnsureFolder(Root + "/Data", "Items");
 
             // ---------- 1. Datos: tipos de objeto ----------
-            var battery = CreateItem("Item_Bateria", "battery_ion", "Batería de iones",
-                "Celda de energía de alta capacidad. Alimenta puertas y maquinaria.", ItemCategory.Battery, 5, false, new Color(0.55f, 1f, 0.35f));
-            var scrap = CreateItem("Item_Chatarra", "scrap_metal", "Chatarra metálica",
-                "Restos de placas y tornillos. Útil para fabricar y reparar.", ItemCategory.Part, 20, false, new Color(0.75f, 0.75f, 0.8f));
-            var wrench = CreateItem("Item_LlaveHidraulica", "tool_hydraulic_wrench", "Llave hidráulica",
-                "Herramienta de mantenimiento. Permite retirar rejillas y paneles atornillados.", ItemCategory.Tool, 1, true, new Color(1f, 0.65f, 0.2f));
-            var circuit = CreateItem("Item_Circuito", "component_circuit", "Circuito de control",
-                "Placa electrónica intacta. Necesaria para reparar terminales.", ItemCategory.Component, 10, false, new Color(0.3f, 0.85f, 1f));
-            AssetDatabase.SaveAssets();
+            var items = EnsureItems();
+            var battery = items.Battery; var scrap = items.Scrap; var wrench = items.Wrench; var circuit = items.Circuit;
 
             // ---------- 2. Escena, materiales e iluminación ----------
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -103,7 +96,7 @@ namespace Nexus7.EditorTools
             Container("Contenedor_Este", loot, new Vector3(13.6f, 0f, 10f), 90f,
                 new[] { new ItemStack(wrench, 1), new ItemStack(circuit, 1) });
             Container("Contenedor_Centro", loot, new Vector3(1.6f, 0f, 9.2f), 0f,
-                new[] { new ItemStack(circuit, 2), new ItemStack(scrap, 3) });
+                new[] { new ItemStack(circuit, 2), new ItemStack(scrap, 3), new ItemStack(battery, 1) }); // batería extra → Fase 3
 
             // Bitácora en el vestíbulo
             var log = B.Box("RegistroSeguridad", env, new Vector3(2.47f, 1.4f, -3f), new Vector3(0.06f, 0.4f, 0.5f), warningMat);
@@ -178,7 +171,7 @@ namespace Nexus7.EditorTools
             var exitMsg = exit.AddComponent<TutorialTrigger>();
             B.SetStrings(exitMsg, "messages", new[] { "IA NEXUS-7: Montacargas en marcha. Subiendo al nivel de ingeniería..." });
             var exitTrig = exit.AddComponent<SceneExitTrigger>();
-            B.SetString(exitTrig, "sceneName", "");            // la Fase 3 aún no existe
+            B.SetString(exitTrig, "sceneName", "SalaEnergia"); // Fase 3 (si aún no existe, muestra el mensaje de fin)
             B.SetString(exitTrig, "fallbackMessage", "— FIN DE LA FASE 2 —");
 
             // ---------- 8. HUD ampliado ----------
@@ -250,7 +243,7 @@ namespace Nexus7.EditorTools
         //  ENTORNO
         // =====================================================================
 
-        private static void BuildShell(Transform env)
+        internal static void BuildShell(Transform env)
         {
             // Almacén principal (x: -15..15, z: 0..30). Suelo/techo en losetas para que cada luz afecte solo a lo cercano.
             Tiled("Suelo", env, new Vector3(0, -T / 2, L / 2), new Vector3(W + 2 * T, T, L + 2 * T), floorMat);
@@ -286,7 +279,7 @@ namespace Nexus7.EditorTools
                 B.NoCollider(B.Box("LineaSuelo", env, new Vector3(x, 0.005f, 13.75f), new Vector3(0.12f, 0.01f, 19.5f), warningMat));
         }
 
-        private static void BuildShelves(Transform parent)
+        internal static void BuildShelves(Transform parent)
         {
             var rng = new System.Random(7); // semilla fija: siempre el mismo almacén
             Shelf(parent, -9f, 8f, 22f, rng);
@@ -297,7 +290,7 @@ namespace Nexus7.EditorTools
             Shelf(parent, 9f, 8f, 22f, rng);
         }
 
-        private static void Shelf(Transform parent, float x, float z0, float z1, System.Random rng)
+        internal static void Shelf(Transform parent, float x, float z0, float z1, System.Random rng)
         {
             float len = z1 - z0, cz = (z0 + z1) / 2f;
             var root = new GameObject("Estanteria").transform;
@@ -320,7 +313,7 @@ namespace Nexus7.EditorTools
             }
         }
 
-        private static void BuildCrates(Transform parent)
+        internal static void BuildCrates(Transform parent)
         {
             var root = new GameObject("CajasCarga").transform;
             root.SetParent(parent);
@@ -343,7 +336,7 @@ namespace Nexus7.EditorTools
             }
         }
 
-        private static void BuildRubble(Transform parent)
+        internal static void BuildRubble(Transform parent)
         {
             // Derrumbe que bloquea por completo el pasillo este (x 9.6..15) a la altura de z≈17.
             var root = new GameObject("Derrumbe_RutaBloqueada").transform;
@@ -355,7 +348,7 @@ namespace Nexus7.EditorTools
             Rot(B.Box("VigaCaida", root, new Vector3(12.3f, 2.4f, 17f), new Vector3(0.3f, 0.3f, 6f), metalMat), 0f, 70f, 25f);
         }
 
-        private static void BuildDuct(Transform env, Transform gameplay, ItemData wrench)
+        internal static void BuildDuct(Transform env, Transform gameplay, ItemData wrench)
         {
             // Conducto bajo (1.2 m) por el lateral oeste, de z=3 a z=19. Solo se puede recorrer agachado
             // y los drones (NavMesh de 2 m de alto) no pueden entrar: ruta alternativa segura.
@@ -374,7 +367,7 @@ namespace Nexus7.EditorTools
             SetFloat(grate, "doorNoiseRadius", 3f);
         }
 
-        private static DoorController BuildGateAndLift(Transform env, Transform gameplay, ItemData battery)
+        internal static DoorController BuildGateAndLift(Transform env, Transform gameplay, ItemData battery)
         {
             // Cabina del montacargas tras el muro norte
             var lift = new GameObject("Montacargas").transform;
@@ -396,7 +389,7 @@ namespace Nexus7.EditorTools
             return gate;
         }
 
-        private static DoorController SlidingDoor(string name, Transform parent, Vector3 pos, Vector3 panelSize,
+        internal static DoorController SlidingDoor(string name, Transform parent, Vector3 pos, Vector3 panelSize,
                                                   Vector3 openOffset, Material panelMat, Vector3 statusLocalPos)
         {
             var root = new GameObject(name);
@@ -426,7 +419,7 @@ namespace Nexus7.EditorTools
             return door;
         }
 
-        private static void BuildLights(Transform env)
+        internal static void BuildLights(Transform env)
         {
             var root = new GameObject("Iluminacion").transform;
             root.SetParent(env);
@@ -452,7 +445,7 @@ namespace Nexus7.EditorTools
             PointLight("LuzMontacargas", root, new Vector3(10f, 5.4f, 33f), new Color(1f, 0.75f, 0.45f), 7f, 1.2f, false);
         }
 
-        private static void IndustrialLamp(Transform parent, Vector3 pos, bool flicker, bool shadows)
+        internal static void IndustrialLamp(Transform parent, Vector3 pos, bool flicker, bool shadows)
         {
             var fixture = B.NoCollider(B.Box("Lampara", parent, pos, new Vector3(1.4f, 0.1f, 0.35f), lampMat));
             Color c = new Color(0.6f, 0.75f, 1f);
@@ -468,7 +461,7 @@ namespace Nexus7.EditorTools
             SetFloat(fl, "flickerAmount", 0.5f);
         }
 
-        private static Light PointLight(string name, Transform parent, Vector3 pos, Color color, float range, float intensity, bool shadows)
+        internal static Light PointLight(string name, Transform parent, Vector3 pos, Color color, float range, float intensity, bool shadows)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent);
@@ -482,7 +475,7 @@ namespace Nexus7.EditorTools
             return l;
         }
 
-        private static void ConfigureLighting()
+        internal static void ConfigureLighting()
         {
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Flat;
@@ -497,7 +490,7 @@ namespace Nexus7.EditorTools
         //  BOTÍN, ENEMIGOS, ZONAS
         // =====================================================================
 
-        private static GameObject Pickup(string name, Transform parent, Vector3 floorPos, ItemData item, int amount,
+        internal static GameObject Pickup(string name, Transform parent, Vector3 floorPos, ItemData item, int amount,
                                          PrimitiveType shape, Vector3 visualScale, Material mat, float noise, bool glow)
         {
             var root = new GameObject(name);
@@ -525,7 +518,7 @@ namespace Nexus7.EditorTools
             return root;
         }
 
-        private static GameObject Container(string name, Transform parent, Vector3 floorPos, float rotY, ItemStack[] contents)
+        internal static GameObject Container(string name, Transform parent, Vector3 floorPos, float rotY, ItemStack[] contents)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent);
@@ -551,13 +544,13 @@ namespace Nexus7.EditorTools
             return root;
         }
 
-        private struct WP
+        internal struct WP
         {
             public Vector3 pos; public float wait; public bool face; public float rotY;
             public WP(Vector3 pos, float wait, bool face, float rotY) { this.pos = pos; this.wait = wait; this.face = face; this.rotY = rotY; }
         }
 
-        private static PatrolRoute Route(string name, Transform parent, PatrolRoute.RouteMode mode, WP[] points)
+        internal static PatrolRoute Route(string name, Transform parent, PatrolRoute.RouteMode mode, WP[] points)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent);
@@ -576,7 +569,7 @@ namespace Nexus7.EditorTools
             return route;
         }
 
-        private static EnemyPatrol Drone(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route)
+        internal static EnemyPatrol Drone(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent);
@@ -635,7 +628,7 @@ namespace Nexus7.EditorTools
             return patrol;
         }
 
-        private static GameObject Zone(string name, Transform parent, Vector3 pos, Vector3 size)
+        internal static GameObject Zone(string name, Transform parent, Vector3 pos, Vector3 size)
         {
             var go = new GameObject(name) { layer = IgnoreRaycastLayer };
             go.transform.SetParent(parent);
@@ -646,7 +639,7 @@ namespace Nexus7.EditorTools
             return go;
         }
 
-        private static void MessageZone(string name, Transform parent, Vector3 pos, Vector3 size, string message)
+        internal static void MessageZone(string name, Transform parent, Vector3 pos, Vector3 size, string message)
         {
             var t = Zone(name, parent, pos, size).AddComponent<TutorialTrigger>();
             B.SetStrings(t, "messages", new[] { message });
@@ -656,7 +649,7 @@ namespace Nexus7.EditorTools
         //  UI DE LA FASE 2
         // =====================================================================
 
-        private static void BuildPhase2UI(Transform canvas, InventorySystem inventory, PlayerStealth stealth)
+        internal static void BuildPhase2UI(Transform canvas, InventorySystem inventory, PlayerStealth stealth)
         {
             // Notificaciones de recogida (lateral derecho)
             var notifGo = new GameObject("Notificaciones", typeof(RectTransform));
@@ -709,7 +702,7 @@ namespace Nexus7.EditorTools
         //  MATERIALES Y DATOS
         // =====================================================================
 
-        private static void CreateMaterials()
+        internal static void CreateMaterials()
         {
             floorMat    = B.CreateMat("M2_SueloAlmacen", new Color(0.16f, 0.17f, 0.18f), null, 0.45f, 0.7f);
             wallMat     = B.CreateMat("M2_MuroAlmacen",  new Color(0.24f, 0.26f, 0.28f), null, 0.3f, 0.5f);
@@ -728,7 +721,27 @@ namespace Nexus7.EditorTools
             warningMat  = B.CreateMat("M2_Aviso",        new Color(1f, 0.75f, 0.1f), new Color(1f, 0.7f, 0.1f) * 0.6f);
         }
 
-        private static ItemData CreateItem(string file, string id, string displayName, string description,
+        /// <summary>Tipos de objeto compartidos por todas las fases (crea o actualiza los assets).</summary>
+        internal class ItemSet { public ItemData Battery, Scrap, Wrench, Circuit; }
+
+        internal static ItemSet EnsureItems()
+        {
+            B.EnsureFolder(Root, "Data");
+            B.EnsureFolder(Root + "/Data", "Items");
+            var set = new ItemSet();
+            set.Battery = CreateItem("Item_Bateria", "battery_ion", "Batería de iones",
+                "Celda de energía de alta capacidad. Alimenta puertas y maquinaria.", ItemCategory.Battery, 5, false, new Color(0.55f, 1f, 0.35f));
+            set.Scrap = CreateItem("Item_Chatarra", "scrap_metal", "Chatarra metálica",
+                "Restos de placas y tornillos. Útil para fabricar y reparar.", ItemCategory.Part, 20, false, new Color(0.75f, 0.75f, 0.8f));
+            set.Wrench = CreateItem("Item_LlaveHidraulica", "tool_hydraulic_wrench", "Llave hidráulica",
+                "Herramienta de mantenimiento. Permite retirar rejillas y paneles atornillados.", ItemCategory.Tool, 1, true, new Color(1f, 0.65f, 0.2f));
+            set.Circuit = CreateItem("Item_Circuito", "component_circuit", "Circuito de control",
+                "Placa electrónica intacta. Necesaria para reparar terminales.", ItemCategory.Component, 10, false, new Color(0.3f, 0.85f, 1f));
+            AssetDatabase.SaveAssets();
+            return set;
+        }
+
+        internal static ItemData CreateItem(string file, string id, string displayName, string description,
                                            ItemCategory category, int maxStack, bool keyItem, Color color)
         {
             string path = $"{Root}/Data/Items/{file}.asset";
@@ -751,7 +764,7 @@ namespace Nexus7.EditorTools
             return item;
         }
 
-        private static void AddToBuildSettings()
+        internal static void AddToBuildSettings()
         {
             var scenes = EditorBuildSettings.scenes.ToList();
             if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
@@ -763,7 +776,7 @@ namespace Nexus7.EditorTools
         // =====================================================================
 
         /// <summary>Crea una caja dividida en losetas de ≤ 6 m (mejor iluminación con muchas luces).</summary>
-        private static void Tiled(string name, Transform parent, Vector3 center, Vector3 size, Material mat, float tile = 6f)
+        internal static void Tiled(string name, Transform parent, Vector3 center, Vector3 size, Material mat, float tile = 6f)
         {
             int nx = Mathf.Max(1, Mathf.CeilToInt(size.x / tile));
             int nz = Mathf.Max(1, Mathf.CeilToInt(size.z / tile));
@@ -779,13 +792,13 @@ namespace Nexus7.EditorTools
                 }
         }
 
-        private static GameObject Rot(GameObject go, float x, float y, float z)
+        internal static GameObject Rot(GameObject go, float x, float y, float z)
         {
             go.transform.rotation = Quaternion.Euler(x, y, z);
             return go;
         }
 
-        private static SerializedObject So(Object target, string field, out SerializedProperty prop)
+        internal static SerializedObject So(Object target, string field, out SerializedProperty prop)
         {
             var so = new SerializedObject(target);
             prop = so.FindProperty(field);
@@ -793,13 +806,15 @@ namespace Nexus7.EditorTools
             return so;
         }
 
-        private static void SetInt(Object t, string f, int v)         { var so = So(t, f, out var p); if (p == null) return; p.intValue = v; so.ApplyModifiedPropertiesWithoutUndo(); }
-        private static void SetFloat(Object t, string f, float v)     { var so = So(t, f, out var p); if (p == null) return; p.floatValue = v; so.ApplyModifiedPropertiesWithoutUndo(); }
-        private static void SetBool(Object t, string f, bool v)       { var so = So(t, f, out var p); if (p == null) return; p.boolValue = v; so.ApplyModifiedPropertiesWithoutUndo(); }
-        private static void SetColor(Object t, string f, Color v)     { var so = So(t, f, out var p); if (p == null) return; p.colorValue = v; so.ApplyModifiedPropertiesWithoutUndo(); }
-        private static void SetVector3(Object t, string f, Vector3 v) { var so = So(t, f, out var p); if (p == null) return; p.vector3Value = v; so.ApplyModifiedPropertiesWithoutUndo(); }
+        internal static void SetInt(Object t, string f, int v)         { var so = So(t, f, out var p); if (p == null) return; p.intValue = v; so.ApplyModifiedPropertiesWithoutUndo(); }
+        internal static void SetFloat(Object t, string f, float v)     { var so = So(t, f, out var p); if (p == null) return; p.floatValue = v; so.ApplyModifiedPropertiesWithoutUndo(); }
+        internal static void SetBool(Object t, string f, bool v)       { var so = So(t, f, out var p); if (p == null) return; p.boolValue = v; so.ApplyModifiedPropertiesWithoutUndo(); }
+        internal static void SetColor(Object t, string f, Color v)     { var so = So(t, f, out var p); if (p == null) return; p.colorValue = v; so.ApplyModifiedPropertiesWithoutUndo(); }
+        internal static void SetVector3(Object t, string f, Vector3 v) { var so = So(t, f, out var p); if (p == null) return; p.vector3Value = v; so.ApplyModifiedPropertiesWithoutUndo(); }
 
-        private static void SetObjectArray(Object t, string f, Object[] values)
+        internal static void SetVector2(Object t, string f, Vector2 v) { var so = So(t, f, out var p); if (p == null) return; p.vector2Value = v; so.ApplyModifiedPropertiesWithoutUndo(); }
+
+        internal static void SetObjectArray(Object t, string f, Object[] values)
         {
             var so = So(t, f, out var p);
             if (p == null) return;
@@ -808,7 +823,7 @@ namespace Nexus7.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void SetStacks(Object t, string f, IList<ItemStack> stacks)
+        internal static void SetStacks(Object t, string f, IList<ItemStack> stacks)
         {
             var so = So(t, f, out var p);
             if (p == null) return;

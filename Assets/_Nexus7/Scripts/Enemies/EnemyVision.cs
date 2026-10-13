@@ -36,6 +36,9 @@ namespace Nexus7.Enemies
         [SerializeField] private Color suspiciousColor = new Color(1f, 0.8f, 0.1f);
         [SerializeField] private Color alertColor = new Color(1f, 0.1f, 0.05f);
 
+        /// <summary>Todos los "ojos" activos: drones y cámaras (lo usa el indicador de sigilo).</summary>
+        public static readonly System.Collections.Generic.List<EnemyVision> All = new System.Collections.Generic.List<EnemyVision>();
+
         public float Awareness { get; private set; }
         public bool CanSeePlayer { get; private set; }
         public Vector3 LastSeenPosition { get; private set; }
@@ -45,6 +48,9 @@ namespace Nexus7.Enemies
         private Transform player;
         private CharacterController playerController;
         private PlayerStealth playerStealth;
+
+        private void OnEnable() => All.Add(this);
+        private void OnDisable() => All.Remove(this);
 
         private void Start()
         {

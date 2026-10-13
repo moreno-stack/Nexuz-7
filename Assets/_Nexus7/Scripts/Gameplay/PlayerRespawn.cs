@@ -53,13 +53,16 @@ namespace Nexus7.Gameplay
         }
 
         /// <summary>Lo llama el enemigo al alcanzar al jugador.</summary>
-        public void Caught()
+        public void Caught() => Respawn(caughtMessage);
+
+        /// <summary>Reaparición genérica (captura, muerte por descarga...). Muestra 'message' durante el fundido.</summary>
+        public void Respawn(string message)
         {
             if (isRespawning) return;
-            StartCoroutine(RespawnRoutine());
+            StartCoroutine(RespawnRoutine(message));
         }
 
-        private IEnumerator RespawnRoutine()
+        private IEnumerator RespawnRoutine(string message)
         {
             isRespawning = true;
             controller.InputEnabled = false;
@@ -68,7 +71,7 @@ namespace Nexus7.Gameplay
             var hud = HUDManager.Instance;
             if (hud != null)
             {
-                hud.QueueMessage(caughtMessage, 2f);
+                hud.QueueMessage(message, 2f);
                 yield return hud.Fade(0f, 1f, fadeOutTime);
             }
             yield return new WaitForSeconds(blackTime);
@@ -81,6 +84,7 @@ namespace Nexus7.Gameplay
             PlayerRespawned?.Invoke();
 
             if (hud != null) yield return hud.Fade(1f, 0f, fadeInTime);
+            controller.ClearInputLocks();
             controller.InputEnabled = true;
             isRespawning = false;
         }

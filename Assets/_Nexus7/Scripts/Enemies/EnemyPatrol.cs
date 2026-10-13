@@ -83,6 +83,7 @@ namespace Nexus7.Enemies
         {
             All.Add(this);
             NoiseSystem.NoiseEmitted += OnNoiseHeard;
+            AlarmSystem.AlarmRaised += OnAlarm;
             PlayerRespawn.PlayerCaught += OnPlayerCaught;
             PlayerRespawn.PlayerRespawned += ResetToStart;
         }
@@ -91,6 +92,7 @@ namespace Nexus7.Enemies
         {
             All.Remove(this);
             NoiseSystem.NoiseEmitted -= OnNoiseHeard;
+            AlarmSystem.AlarmRaised -= OnAlarm;
             PlayerRespawn.PlayerCaught -= OnPlayerCaught;
             PlayerRespawn.PlayerRespawned -= ResetToStart;
         }
@@ -240,6 +242,19 @@ namespace Nexus7.Enemies
             if (frozen || source == gameObject || CurrentState == EnemyState.Chase || !agent.isOnNavMesh) return;
             if (Vector3.Distance(transform.position, position) <= radius * hearingMultiplier)
                 Investigate(position);
+        }
+
+        // =============== ALARMA (cámaras de seguridad) ===============
+        [Header("Alarma")]
+        [Tooltip("Velocidad al acudir a una alarma (entre investigar y perseguir).")]
+        [SerializeField] private float alarmSpeed = 3.6f;
+
+        private void OnAlarm(Vector3 position, float radius)
+        {
+            if (frozen || CurrentState == EnemyState.Chase || !agent.isOnNavMesh) return;
+            if (Vector3.Distance(transform.position, position) > radius) return;
+            Investigate(position);
+            agent.speed = alarmSpeed; // acude corriendo
         }
 
         // =============== CAPTURA / REINICIO ===============

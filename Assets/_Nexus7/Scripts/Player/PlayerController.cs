@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Nexus7.Core;
 
@@ -67,8 +68,22 @@ namespace Nexus7.Player
         public bool IsCrouching { get; private set; }
         /// <summary>Radio de ruido actual en metros (0 si está quieto).</summary>
         public float CurrentNoiseRadius { get; private set; }
-        /// <summary>Si es false, el jugador no responde a la entrada (cinemáticas, tutorial).</summary>
-        public bool InputEnabled { get; set; } = true;
+        /// <summary>
+        /// Si es false, el jugador no responde a la entrada (cinemáticas, tutorial, aturdimiento, hackeo).
+        /// Es false si se desactivó explícitamente O si algún sistema tiene un bloqueo activo (AddInputLock).
+        /// Los bloqueos permiten que varios sistemas (descarga eléctrica + hackeo) no se pisen entre sí.
+        /// </summary>
+        public bool InputEnabled
+        {
+            get => inputEnabled && inputLocks.Count == 0;
+            set => inputEnabled = value;
+        }
+        private bool inputEnabled = true;
+        private readonly HashSet<object> inputLocks = new HashSet<object>();
+
+        public void AddInputLock(object owner) => inputLocks.Add(owner);
+        public void RemoveInputLock(object owner) => inputLocks.Remove(owner);
+        public void ClearInputLocks() => inputLocks.Clear();
 
         private CharacterController controller;
         private Vector3 horizontalVelocity;

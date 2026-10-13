@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Nexus7.Core;
 
 namespace Nexus7.Inventory
 {
@@ -30,6 +31,9 @@ namespace Nexus7.Inventory
         [SerializeField, Min(1)] private int capacity = 12;
         [Tooltip("Objetos con los que se empieza (útil para pruebas).")]
         [SerializeField] private List<ItemStack> startingItems = new List<ItemStack>();
+        [Tooltip("Si vienes de otra escena, carga lo que llevabas (GameSession). Si no hay nada guardado, usa Starting Items " +
+                 "(así cada escena se puede probar sola con un equipo por defecto).")]
+        [SerializeField] private bool loadFromSession = true;
 
         private readonly List<InventorySlot> slots = new List<InventorySlot>();
 
@@ -47,7 +51,10 @@ namespace Nexus7.Inventory
 
         private void Awake()
         {
-            foreach (var stack in startingItems)
+            var source = loadFromSession && GameSession.HasSavedInventory
+                ? (IEnumerable<ItemStack>)GameSession.SavedInventory
+                : startingItems;
+            foreach (var stack in source)
                 if (stack.IsValid) Add(stack.item, stack.amount);
         }
 
