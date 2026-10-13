@@ -1,0 +1,88 @@
+using System;
+using System.Collections;
+using UnityEngine;
+using Nexus7.Player;
+using Nexus7.UI;
+
+namespace Nexus7.Gameplay
+{
+    /// <summary>
+    /// Gestiona la captura del jugador: fundido a negro, mensaje, teletransporte al último
+    /// punto de control y reinicio de los enemigos. El inventario SE CONSERVA (decisión de diseño:
+    /// castigar con tiempo, no con frustración).
+    ///
+    /// Eventos estáticos:
+    ///   PlayerCaught    → los enemigos se congelan
+    ///   PlayerRespawned → los enemigos vuelven a su posición inicial
+    ///
+    /// Colocar en: el GameObject raíz "Player".
+    /// </summary>
+    [RequireComponent(typeof(PlayerController))]
+    public class PlayerRespawn : MonoBehaviour
+    {
+        public static event Action PlayerCaught;
+        public static event Action PlayerRespawned;
+
+        [SerializeField, TextArea] private string caughtMessage =
+            "¡DETECTADO! Un dron de seguridad te ha neutralizado. Reiniciando desde el último punto seguro...";
+        [SerializeField] private float fadeOutTime = 0.6f;
+        [SerializeField] private float blackTime = 1.2f;
+        [SerializeField] private float fadeInTime = 1f;
+
+        private PlayerController controller;
+        private CharacterController characterController;
+        private Vector3 respawnPosition;
+        private Quaternion respawnRotation;
+        private bool isRespawning;
+
+        public bool IsRespawning => isRespawning;
+
+        private void Awake()
+        {
+            controller = GetComponent<PlayerController>();
+            characterController = GetComponent<CharacterController>();
+            respawnPosition = transform.position;
+            respawnRotation = transform.rotation;
+        }
+
+        /// <summary>Lo llaman los Checkpoint al cruzarlos.</summary>
+        public void SetCheckpoint(Transform point)
+        {
+            respawnPosition = point.position;
+            respawnRotation = Quaternion.Euler(0f, point.eulerAngles.y, 0f);
+        }
+
+        /// <summary>Lo llama el enemigo al alcanzar al jugador.</summary>
+        public void Caught()
+        {
+            if (isRespawning) return;
+            StartCoroutine(RespawnRoutine());
+        }
+
+        private IEnumerator RespawnRoutine()
+        {
+            isRespawning = true;
+            controller.InputEnabled = false;
+            PlayerCaught?.Invoke();
+
+            var hud = HUDManager.Instance;
+            if (hud != null)
+            {
+                hud.QueueMessage(caughtMessage, 2f);
+                yield return hud.Fade(0f, 1f, fadeOutTime);
+            }
+            yield return new WaitForSeconds(blackTime);
+
+            // Teletransporte: hay que desactivar el CharacterController o ignora el cambio de posición.
+            if (characterController != null) characterController.enabled = false;
+            transform.SetPositionAndRotation(respawnPosition, respawnRotation);
+            if (characterController != null) characterController.enabled = true;
+
+            PlayerRespawned?.Invoke();
+
+            if (hud != null) yield return hud.Fade(1f, 0f, fadeInTime);
+            controller.InputEnabled = true;
+            isRespawning = false;
+        }
+    }
+}

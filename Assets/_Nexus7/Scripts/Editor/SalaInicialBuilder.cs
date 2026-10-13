@@ -142,7 +142,7 @@ namespace Nexus7.EditorTools
         //  Construcción de piezas
         // =====================================================================
 
-        private static DoorController BuildDoor(Transform parent, float z, Material wallMat, Material doorMat, Material statusMat)
+        internal static DoorController BuildDoor(Transform parent, float z, Material wallMat, Material doorMat, Material statusMat)
         {
             const float doorW = 2f, doorH = 2.5f;
             var root = new GameObject("PuertaC7");
@@ -181,7 +181,7 @@ namespace Nexus7.EditorTools
             return door;
         }
 
-        private static (PlayerController, PlayerInteractor) BuildPlayer()
+        internal static (PlayerController, PlayerInteractor) BuildPlayer()
         {
             var go = new GameObject("Player") { tag = "Player" };
             go.transform.position = new Vector3(0f, 0.05f, 2.8f); // junto a la cápsula, mirando hacia +Z
@@ -221,7 +221,7 @@ namespace Nexus7.EditorTools
             return (controller, interactor);
         }
 
-        private static Nexus7.UI.HUDManager BuildHUD()
+        internal static Nexus7.UI.HUDManager BuildHUD()
         {
             var go = new GameObject("HUD", typeof(RectTransform));
             var canvas = go.AddComponent<Canvas>();
@@ -257,7 +257,7 @@ namespace Nexus7.EditorTools
             return hud;
         }
 
-        private static void EmergencyLamp(Transform parent, Vector3 pos, Material lampMat, EmergencyLight.Mode mode)
+        internal static void EmergencyLamp(Transform parent, Vector3 pos, Material lampMat, EmergencyLight.Mode mode)
         {
             var fixture = NoCollider(Box("LamparaEmergencia", parent, pos, new Vector3(0.6f, 0.08f, 0.2f), lampMat));
             var lightGo = new GameObject("LuzRoja");
@@ -276,7 +276,7 @@ namespace Nexus7.EditorTools
             SetRef(flicker, "emissiveRenderer", fixture.GetComponent<Renderer>());
         }
 
-        private static void Trigger(string name, Transform parent, Vector3 pos, Vector3 size, string[] messages, string objective)
+        internal static void Trigger(string name, Transform parent, Vector3 pos, Vector3 size, string[] messages, string objective)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent);
@@ -289,7 +289,7 @@ namespace Nexus7.EditorTools
             if (!string.IsNullOrEmpty(objective)) SetString(trig, "newObjective", objective);
         }
 
-        private static void ConfigureLighting()
+        internal static void ConfigureLighting()
         {
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Flat;
@@ -304,19 +304,19 @@ namespace Nexus7.EditorTools
         //  Utilidades
         // =====================================================================
 
-        private static void CreateFolders()
+        internal static void CreateFolders()
         {
             EnsureFolder("Assets", "_Nexus7");
             foreach (var f in new[] { "Scripts", "Prefabs", "Scenes", "Materials", "UI", "Audio" })
                 EnsureFolder(Root, f);
         }
 
-        private static void EnsureFolder(string parent, string name)
+        internal static void EnsureFolder(string parent, string name)
         {
             if (!AssetDatabase.IsValidFolder($"{parent}/{name}")) AssetDatabase.CreateFolder(parent, name);
         }
 
-        private static Shader LitShader()
+        internal static Shader LitShader()
         {
             if (GraphicsSettings.currentRenderPipeline != null)
             {
@@ -326,7 +326,7 @@ namespace Nexus7.EditorTools
             return Shader.Find("Standard");
         }
 
-        private static Material CreateMat(string name, Color color, Color? emission = null, float smoothness = 0.3f, float metallic = 0.5f)
+        internal static Material CreateMat(string name, Color color, Color? emission = null, float smoothness = 0.3f, float metallic = 0.5f)
         {
             string path = $"{Root}/Materials/{name}.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -352,7 +352,7 @@ namespace Nexus7.EditorTools
             return mat;
         }
 
-        private static GameObject Box(string name, Transform parent, Vector3 localPos, Vector3 scale, Material mat)
+        internal static GameObject Box(string name, Transform parent, Vector3 localPos, Vector3 scale, Material mat)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             go.name = name;
@@ -364,13 +364,13 @@ namespace Nexus7.EditorTools
             return go;
         }
 
-        private static GameObject NoCollider(GameObject go)
+        internal static GameObject NoCollider(GameObject go)
         {
             Object.DestroyImmediate(go.GetComponent<Collider>());
             return go;
         }
 
-        private static Image UIImage(string name, Transform parent, Color color)
+        internal static Image UIImage(string name, Transform parent, Color color)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -380,7 +380,7 @@ namespace Nexus7.EditorTools
             return img;
         }
 
-        private static TextMeshProUGUI UIText(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size,
+        internal static TextMeshProUGUI UIText(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size,
                                               float fontSize, TextAlignmentOptions align, Color color)
         {
             var go = new GameObject(name, typeof(RectTransform));
@@ -395,7 +395,7 @@ namespace Nexus7.EditorTools
             return tmp;
         }
 
-        private static void Anchor(RectTransform rt, Vector2 min, Vector2 max, Vector2 pos, Vector2 size)
+        internal static void Anchor(RectTransform rt, Vector2 min, Vector2 max, Vector2 pos, Vector2 size)
         {
             rt.anchorMin = min;
             rt.anchorMax = max;
@@ -403,13 +403,13 @@ namespace Nexus7.EditorTools
             rt.sizeDelta = size;
         }
 
-        private static void SavePrefab(GameObject go, string name)
+        internal static void SavePrefab(GameObject go, string name)
         {
             PrefabUtility.SaveAsPrefabAssetAndConnect(go, $"{Root}/Prefabs/{name}.prefab", InteractionMode.AutomatedAction);
         }
 
         // --- Asignación de campos privados [SerializeField] mediante SerializedObject ---
-        private static SerializedProperty Prop(Object target, string field, out SerializedObject so)
+        internal static SerializedProperty Prop(Object target, string field, out SerializedObject so)
         {
             so = new SerializedObject(target);
             var p = so.FindProperty(field);
@@ -417,7 +417,7 @@ namespace Nexus7.EditorTools
             return p;
         }
 
-        private static void SetRef(Object target, string field, Object value)
+        internal static void SetRef(Object target, string field, Object value)
         {
             var p = Prop(target, field, out var so);
             if (p == null) return;
@@ -425,7 +425,7 @@ namespace Nexus7.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void SetString(Object target, string field, string value)
+        internal static void SetString(Object target, string field, string value)
         {
             var p = Prop(target, field, out var so);
             if (p == null) return;
@@ -433,7 +433,7 @@ namespace Nexus7.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void SetStrings(Object target, string field, string[] values)
+        internal static void SetStrings(Object target, string field, string[] values)
         {
             var p = Prop(target, field, out var so);
             if (p == null) return;
@@ -442,7 +442,7 @@ namespace Nexus7.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void SetEnum(Object target, string field, int index)
+        internal static void SetEnum(Object target, string field, int index)
         {
             var p = Prop(target, field, out var so);
             if (p == null) return;
