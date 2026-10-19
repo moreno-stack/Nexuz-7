@@ -25,8 +25,21 @@ namespace Nexus7.Core
             HasSavedInventory = true;
         }
 
+        /// <summary>El jugador ya se ha puesto el traje espacial (Fase 1).</summary>
+        public static bool HasSuit { get; set; }
+        /// <summary>Semilla de la partida: decide los objetos aleatorios de cada sala.</summary>
+        public static int RunSeed { get; private set; } = System.Environment.TickCount;
+
+        /// <summary>Nueva partida: sin traje y con objetos aleatorios distintos.</summary>
+        public static void NewRun()
+        {
+            HasSuit = false;
+            RunSeed = unchecked(System.Environment.TickCount * 7919 + RunSeed);
+        }
+
         public static void Clear()
         {
+            HasSuit = false;
             savedInventory.Clear();
             HasSavedInventory = false;
         }

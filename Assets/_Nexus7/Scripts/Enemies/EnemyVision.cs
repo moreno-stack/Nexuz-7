@@ -82,7 +82,7 @@ namespace Nexus7.Enemies
 
         private void Update()
         {
-            if (blinded) { CanSeePlayer = false; return; }
+            if (blinded || EnemyPatrol.Paused) { CanSeePlayer = false; return; }
 
             // Margen tras reaparecer: evita capturas en cadena justo al recuperar el control.
             CanSeePlayer = player != null && !Nexus7.Gameplay.PlayerRespawn.InGrace && CheckLineOfSight(out float distance);
@@ -93,7 +93,7 @@ namespace Nexus7.Enemies
                 float visibility = playerStealth != null ? playerStealth.Visibility : 1f;
                 float distanceFactor = Mathf.Lerp(2.5f, 0.4f, distance / EffectiveViewDistance); // de cerca se detecta mucho antes
                 float wary = IsWary ? boostMultiplier : 1f;
-                float alert = Nexus7.Core.AlertSystem.Profile.detection;
+                float alert = Nexus7.Core.AlertSystem.Profile.detection * Nexus7.Core.DifficultySettings.DetectionMultiplier;
                 Awareness += detectionSpeed * visibility * distanceFactor * wary * alert * Time.deltaTime;
             }
             else

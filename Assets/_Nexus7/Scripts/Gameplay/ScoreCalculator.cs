@@ -20,6 +20,8 @@ namespace Nexus7.Gameplay
         public int distinctDeviceKinds, hacksSucceeded, hacksFailed, sectorsDisabled, empTargetsHit, decoysTriggered;
         // Resultado
         public int deaths;
+        /// <summary>Multiplicador de dificultad (Fácil 1 · Normal 1.15 · Difícil 1.3). 0 = sin indicar → 1.</summary>
+        public float difficultyMultiplier;
         public bool escaped;
     }
 
@@ -104,7 +106,9 @@ namespace Nexus7.Gameplay
             // ---- Total ----
             r.penalty = 200 * i.deaths;
             int sum = r.stealth + r.resources + r.time + r.creativity - r.penalty;
-            r.total = Math.Max(0, i.escaped ? sum : sum / 2);
+            int baseTotal = Math.Max(0, i.escaped ? sum : sum / 2);
+            double mult = i.difficultyMultiplier > 0f ? i.difficultyMultiplier : 1.0;
+            r.total = (int)Math.Round(baseTotal * mult, MidpointRounding.AwayFromZero);
             r.grade = Grade(r.total);
             return r;
         }

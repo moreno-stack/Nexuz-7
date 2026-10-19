@@ -24,8 +24,14 @@ namespace Nexus7.Player
         [Tooltip("Aceleración en m/s² hacia la velocidad objetivo. Más alto = respuesta más brusca.")]
         [SerializeField] private float acceleration = 20f;
 
-        [Header("Gravedad")]
+        [Header("Gravedad y salto")]
         [SerializeField] private float gravity = -20f;
+        [Tooltip("Altura del salto en metros.")]
+        [SerializeField] private float jumpHeight = 1.1f;
+        [Tooltip("Margen para saltar justo después de dejar un borde (s).")]
+        [SerializeField] private float coyoteTime = 0.1f;
+        [Tooltip("Amortiguación de los empujones (m/s por segundo).")]
+        [SerializeField] private float impulseDamping = 8f;
 
         [Header("Agacharse")]
         [Tooltip("Objeto hijo que contiene la cámara; baja al agacharse.")]
@@ -62,6 +68,9 @@ namespace Nexus7.Player
         [SerializeField] private KeyCode runPadButton = KeyCode.JoystickButton8;
         [Tooltip("JoystickButton1 = botón B en mando Xbox.")]
         [SerializeField] private KeyCode crouchPadButton = KeyCode.JoystickButton1;
+        [SerializeField] private KeyCode jumpKey = KeyCode.Space;
+        [Tooltip("JoystickButton0 = botón A en mando Xbox (interactuar pasa a X).")]
+        [SerializeField] private KeyCode jumpPadButton = KeyCode.JoystickButton0;
 
         // ---------- Estado público (lo leen el tutorial, la UI y futuros enemigos) ----------
         public MovementState State { get; private set; } = MovementState.Idle;
@@ -85,7 +94,17 @@ namespace Nexus7.Player
         public void RemoveInputLock(object owner) => inputLocks.Remove(owner);
         public void ClearInputLocks() => inputLocks.Clear();
 
+        /// <summary>Empujón externo (golpe de un robot). Se suma al movimiento y se amortigua.</summary>
+        public void AddImpulse(Vector3 velocity) => impulse += velocity;
+
+        public bool IsGrounded => controller != null && controller.isGrounded;
+        public bool IsJumping => jump != null && jump.IsAirborne;
+        /// <summary>Se dispara al tocar el suelo tras estar en el aire.</summary>
+        public event System.Action Landed;
+
         private CharacterController controller;
+        private JumpModel jump;
+        private Vector3 impulse;
         private Vector3 horizontalVelocity;
         private float verticalVelocity;
         private bool wantsCrouch;
@@ -94,6 +113,7 @@ namespace Nexus7.Player
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
+            jump = new JumpModel(jumpHeight, gravity, coyoteTime);
             controller.height = standingHeight;
             controller.center = new Vector3(0f, standingHeight * 0.5f, 0f);
         }
@@ -103,8 +123,10 @@ namespace Nexus7.Player
             // 1) Leer entrada. "Horizontal"/"Vertical" del Input Manager ya incluyen WASD, flechas y stick izquierdo.
             Vector2 input = Vector2.zero;
             bool runHeld = false;
+            bool jumpPressed = false;
             if (InputEnabled)
             {
+                jumpPressed = Input.GetKeyDown(jumpKey) || Input.GetKeyDown(jumpPadButton);
                 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
                 runHeld = Input.GetKey(runKey) || Input.GetKey(runPadButton);
                 HandleCrouchInput();
@@ -123,16 +145,30 @@ namespace Nexus7.Player
             Vector3 desired = (transform.right * input.x + transform.forward * input.y) * targetSpeed;
             horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, desired, acceleration * Time.deltaTime);
 
-            // 4) Gravedad.
+            // 4) Suelo, salto y gravedad.
+            float fall = jump.NotifyGrounded(controller.isGrounded, Time.time, transform.position.y);
+            if (fall > 0f) OnLanded(fall);
             if (controller.isGrounded && verticalVelocity < 0f) verticalVelocity = -2f; // mantiene pegado al suelo
+            float jumpVelocity;
+            if (jumpPressed && jump.TryJump(controller.isGrounded, IsCrouching, !InputEnabled, Time.time, out jumpVelocity))
+                verticalVelocity = jumpVelocity;
             verticalVelocity += gravity * Time.deltaTime;
 
-            controller.Move((horizontalVelocity + Vector3.up * verticalVelocity) * Time.deltaTime);
+            impulse = Vector3.MoveTowards(impulse, Vector3.zero, impulseDamping * Time.deltaTime);
+            controller.Move((horizontalVelocity + impulse + Vector3.up * verticalVelocity) * Time.deltaTime);
 
             // 5) Estado y ruido según la velocidad REAL (si choca con una pared, cuenta como quieto).
             Vector3 planar = controller.velocity;
             planar.y = 0f;
             UpdateStateAndNoise(planar.magnitude, running);
+        }
+
+        private void OnLanded(float fallHeight)
+        {
+            float radius = jump.LandingNoiseRadius(fallHeight);
+            if (IsCrouching && radius > 0f) radius *= 0.5f;   // aterrizar agachado amortigua el golpe
+            if (radius > 0f) NoiseSystem.Emit(transform.position, radius, gameObject);
+            Landed?.Invoke();
         }
 
         private void HandleCrouchInput()

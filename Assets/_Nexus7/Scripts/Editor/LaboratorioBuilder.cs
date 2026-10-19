@@ -140,7 +140,7 @@ namespace Nexus7.EditorTools
             // ---------- 5. Jugador ----------
             var (player, interactor) = B.BuildPlayer();
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -3.2f), Quaternion.identity);
-            var inventory = player.gameObject.AddComponent<InventorySystem>();
+            var inventory = B.GetOrAdd<InventorySystem>(player.gameObject);
             A.SetStacks(inventory, "startingItems", new[]   // solo si se juega esta escena directamente
             {
                 new ItemStack(items.Scrap, 6), new ItemStack(items.Circuit, 2), new ItemStack(items.Battery, 1)
@@ -673,23 +673,7 @@ namespace Nexus7.EditorTools
 
         internal static void BuildPhase4UI(Transform canvas, DeviceQuickbar quickbar, PlayerStealth stealth)
         {
-            // Tinte del camuflaje (pantalla completa, detrás de los textos)
-            var overlay = B.UIImage("TinteCamuflaje", canvas, new Color(0.35f, 0.6f, 1f, 0f));
-            overlay.rectTransform.anchorMin = Vector2.zero;
-            overlay.rectTransform.anchorMax = Vector2.one;
-            overlay.rectTransform.offsetMin = overlay.rectTransform.offsetMax = Vector2.zero;
-            overlay.transform.SetSiblingIndex(2);
-
-            var slots = B.UIText("BarraDispositivos", canvas, new Vector2(0.5f, 0f), new Vector2(0f, 12f), new Vector2(1200f, 64f), 24f, TextAlignmentOptions.Center, Color.white);
-            slots.rectTransform.pivot = new Vector2(0.5f, 0f);
-            var cloak = B.UIText("TextoCamuflaje", canvas, new Vector2(0.5f, 0.5f), new Vector2(0f, -140f), new Vector2(600f, 40f), 30f, TextAlignmentOptions.Center, new Color(0.6f, 0.8f, 1f));
-            var qUi = canvas.gameObject.AddComponent<UI.QuickbarUI>();
-            B.SetRef(qUi, "quickbar", quickbar);
-            B.SetRef(qUi, "stealth", stealth);
-            B.SetRef(qUi, "slotsText", slots);
-            B.SetRef(qUi, "cloakText", cloak);
-            B.SetRef(qUi, "cloakOverlay", overlay);
-
+            // La barra rápida y el camuflaje ya los muestra HotbarUI (HUD común de BuildHUD).
             // Panel de fabricación
             var panel = B.UIImage("PanelFabricacion", canvas, new Color(0.02f, 0.05f, 0.09f, 0.92f));
             B.Anchor(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980f, 580f));

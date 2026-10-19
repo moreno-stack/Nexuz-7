@@ -112,7 +112,7 @@ namespace Nexus7.EditorTools
             // ---------- 4. Jugador ----------
             var (player, interactor) = B.BuildPlayer();
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -3.2f), Quaternion.identity);
-            var inventory = player.gameObject.AddComponent<InventorySystem>();
+            var inventory = B.GetOrAdd<InventorySystem>(player.gameObject);
             var stealth = player.gameObject.AddComponent<PlayerStealth>();
             player.gameObject.AddComponent<PlayerRespawn>();
 

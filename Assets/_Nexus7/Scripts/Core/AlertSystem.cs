@@ -6,7 +6,7 @@ namespace Nexus7.Core
     public enum AlertLevel { Normal, Yellow, Red }
 
     /// <summary>Sucesos que suben la tensión de la nave (cada uno con su peso en AlertSystem.Weight).</summary>
-    public enum AlertEvent { AlarmRaised, PlayerSpotted, PlayerCaught, HackFailed, HackError, LoudNoise, DeviceDetonation, Custom }
+    public enum AlertEvent { AlarmRaised, PlayerSpotted, PlayerCaught, HackFailed, HackError, LoudNoise, DeviceDetonation, PlayerHit, Custom }
 
     /// <summary>
     /// Modificadores que aplica cada nivel a TODOS los sistemas hostiles.
@@ -76,6 +76,7 @@ namespace Nexus7.Core
                 case AlertEvent.HackError:        return 5f;
                 case AlertEvent.LoudNoise:        return 0.35f;  // por cada paso corriendo
                 case AlertEvent.DeviceDetonation: return 4f;
+                case AlertEvent.PlayerHit:        return 6f;   // un robot te ha golpeado
                 default:                          return 0f;
             }
         }

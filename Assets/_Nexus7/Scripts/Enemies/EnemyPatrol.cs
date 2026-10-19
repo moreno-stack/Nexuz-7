@@ -31,6 +31,11 @@ namespace Nexus7.Enemies
 
         /// <summary>Todos los enemigos activos (lo usa el indicador de sigilo del HUD).</summary>
         public static readonly List<EnemyPatrol> All = new List<EnemyPatrol>();
+        /// <summary>true durante las cinemáticas: los drones se quedan quietos y no detectan.</summary>
+        public static bool Paused;
+        private bool pausedHere;
+        /// <summary>El dron puede volver a moverse (no está congelado, aturdido ni en pausa por una cinemática).</summary>
+        public bool CanMove => !frozen && !Paused && CurrentState != EnemyState.Stunned;
 
         /// <summary>Se dispara cuando un dron empieza a perseguir al jugador (alertas, escuadrones).</summary>
         public static event System.Action<EnemyPatrol> PlayerSpotted;
@@ -92,6 +97,7 @@ namespace Nexus7.Enemies
         private EnemyVision vision;
         private Transform player;
         private PlayerRespawn playerRespawn;
+        private EnemyMeleeAttack melee;
 
         private int waypointIndex;
         private int routeDirection = 1;
@@ -153,6 +159,7 @@ namespace Nexus7.Enemies
                 player = go.transform;
                 playerRespawn = go.GetComponent<PlayerRespawn>();
             }
+            melee = GetComponent<EnemyMeleeAttack>();
 
             agent.enabled = true;
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
@@ -165,6 +172,12 @@ namespace Nexus7.Enemies
 
         private void Update()
         {
+            if (Paused)
+            {
+                if (!pausedHere && agent.isOnNavMesh) { agent.isStopped = true; pausedHere = true; }
+                return;
+            }
+            if (pausedHere) { pausedHere = false; if (agent.isOnNavMesh && !frozen && CurrentState != EnemyState.Stunned) agent.isStopped = false; }
             if (frozen || !agent.isOnNavMesh) return;
 
             if (CurrentState == EnemyState.Stunned) { UpdateStunned(); return; }
@@ -317,7 +330,13 @@ namespace Nexus7.Enemies
                 agent.SetDestination(vision.CanSeePlayer ? player.position : vision.LastSeenPosition);
             }
 
-            if (Vector3.Distance(transform.position, player.position) <= catchDistance)
+            if (melee != null)
+            {
+                // Robot armado: golpea al llegar al alcance del arma (se puede esquivar apartándose).
+                if (melee.IsAttacking) return;
+                if (Vector3.Distance(transform.position, player.position) <= melee.Range * 0.9f) { melee.TryAttack(); return; }
+            }
+            else if (Vector3.Distance(transform.position, player.position) <= catchDistance)
             {
                 if (playerRespawn != null) playerRespawn.Caught();
                 return;
@@ -410,6 +429,7 @@ namespace Nexus7.Enemies
         public void Stun(float duration)
         {
             if (frozen) return;
+            if (melee != null) melee.Cancel();
             CurrentState = EnemyState.Stunned;
             stunTimer = Mathf.Max(stunTimer, duration);
             currentDistraction = null;

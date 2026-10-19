@@ -45,8 +45,15 @@ namespace Nexus7.UI
             if (panel != null) panel.SetActive(false);
         }
 
-        private void OnEnable() => PlayerRespawn.PlayerCaught += Abort;
-        private void OnDisable() => PlayerRespawn.PlayerCaught -= Abort;
+        private void OnEnable() { PlayerRespawn.PlayerCaught += Abort; Nexus7.Player.PlayerHealth.PlayerHit += OnPlayerHit; }
+        private void OnDisable() { PlayerRespawn.PlayerCaught -= Abort; Nexus7.Player.PlayerHealth.PlayerHit -= OnPlayerHit; }
+
+        /// <summary>Un golpe interrumpe el hackeo: termina como fallido (sin penalización extra) y el dueño libera su bloqueo.</summary>
+        private void OnPlayerHit(Vector3 attacker)
+        {
+            if (sequence == null) return;
+            Finish(false, false);
+        }
         private void OnDestroy() { if (Instance == this) Instance = null; }
 
         public void Begin(HackDifficulty difficulty, string label, Vector3 position, Action<bool> callback)

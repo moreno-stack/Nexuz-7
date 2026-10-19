@@ -172,7 +172,7 @@ namespace Nexus7.EditorTools
             // ---------- 5. Jugador ----------
             var (player, interactor) = B.BuildPlayer();
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -3.2f), Quaternion.identity);
-            var inventory = player.gameObject.AddComponent<InventorySystem>();
+            var inventory = B.GetOrAdd<InventorySystem>(player.gameObject);
             // Equipo de prueba si se juega esta escena directamente (si vienes del Centro de Control, se usa tu inventario real).
             A.SetStacks(inventory, "startingItems", new[]
             {
@@ -180,7 +180,7 @@ namespace Nexus7.EditorTools
             });
             var stealth = player.gameObject.AddComponent<PlayerStealth>();
             player.gameObject.AddComponent<PlayerRespawn>();
-            var health = player.gameObject.AddComponent<PlayerHealth>();
+            var health = B.GetOrAdd<PlayerHealth>(player.gameObject);
             A.SetBool(health, "respawnOnDeath", false);   // aquí morir = final crítico
             var crafting = player.gameObject.AddComponent<CraftingSystem>();
             A.SetObjectArray(crafting, "knownRecipes", p4.Recipes.Cast<Object>().ToArray());

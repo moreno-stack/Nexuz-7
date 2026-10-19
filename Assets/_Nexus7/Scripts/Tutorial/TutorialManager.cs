@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using Nexus7.Cinematics;
+using Nexus7.Core;
 using Nexus7.Interaction;
 using Nexus7.Player;
 using Nexus7.UI;
@@ -9,9 +11,10 @@ namespace Nexus7.Tutorial
 {
     /// <summary>
     /// Secuencia de despertar + tutorial guiado:
-    /// 1. Pantalla en negro y mensajes de la IA (controles bloqueados).
-    /// 2. Fundido de entrada; se devuelve el control.
-    /// 3. Pasos que esperan a que el jugador REALICE la acción (moverse, correr, agacharse, interactuar).
+    /// 1. Intro: o bien la cinemática «Despertar» (waitForCinematic) o la intro clásica en negro con mensajes de la IA.
+    /// 2. Se devuelve el control.
+    /// 3. Pasos (TutorialSteps.Phase1) que esperan a que el jugador REALICE la acción: moverse, correr, agacharse,
+    ///    saltar, cambiar de cámara, interactuar y ponerse el traje. Un paso ya cumplido (p. ej. el traje) se salta.
     /// 4. Se fija el primer objetivo.
     ///
     /// Colocar en: un GameObject vacío "GameSystems" de la escena.
@@ -25,6 +28,8 @@ namespace Nexus7.Tutorial
         [Header("Opciones")]
         [Tooltip("Desactívalo para saltar la intro mientras pruebas otras cosas.")]
         [SerializeField] private bool playIntro = true;
+        [Tooltip("Espera a que termine (o se salte) la cinemática de la escena en lugar de la intro clásica.")]
+        [SerializeField] private bool waitForCinematic;
         [SerializeField] private float fadeInDuration = 4f;
 
         [Header("Historia al despertar")]
@@ -41,6 +46,8 @@ namespace Nexus7.Tutorial
         [SerializeField] private string firstObjective = "Objetivo: Encuentra la forma de abrir la puerta del corredor C-7.";
 
         private bool hasInteracted;
+        private bool cameraToggled;
+        private CameraModeSwitcher cameraSwitcher;
 
         private void OnEnable()  { if (interactor != null) interactor.Interacted += OnPlayerInteracted; }
         private void OnDisable() { if (interactor != null) interactor.Interacted -= OnPlayerInteracted; }
@@ -55,44 +62,80 @@ namespace Nexus7.Tutorial
                 yield break;
             }
 
-            if (!playIntro)
+            cameraSwitcher = player.GetComponent<CameraModeSwitcher>();
+
+            if (waitForCinematic)
+            {
+                hud.SetFade(0f);
+                float noCinematic = 0f;
+                while (!ShouldStartSteps(CinematicDirector.IsPlaying, noCinematic))
+                {
+                    noCinematic = CinematicDirector.IsPlaying ? 0f : noCinematic + Time.deltaTime;
+                    yield return null;
+                }
+            }
+            else if (!playIntro)
             {
                 hud.SetFade(0f);
                 hud.SetObjective(firstObjective);
                 yield break;
             }
+            else
+            {
+                // --- Intro clásica: despertar en negro ---
+                player.InputEnabled = false;
+                hud.SetFade(1f);
+                yield return new WaitForSeconds(1f);
 
-            // --- 1. Despertar en negro ---
-            player.InputEnabled = false;
-            hud.SetFade(1f);
-            yield return new WaitForSeconds(1f);
+                if (wakeUpMessages.Length > 0) hud.QueueMessage(wakeUpMessages[0]);
+                yield return new WaitForSeconds(1.5f);
 
-            if (wakeUpMessages.Length > 0) hud.QueueMessage(wakeUpMessages[0]);
-            yield return new WaitForSeconds(1.5f);
+                StartCoroutine(hud.Fade(1f, 0f, fadeInDuration));
+                for (int i = 1; i < wakeUpMessages.Length; i++) hud.QueueMessage(wakeUpMessages[i]);
+                yield return hud.WaitForMessages();
 
-            // --- 2. Abrir los ojos mientras sigue hablando la IA ---
-            StartCoroutine(hud.Fade(1f, 0f, fadeInDuration));
-            for (int i = 1; i < wakeUpMessages.Length; i++) hud.QueueMessage(wakeUpMessages[i]);
-            yield return hud.WaitForMessages();
+                var respawn = player.GetComponent<Nexus7.Gameplay.PlayerRespawn>();
+                if (respawn == null || !respawn.IsRespawning) player.InputEnabled = true;
+            }
 
-            var respawn = player.GetComponent<Nexus7.Gameplay.PlayerRespawn>();
-            if (respawn == null || !respawn.IsRespawning) player.InputEnabled = true;
-
-            // --- 3. Pasos del tutorial: cada uno espera a que el jugador haga la acción ---
-            yield return Step("Usa [W][A][S][D] o el stick izquierdo para moverte. Mueve el ratón para mirar.",
-                              () => player.State != MovementState.Idle, holdSeconds: 1.2f);
-
-            yield return Step("Mantén [Shift] (L3 en el mando) para correr. Cuidado: correr hace MUCHO ruido.",
-                              () => player.State == MovementState.Running, holdSeconds: 0.8f);
-
-            yield return Step("Pulsa [Ctrl] o [C] (B en el mando) para agacharte. Agachado avanzas lento, pero casi en silencio.",
-                              () => player.IsCrouching && player.State != MovementState.Idle, holdSeconds: 1f);
-
-            yield return Step("Apunta a un objeto cercano y pulsa [E] (A en el mando) para interactuar. Prueba con la bitácora de la pared.",
-                              () => hasInteracted, holdSeconds: 0f);
-
-            // --- 4. Primer objetivo (si el jugador ya usó la terminal, no se pisa su objetivo "cruza la puerta") ---
             if (string.IsNullOrEmpty(hud.CurrentObjective)) hud.SetObjective(firstObjective);
+
+            // --- Pasos del tutorial: cada uno espera a que el jugador haga la acción ---
+            bool initialThird = cameraSwitcher != null && cameraSwitcher.ThirdPerson;
+            foreach (var step in TutorialSteps.Phase1)
+            {
+                if (step.id == "suit" && GameSession.HasSuit) continue;   // ya se lo puso: no se pide
+                var id = step.id;
+                yield return Step(step.hint, () =>
+                {
+                    if (cameraSwitcher != null && cameraSwitcher.ThirdPerson != initialThird) cameraToggled = true;
+                    return IsStepDone(id, player, hasInteracted, cameraToggled);
+                }, step.hold);
+            }
+        }
+
+        /// <summary>La cinemática terminó (o se saltó / no había) y lleva al menos 0,2 s sin reproducirse.</summary>
+        public static bool ShouldStartSteps(bool cinematicPlaying, float noCinematicFor) =>
+            !cinematicPlaying && noCinematicFor >= 0.2f;
+
+        /// <summary>Condición de cada paso del tutorial (ver TutorialSteps). Sin jugador solo se cumplen los que no lo necesitan.</summary>
+        public static bool IsStepDone(string id, PlayerController p, bool interacted, bool cameraToggled)
+        {
+            switch (id)
+            {
+                case "suit":     return GameSession.HasSuit;
+                case "camera":   return cameraToggled;
+                case "interact": return interacted;
+            }
+            if (p == null) return false;
+            switch (id)
+            {
+                case "move":   return p.State != MovementState.Idle;
+                case "run":    return p.State == MovementState.Running;
+                case "crouch": return p.IsCrouching && p.State != MovementState.Idle;
+                case "jump":   return p.IsJumping;
+                default:       return false;
+            }
         }
 
         /// <summary>Muestra una pista y espera a que la condición se cumpla durante holdSeconds acumulados.</summary>

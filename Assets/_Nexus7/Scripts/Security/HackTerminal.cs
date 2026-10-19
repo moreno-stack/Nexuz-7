@@ -42,7 +42,7 @@ namespace Nexus7.Security
         [SerializeField] private Color idleColor = new Color(0.2f, 0.9f, 0.4f);
         [SerializeField] private Color hackedColor = new Color(0.2f, 0.6f, 1f);
 
-        private bool hacking;
+        private bool hacking, interrupted;
         private float lastDeniedTime = -999f;
 
         public IEnumerable<IHackable> Targets => targets == null ? Enumerable.Empty<IHackable>() : targets.OfType<IHackable>();
@@ -50,8 +50,9 @@ namespace Nexus7.Security
         public bool TargetsDisabled => Targets.Any(t => t.IsDisabled);
         public float RemainingTime => Targets.Select(t => t.RemainingDisabledTime).DefaultIfEmpty(0f).Max();
 
-        private void OnEnable() => All.Add(this);
-        private void OnDisable() => All.Remove(this);
+        private void OnEnable() { All.Add(this); PlayerHealth.PlayerHit += OnPlayerHit; }
+        private void OnDisable() { All.Remove(this); PlayerHealth.PlayerHit -= OnPlayerHit; }
+        private void OnPlayerHit(Vector3 attacker) { if (hacking) interrupted = true; }
 
         public override string Prompt
         {
@@ -93,6 +94,7 @@ namespace Nexus7.Security
         private IEnumerator HackRoutine(PlayerInteractor interactor, InventorySystem inventory)
         {
             hacking = true;
+            interrupted = false;
             var controller = interactor.GetComponentInParent<PlayerController>();
             var respawn = interactor.GetComponentInParent<PlayerRespawn>();
             var hud = HUDManager.Instance;
@@ -101,7 +103,7 @@ namespace Nexus7.Security
 
             for (float t = 0f; t < hackTime; t += Time.deltaTime)
             {
-                if (respawn != null && respawn.IsRespawning) // capturado durante el hackeo → se cancela
+                if ((respawn != null && respawn.IsRespawning) || interrupted) // capturado o golpeado durante el hackeo → se cancela
                 {
                     Finish(controller, hud);
                     yield break;

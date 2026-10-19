@@ -43,8 +43,9 @@ namespace Nexus7.UI
             if (panel != null) panel.SetActive(false);
         }
 
-        private void OnEnable() => PlayerRespawn.PlayerCaught += ForceClose;
-        private void OnDisable() => PlayerRespawn.PlayerCaught -= ForceClose;
+        private void OnEnable() { PlayerRespawn.PlayerCaught += ForceClose; PlayerHealth.PlayerHit += OnPlayerHit; }
+        private void OnDisable() { PlayerRespawn.PlayerCaught -= ForceClose; PlayerHealth.PlayerHit -= OnPlayerHit; }
+        private void OnPlayerHit(Vector3 attacker) { if (IsOpen) ForceClose(); }
         private void OnDestroy() { if (Instance == this) Instance = null; }
 
         public void Open(ControlConsole target, PlayerInteractor interactor)

@@ -46,6 +46,7 @@ namespace Nexus7.Gameplay
             EnemyPatrol.PlayerSpotted += OnSpotted;
             PlayerRespawn.PlayerCaught += OnCaught;
             NoiseSystem.NoiseEmitted += OnNoise;
+            PlayerHealth.PlayerHit += OnPlayerHit;
             AlertSystem.LevelChanged += OnLevelChanged;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
         }
@@ -56,6 +57,7 @@ namespace Nexus7.Gameplay
             EnemyPatrol.PlayerSpotted -= OnSpotted;
             PlayerRespawn.PlayerCaught -= OnCaught;
             NoiseSystem.NoiseEmitted -= OnNoise;
+            PlayerHealth.PlayerHit -= OnPlayerHit;
             AlertSystem.LevelChanged -= OnLevelChanged;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
         }
@@ -85,9 +87,11 @@ namespace Nexus7.Gameplay
             // PlayerCaught también se usa al reaparecer tras morir por una descarga: eso no es una captura.
             var player = GameObject.FindGameObjectWithTag("Player");
             var health = player != null ? player.GetComponent<PlayerHealth>() : null;
-            if (health != null && health.Current <= 0f) return;
+            if (health != null && health.Current <= 0f && !health.LastDamageFromEnemy) return;   // descarga eléctrica: no es captura
             AlertSystem.Report(AlertEvent.PlayerCaught);
         }
+
+        private void OnPlayerHit(Vector3 attacker) => AlertSystem.Report(AlertEvent.PlayerHit);
 
         private void OnNoise(Vector3 position, float radius, GameObject source)
         {

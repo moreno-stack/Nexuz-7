@@ -18,8 +18,8 @@ namespace Nexus7.Interaction
         [Tooltip("Capas que el raycast puede golpear. Las paredes también deben estar incluidas para que bloqueen la vista.")]
         [SerializeField] private LayerMask interactMask = ~0;
         [SerializeField] private KeyCode interactKey = KeyCode.E;
-        [Tooltip("JoystickButton0 = botón A en mando Xbox.")]
-        [SerializeField] private KeyCode interactPadButton = KeyCode.JoystickButton0;
+        [Tooltip("JoystickButton2 = botón X en mando Xbox (A es saltar).")]
+        [SerializeField] private KeyCode interactPadButtonX = KeyCode.JoystickButton2;
 
         /// <summary>Se dispara tras cada interacción (el tutorial lo usa para avanzar).</summary>
         public event Action<IInteractable> Interacted;
@@ -33,7 +33,7 @@ namespace Nexus7.Interaction
             Current = canAct ? FindTarget() : null;
             RefreshPrompt();
 
-            if (Current != null && (Input.GetKeyDown(interactKey) || Input.GetKeyDown(interactPadButton)))
+            if (Current != null && (Input.GetKeyDown(interactKey) || Input.GetKeyDown(interactPadButtonX)))
             {
                 Current.Interact(this);
                 Interacted?.Invoke(Current);
@@ -42,12 +42,22 @@ namespace Nexus7.Interaction
 
         private IInteractable FindTarget()
         {
-            var ray = new Ray(transform.position, transform.forward);
-            if (!Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactMask, QueryTriggerInteraction.Ignore))
-                return null;
+            // En tercera persona la cámara está detrás del jugador: el rayo es más largo, se ignora el propio
+            // jugador y lo que cuenta es la distancia desde el pecho del jugador (máx. interactDistance).
+            Vector3 chest = player != null ? player.transform.position + Vector3.up * 1.2f : transform.position;
+            float extra = Vector3.Distance(transform.position, chest);
+            var hits = Physics.RaycastAll(new Ray(transform.position, transform.forward), interactDistance + extra, interactMask, QueryTriggerInteraction.Ignore);
+            RaycastHit best = default(RaycastHit);
+            bool found = false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (player != null && hits[i].collider.transform.IsChildOf(player.transform)) continue;
+                if (!found || hits[i].distance < best.distance) { best = hits[i]; found = true; }
+            }
+            if (!found || Vector3.Distance(chest, best.point) > interactDistance) return null;
 
             // GetComponentInParent permite poner el script en el padre y el collider en un hijo (p. ej. el panel de la puerta).
-            var target = hit.collider.GetComponentInParent<IInteractable>();
+            var target = best.collider.GetComponentInParent<IInteractable>();
             return (target != null && target.CanInteract(this)) ? target : null;
         }
 

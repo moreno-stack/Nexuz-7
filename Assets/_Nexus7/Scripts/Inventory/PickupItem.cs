@@ -43,6 +43,13 @@ namespace Nexus7.Inventory
             amount = Mathf.Max(1, newAmount);
         }
 
+        /// <summary>Forma visible que gira y flota (la usan los spawners de botín).</summary>
+        public void SetVisual(Transform v)
+        {
+            visual = v;
+            if (visual != null) visualBasePos = visual.localPosition;
+        }
+
         private void Awake()
         {
             if (visual != null) visualBasePos = visual.localPosition;

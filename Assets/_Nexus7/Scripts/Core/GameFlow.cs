@@ -17,6 +17,7 @@ namespace Nexus7.Core
         public static void StartNewRun()
         {
             ResetRunState();
+            GameSession.NewRun();
             RunStats.EnsureStarted();
             Load(FirstScene);
         }
@@ -45,6 +46,7 @@ namespace Nexus7.Core
             GameSession.Clear();
             AlertSystem.ResetAll();
             RunStats.Reset();
+            Nexus7.Enemies.EnemyPatrol.Paused = false;
         }
 
         public static int BestScore => PlayerPrefs.GetInt(BestScoreKey, 0);

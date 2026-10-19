@@ -20,8 +20,12 @@ namespace Nexus7.Player
         [Tooltip("Segundos sin recibir daño antes de empezar a regenerar.")]
         [SerializeField] private float regenDelay = 5f;
         [SerializeField] private float regenPerSecond = 6f;
+        [Tooltip("Velocidad del empujón al recibir un golpe (m/s).")]
+        [SerializeField] private float knockback = 3f;
         [Tooltip("false = en la zona final la muerte no reaparece: la gestiona EndingManager (final crítico).")]
         [SerializeField] private bool respawnOnDeath = true;
+        [Tooltip("Escudo del traje (si lo lleva puesto absorbe el daño primero).")]
+        [SerializeField] private SuitShield shield;
         [SerializeField, TextArea] private string deathMessage =
             "Descarga eléctrica letal. Reiniciando sistemas vitales en el último punto seguro...";
 
@@ -29,9 +33,13 @@ namespace Nexus7.Player
         public float Max => maxHealth;
         public float Normalized => maxHealth > 0f ? Current / maxHealth : 0f;
         public bool IsStunned { get; private set; }
+        /// <summary>El último daño a la vida lo hizo un enemigo (fuera de combate = captura).</summary>
+        public bool LastDamageFromEnemy { get; private set; }
 
         /// <summary>Se dispara cuando la integridad llega a 0.</summary>
         public static event Action PlayerDied;
+        /// <summary>Un enemigo ha golpeado al jugador (posición del atacante).</summary>
+        public static event Action<Vector3> PlayerHit;
 
         /// <summary>Cantidad de daño recibida (la UI hace un destello rojo).</summary>
         public event Action<float> Damaged;
@@ -47,6 +55,7 @@ namespace Nexus7.Player
         {
             controller = GetComponent<PlayerController>();
             respawn = GetComponent<PlayerRespawn>();
+            if (shield == null) shield = GetComponent<SuitShield>();
             Current = maxHealth;
         }
 
@@ -59,14 +68,34 @@ namespace Nexus7.Player
                 Heal(regenPerSecond * Time.deltaTime);
         }
 
-        public void TakeDamage(float amount)
+        /// <summary>Daño ambiental (descargas, trampas). Se escala por la dificultad.</summary>
+        public void TakeDamage(float amount) => ApplyDamage(amount, transform.position, false);
+
+        /// <summary>Golpe de un enemigo desde 'origin': escala por dificultad, escudo, vida, empujón y aviso a la alerta.</summary>
+        public void TakeDamage(float amount, Vector3 origin) => ApplyDamage(amount, origin, true);
+
+        private void ApplyDamage(float amount, Vector3 origin, bool fromEnemy)
         {
             if (amount <= 0f || Current <= 0f || (respawn != null && respawn.IsRespawning)) return;
 
-            RunStats.RecordDamage(Mathf.Min(amount, Current));
-            Current = Mathf.Max(0f, Current - amount);
+            float scaled = amount * DifficultySettings.DamageMultiplier;
+            float rest = shield != null ? shield.Absorb(scaled) : scaled;
             lastDamageTime = Time.time;
-            Damaged?.Invoke(amount);
+
+            if (fromEnemy)
+            {
+                Vector3 away = transform.position - origin;
+                away.y = 0f;
+                if (controller != null && away.sqrMagnitude > 0.0001f) controller.AddImpulse(away.normalized * knockback);
+                PlayerHit?.Invoke(origin);
+            }
+            if (rest <= 0f) return;
+
+            LastDamageFromEnemy = fromEnemy;
+            float applied = Mathf.Min(rest, Current);
+            RunStats.RecordDamage(applied);
+            Current = Mathf.Max(0f, Current - rest);
+            Damaged?.Invoke(applied);
             HealthChanged?.Invoke(Current, maxHealth);
 
             if (Current <= 0f) Die();
@@ -110,7 +139,7 @@ namespace Nexus7.Player
             RunStats.RecordDeath();
             PlayerDied?.Invoke();
             if (!respawnOnDeath) return;               // la gestiona el final (EndingManager)
-            if (respawn != null) respawn.Respawn(deathMessage);
+            if (respawn != null) { if (LastDamageFromEnemy) respawn.KnockedOut(); else respawn.Respawn(deathMessage); }
             else Heal(maxHealth);
         }
 

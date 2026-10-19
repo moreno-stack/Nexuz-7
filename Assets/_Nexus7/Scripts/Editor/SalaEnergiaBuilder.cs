@@ -157,7 +157,7 @@ namespace Nexus7.EditorTools
             // ---------- 9. Jugador ----------
             var (player, interactor) = B.BuildPlayer();
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -3.2f), Quaternion.identity);
-            var inventory = player.gameObject.AddComponent<InventorySystem>();
+            var inventory = B.GetOrAdd<InventorySystem>(player.gameObject);
             // Equipo por defecto si se juega esta escena directamente (si vienes del Almacén, se usa tu inventario real).
             A.SetStacks(inventory, "startingItems", new[]
             {
@@ -165,7 +165,7 @@ namespace Nexus7.EditorTools
             });
             var stealth = player.gameObject.AddComponent<PlayerStealth>();
             player.gameObject.AddComponent<PlayerRespawn>();
-            var health = player.gameObject.AddComponent<PlayerHealth>();
+            var health = B.GetOrAdd<PlayerHealth>(player.gameObject);
 
             // ---------- 10. Drones de guardia ----------
             var enemies = new GameObject("Enemigos").transform;
@@ -888,10 +888,10 @@ namespace Nexus7.EditorTools
             B.SetRef(hpUi, "stunLabel", stun);
 
             // Energía + sistemas hackeados (arriba a la izquierda, bajo el objetivo)
-            var pLabel = B.UIText("TextoEnergia", canvas, new Vector2(0f, 1f), new Vector2(40f, -112f), new Vector2(700f, 34f), 24f, TextAlignmentOptions.Left, Color.white);
+            var pLabel = B.UIText("TextoEnergia", canvas, new Vector2(0f, 1f), new Vector2(40f, -132f), new Vector2(700f, 34f), 24f, TextAlignmentOptions.Left, Color.white);
             pLabel.rectTransform.pivot = new Vector2(0f, 1f);
-            var (pFill, pBg) = Bar("BarraEnergia", canvas, new Vector2(0f, 1f), new Vector2(40f, -150f));
-            var hacks = B.UIText("TextoHackeos", canvas, new Vector2(0f, 1f), new Vector2(40f, -166f), new Vector2(700f, 120f), 22f, TextAlignmentOptions.TopLeft, Color.white);
+            var (pFill, pBg) = Bar("BarraEnergia", canvas, new Vector2(0f, 1f), new Vector2(40f, -170f));
+            var hacks = B.UIText("TextoHackeos", canvas, new Vector2(0f, 1f), new Vector2(40f, -186f), new Vector2(700f, 120f), 22f, TextAlignmentOptions.TopLeft, Color.white);
             hacks.rectTransform.pivot = new Vector2(0f, 1f);
             var pUi = canvas.gameObject.AddComponent<UI.PowerStatusUI>();
             B.SetRef(pUi, "label", pLabel);

@@ -109,18 +109,39 @@ namespace Nexus7.EditorTools
                     new[] { "IA NEXUS-7: Has salido del corredor C-7. Bien hecho, tripulante.", "— FIN DE LA FASE 1 —" },
                     "Objetivo: Dirígete al puente de mando.");
 
-            // ---------- Jugador ----------
-            var (player, interactor) = BuildPlayer();
+            // ---------- Jugador (sin traje: está en la taquilla) ----------
+            var (player, interactor) = BuildPlayer(false);
+            SetBool(door, "requiresSuit", true);
+            SetString(door, "suitMessage", "IA NEXUS-7: Sin el traje espacial no sobrevivirás fuera de esta sala. Está en la taquilla junto a la cápsula.");
+
+            // ---------- Taquilla con el traje espacial ----------
+            BuildSuitLocker(env, new Vector3(1.6f, 0f, 3.4f), trimMat, player.GetComponent<PlayerSuit>());
+
+            // ---------- Botín de práctica para la barra rápida [1]–[9] ----------
+            var items = Nexus7.EditorTools.AlmacenCargaBuilder.EnsureItems();
+            var scrapMat = CreateMat("M2_Chatarra", new Color(0.5f, 0.5f, 0.52f), null, 0.7f, 1f);
+            var loot = new GameObject("Objetos").transform;
+            loot.SetParent(env, false);
+            Nexus7.EditorTools.AlmacenCargaBuilder.Pickup("Pickup_Chatarra", loot, new Vector3(-1.2f, 0f, 6f), items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), scrapMat, 3f, false);
+            Nexus7.EditorTools.AlmacenCargaBuilder.Pickup("Pickup_Chatarra", loot, new Vector3(1.2f, 0f, 9f), items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), scrapMat, 3f, false);
 
             // ---------- HUD ----------
             var hud = BuildHUD();
 
             // ---------- Sistemas ----------
             var systems = new GameObject("GameSystems");
+            var director = systems.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            SetRef(director, "player", player);
+            SetRef(director, "cameraTransform", interactor.transform);
+            SetRef(director, "subtitles", hud.GetComponent<Nexus7.UI.SubtitleUI>());
+            SetShots(director, "shots", Nexus7.Cinematics.CinematicScripts.Despertar());
+
             var tutorial = systems.AddComponent<TutorialManager>();
             SetRef(tutorial, "player", player);
             SetRef(tutorial, "interactor", interactor);
             SetRef(tutorial, "hud", hud);
+            SetBool(tutorial, "playIntro", false);
+            SetBool(tutorial, "waitForCinematic", true);
 
             // ---------- Prefabs ----------
             SavePrefab(player.gameObject, "Player");
@@ -181,7 +202,84 @@ namespace Nexus7.EditorTools
             return door;
         }
 
-        internal static (PlayerController, PlayerInteractor) BuildPlayer()
+        /// <summary>Taquilla abierta con el traje colgado; al usarla (SuitPickup) el jugador se pone el traje.</summary>
+        internal static GameObject BuildSuitLocker(Transform parent, Vector3 pos, Material bodyMat, PlayerSuit playerSuit)
+        {
+            var root = new GameObject("TaquillaTraje");
+            root.transform.SetParent(parent, false);
+            root.transform.localPosition = pos;
+            root.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);      // la abertura mira a −X (al corredor)
+
+            // Cuerpo: fondo + laterales + techo (con colliders; PlayerInteractor encuentra SuitPickup en el padre)
+            Box("Fondo",     root.transform, new Vector3(0f, 1.05f, -0.27f), new Vector3(0.7f, 2.1f, 0.06f), bodyMat);
+            Box("LateralIzq", root.transform, new Vector3(-0.33f, 1.05f, 0f), new Vector3(0.04f, 2.1f, 0.6f), bodyMat);
+            Box("LateralDer", root.transform, new Vector3( 0.33f, 1.05f, 0f), new Vector3(0.04f, 2.1f, 0.6f), bodyMat);
+            Box("Techo",     root.transform, new Vector3(0f, 2.08f, 0f), new Vector3(0.7f, 0.04f, 0.6f), bodyMat);
+            var trigger = root.AddComponent<BoxCollider>();                    // zona de interacción en la abertura
+            trigger.center = new Vector3(0f, 1.05f, 0f);
+            trigger.size = new Vector3(0.62f, 2.0f, 0.56f);
+
+            // Puerta abierta (girada 110° sobre su bisagra)
+            var hinge = new GameObject("Bisagra").transform;
+            hinge.SetParent(root.transform, false);
+            hinge.localPosition = new Vector3(0.35f, 0f, 0.3f);
+            hinge.localRotation = Quaternion.Euler(0f, 110f, 0f);
+            NoCollider(Box("PuertaTaquilla", hinge, new Vector3(-0.35f, 1.05f, 0f), new Vector3(0.7f, 2.05f, 0.03f), bodyMat));
+
+            // Traje colgado: el mismo modelo del jugador con traje, algo más pequeño y sin animación
+            var hanger = new GameObject("TrajeColgado").transform;
+            hanger.SetParent(root.transform, false);
+            hanger.localPosition = new Vector3(0f, 0.12f, -0.05f);
+            hanger.localScale = new Vector3(0.9f, 0.9f, 0.9f);
+            Nexus7.Characters.CharacterRigFactory.BuildPlayer(hanger, true, PlayerMaterials());
+
+            var audio = root.AddComponent<AudioSource>();
+            audio.playOnAwake = false;
+            audio.spatialBlend = 1f;
+            var pickup = root.AddComponent<SuitPickup>();
+            SetRef(pickup, "audioSource", audio);
+            SetRef(pickup, "playerSuit", playerSuit);
+            SetRef(pickup, "suitVisual", hanger.gameObject);
+            return root;
+        }
+
+        /// <summary>Copia un guion (CinematicScripts) a la lista serializada de CinematicDirector.</summary>
+        internal static void SetShots(Object director, string field, System.Collections.Generic.List<Nexus7.Cinematics.CinematicShot> shots)
+        {
+            var p = Prop(director, field, out var so);
+            if (p == null) return;
+            p.arraySize = shots.Count;
+            for (int i = 0; i < shots.Count; i++)
+            {
+                var sh = shots[i];
+                var e = p.GetArrayElementAtIndex(i);
+                e.FindPropertyRelative("fromPos").vector3Value = sh.fromPos;
+                e.FindPropertyRelative("toPos").vector3Value = sh.toPos;
+                e.FindPropertyRelative("fromLook").vector3Value = sh.fromLook;
+                e.FindPropertyRelative("toLook").vector3Value = sh.toLook;
+                e.FindPropertyRelative("duration").floatValue = sh.duration;
+                e.FindPropertyRelative("shake").floatValue = sh.shake;
+                var lines = e.FindPropertyRelative("lines");
+                lines.arraySize = sh.lines.Count;
+                for (int j = 0; j < sh.lines.Count; j++)
+                {
+                    var l = lines.GetArrayElementAtIndex(j);
+                    l.FindPropertyRelative("speaker").stringValue = sh.lines[j].speaker;
+                    l.FindPropertyRelative("text").stringValue = sh.lines[j].text;
+                    l.FindPropertyRelative("at").floatValue = sh.lines[j].at;
+                    l.FindPropertyRelative("hold").floatValue = sh.lines[j].hold;
+                }
+                e.FindPropertyRelative("activateOnStart").arraySize = 0;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// Jugador común de todas las fases: CharacterController, modelo redondeado animado ("Modelo"),
+        /// cámara 1ª/3ª persona (CameraRoot/CameraBoom/PlayerCamera), salud + escudo del traje, inventario,
+        /// barra rápida 1–9 y objeto en la mano. 'startWithSuit' = false solo en la Fase 1 (el traje está en la taquilla).
+        /// </summary>
+        internal static (PlayerController, PlayerInteractor) BuildPlayer(bool startWithSuit = true)
         {
             var go = new GameObject("Player") { tag = "Player" };
             go.transform.position = new Vector3(0f, 0.05f, 2.8f); // junto a la cápsula, mirando hacia +Z
@@ -196,15 +294,25 @@ namespace Nexus7.EditorTools
             footsteps.playOnAwake = false;
             footsteps.spatialBlend = 0f;
 
-            var controller = go.AddComponent<PlayerController>();
-            var look = go.AddComponent<PlayerLook>();
+            // Componentes comunes en orden de dependencias (PlayerRigSetup.Required)
+            foreach (var t in PlayerRigSetup.Required)
+                if (go.GetComponent(t) == null) go.AddComponent(t);
+
+            var controller = go.GetComponent<PlayerController>();
+            var look = go.GetComponent<PlayerLook>();
 
             var camRoot = new GameObject("CameraRoot").transform;
             camRoot.SetParent(go.transform, false);
             camRoot.localPosition = new Vector3(0, 1.6f, 0);
 
+            // Brazo de la cámara en 3ª persona (se recoge solo contra paredes y techo)
+            var boomGo = new GameObject("CameraBoom");
+            boomGo.transform.SetParent(camRoot, false);
+            var boom = boomGo.AddComponent<ThirdPersonCamera>();
+            SetRef(boom, "pivot", camRoot);
+
             var camGo = new GameObject("PlayerCamera") { tag = "MainCamera" };
-            camGo.transform.SetParent(camRoot, false);
+            camGo.transform.SetParent(boomGo.transform, false);
             var cam = camGo.AddComponent<Camera>();
             cam.nearClipPlane = 0.05f;
             cam.fieldOfView = 70f;
@@ -218,7 +326,61 @@ namespace Nexus7.EditorTools
             SetRef(look, "cameraRoot", camRoot);
             SetRef(look, "player", controller);
             SetRef(interactor, "player", controller);
+
+            // ---------- Modelo redondeado ----------
+            var mats = PlayerMaterials();
+            var model = Nexus7.Characters.CharacterRigFactory.BuildPlayer(go.transform, startWithSuit, mats);
+            var anim = go.GetComponent<Nexus7.Characters.ProceduralAnimator>();
+            SetRef(anim, "modelRoot", model);
+            SetRef(go.GetComponent<Nexus7.Characters.PlayerRigDriver>(), "animator", anim);
+
+            var switcher = go.GetComponent<CameraModeSwitcher>();
+            SetRef(switcher, "boom", boom);
+            SetRef(switcher, "bodyRoot", model);
+            SetObjects(switcher, "firstPersonVisible", Nexus7.Characters.CharacterRigFactory.FirstPersonRenderers(model, Nexus7.Characters.CharacterRigSpec.Player(startWithSuit)));
+
+            var shield = go.GetComponent<SuitShield>();
+            SetRef(go.GetComponent<PlayerHealth>(), "shield", shield);
+
+            var hotbar = go.GetComponent<Nexus7.Inventory.Hotbar>();
+            var held = go.GetComponent<HeldItemView>();
+            SetRef(held, "hotbar", hotbar);
+            SetRef(held, "handSocket", Nexus7.Characters.CharacterRigFactory.FindDeep(model, Nexus7.Characters.RigJoints.HandSocket));
+
+            var suit = go.GetComponent<PlayerSuit>();
+            SetBool(suit, "startWithSuit", startWithSuit);
+            SetBool(suit, "modelHasSuit", startWithSuit);
+            SetRef(suit, "shield", shield);
+            SetRef(suit, "modelParent", go.transform);
+            SetRigMaterials(suit, "materials", mats);
+            SetRef(suit, "animator", anim);
+            SetRef(suit, "cameraSwitcher", switcher);
+            SetRef(suit, "heldItem", held);
             return (controller, interactor);
+        }
+
+        /// <summary>Materiales del modelo del jugador (mono naranja, traje blanco, visor azul...).</summary>
+        internal static Nexus7.Characters.RigMaterials PlayerMaterials()
+        {
+            return new Nexus7.Characters.RigMaterials
+            {
+                body   = CreateMat("MJ_Mono",    new Color(0.85f, 0.42f, 0.12f), null, 0.35f, 0.1f),
+                suit   = CreateMat("MJ_Traje",   new Color(0.9f, 0.91f, 0.93f), null, 0.5f, 0.2f),
+                visor  = CreateMat("MJ_Visor",   new Color(0.2f, 0.6f, 1f), new Color(0.2f, 0.6f, 1f) * 1.5f, 0.95f, 0.1f),
+                accent = CreateMat("MJ_Detalle", new Color(0.16f, 0.17f, 0.19f), null, 0.4f, 0.6f),
+                skin   = CreateMat("MJ_Piel",    new Color(0.86f, 0.68f, 0.55f), null, 0.25f, 0f),
+                metal  = CreateMat("MJ_Metal",   new Color(0.45f, 0.48f, 0.52f), null, 0.6f, 0.9f),
+                glow   = CreateMat("MJ_Brillo",  new Color(0.3f, 0.9f, 1f), new Color(0.3f, 0.9f, 1f) * 2f),
+                eye    = CreateMat("MJ_Brillo",  new Color(0.3f, 0.9f, 1f), new Color(0.3f, 0.9f, 1f) * 2f),
+            };
+        }
+
+        /// <summary>Añade el componente solo si no existe (las fases 2–6 añaden inventario/salud tras BuildPlayer).</summary>
+        internal static T GetOrAdd<T>(GameObject go) where T : Component
+        {
+            var c = go.GetComponent<T>();
+            if (c != null) return c;
+            return go.AddComponent<T>();
         }
 
         internal static Nexus7.UI.HUDManager BuildHUD()
@@ -245,7 +407,7 @@ namespace Nexus7.EditorTools
             var prompt    = UIText("TextoInteraccion", go.transform, new Vector2(0.5f, 0.5f), new Vector2(0, -70),  new Vector2(900, 60),   30, TextAlignmentOptions.Center, new Color(0.6f, 0.95f, 1f));
             var message   = UIText("TextoMensajes",    go.transform, new Vector2(0.5f, 0f),   new Vector2(0, 150),  new Vector2(1500, 170), 34, TextAlignmentOptions.Center, Color.white);
             var hint      = UIText("TextoTutorial",    go.transform, new Vector2(0.5f, 1f),   new Vector2(0, -110), new Vector2(1300, 120), 30, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.3f));
-            var objective = UIText("TextoObjetivo",    go.transform, new Vector2(0f, 1f),     new Vector2(40, -40), new Vector2(1000, 60),  26, TextAlignmentOptions.TopLeft, new Color(0.6f, 0.9f, 1f));
+            var objective = UIText("TextoObjetivo",    go.transform, new Vector2(0f, 1f),     new Vector2(40, -40), new Vector2(620, 90),   26, TextAlignmentOptions.TopLeft, new Color(0.6f, 0.9f, 1f));
             objective.rectTransform.pivot = new Vector2(0, 1);
 
             var hud = go.AddComponent<Nexus7.UI.HUDManager>();
@@ -254,7 +416,104 @@ namespace Nexus7.EditorTools
             SetRef(hud, "hintText", hint);
             SetRef(hud, "objectiveText", objective);
             SetRef(hud, "fadeImage", fade);
+
+            BuildCommonHUD(go.transform);
             return hud;
+        }
+
+        /// <summary>
+        /// HUD común de todas las fases: barra rápida 1–9 (abajo en el centro), escudo del traje (abajo a la izquierda,
+        /// encima de la integridad), tinte/texto del camuflaje y subtítulos de cinemática con franjas negras.
+        /// Las referencias al jugador se asignan si ya existe; si no, cada componente lo busca por la etiqueta "Player".
+        /// </summary>
+        internal static void BuildCommonHUD(Transform canvas)
+        {
+            var playerGo = GameObject.FindGameObjectWithTag("Player");
+
+            // --- Camuflaje (tinte a pantalla completa detrás de los textos) + barra rápida ---
+            var overlay = UIImage("TinteCamuflaje", canvas, new Color(0.35f, 0.6f, 1f, 0f));
+            overlay.rectTransform.anchorMin = Vector2.zero;
+            overlay.rectTransform.anchorMax = Vector2.one;
+            overlay.rectTransform.offsetMin = overlay.rectTransform.offsetMax = Vector2.zero;
+            overlay.transform.SetSiblingIndex(2);
+            var slots = UIText("BarraRapida", canvas, new Vector2(0.5f, 0f), new Vector2(0f, 12f), new Vector2(1000f, 64f), 24f, TextAlignmentOptions.Center, Color.white);
+            slots.rectTransform.pivot = new Vector2(0.5f, 0f);
+            var cloak = UIText("TextoCamuflaje", canvas, new Vector2(0.5f, 0.5f), new Vector2(0f, -140f), new Vector2(600f, 40f), 30f, TextAlignmentOptions.Center, new Color(0.6f, 0.8f, 1f));
+            var hotbarUi = canvas.gameObject.AddComponent<Nexus7.UI.HotbarUI>();
+            SetRef(hotbarUi, "slotsText", slots);
+            SetRef(hotbarUi, "cloakText", cloak);
+            SetRef(hotbarUi, "cloakOverlay", overlay);
+
+            // --- Escudo del traje ---
+            var shieldFlash = UIImage("DestelloEscudo", canvas, new Color(0.3f, 0.6f, 1f, 0f));
+            shieldFlash.rectTransform.anchorMin = Vector2.zero;
+            shieldFlash.rectTransform.anchorMax = Vector2.one;
+            shieldFlash.rectTransform.offsetMin = shieldFlash.rectTransform.offsetMax = Vector2.zero;
+            shieldFlash.transform.SetSiblingIndex(2);
+            var shieldRoot = new GameObject("Escudo", typeof(RectTransform));
+            shieldRoot.transform.SetParent(canvas, false);
+            var srt = (RectTransform)shieldRoot.transform;
+            srt.anchorMin = srt.anchorMax = Vector2.zero; srt.pivot = Vector2.zero;
+            srt.anchoredPosition = new Vector2(40f, 106f); srt.sizeDelta = new Vector2(400f, 50f);
+            var shieldLabel = UIText("TextoEscudo", shieldRoot.transform, Vector2.zero, new Vector2(0f, 16f), new Vector2(400f, 34f), 24f, TextAlignmentOptions.Left, new Color(0.55f, 0.8f, 1f));
+            shieldLabel.rectTransform.pivot = Vector2.zero;
+            var shieldBg = UIImage("BarraEscudo", shieldRoot.transform, new Color(0f, 0f, 0f, 0.6f));
+            shieldBg.rectTransform.pivot = Vector2.zero;
+            Anchor(shieldBg.rectTransform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(300f, 10f));
+            var shieldFill = UIImage("Relleno", shieldBg.transform, new Color(0.3f, 0.65f, 1f));
+            shieldFill.rectTransform.pivot = new Vector2(0f, 0.5f);
+            shieldFill.rectTransform.anchorMin = Vector2.zero;
+            shieldFill.rectTransform.anchorMax = Vector2.one;
+            shieldFill.rectTransform.offsetMin = shieldFill.rectTransform.offsetMax = Vector2.zero;
+            var shieldUi = canvas.gameObject.AddComponent<Nexus7.UI.ShieldHealthHUD>();
+            SetRef(shieldUi, "barRoot", shieldRoot);
+            SetRef(shieldUi, "barFill", shieldFill);
+            SetRef(shieldUi, "label", shieldLabel);
+            SetRef(shieldUi, "shieldFlash", shieldFlash);
+
+            // --- Subtítulos y franjas de cinemática (encima de todo lo anterior) ---
+            var barTop = UIImage("FranjaSuperior", canvas, Color.black);
+            barTop.rectTransform.anchorMin = new Vector2(0f, 1f); barTop.rectTransform.anchorMax = new Vector2(1f, 1f);
+            barTop.rectTransform.pivot = new Vector2(0.5f, 1f);
+            barTop.rectTransform.anchoredPosition = Vector2.zero; barTop.rectTransform.sizeDelta = new Vector2(0f, 0f);
+            var barBottom = UIImage("FranjaInferior", canvas, Color.black);
+            barBottom.rectTransform.anchorMin = Vector2.zero; barBottom.rectTransform.anchorMax = new Vector2(1f, 0f);
+            barBottom.rectTransform.pivot = new Vector2(0.5f, 0f);
+            barBottom.rectTransform.anchoredPosition = Vector2.zero; barBottom.rectTransform.sizeDelta = new Vector2(0f, 0f);
+            var subBg = UIImage("FondoSubtitulo", canvas, new Color(0f, 0f, 0f, 0.55f));
+            Anchor(subBg.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -360f), new Vector2(1500f, 96f));
+            var subText = UIText("TextoSubtitulo", canvas, new Vector2(0.5f, 0.5f), new Vector2(0f, -360f), new Vector2(1440f, 90f), 32f, TextAlignmentOptions.Center, Color.white);
+            // Indicador de "mantén para saltar": abajo a la derecha, dentro de la franja inferior (no choca con el sigilo de arriba)
+            var skipText = UIText("TextoSaltar", canvas, new Vector2(1f, 0f), new Vector2(-40f, 52f), new Vector2(420f, 36f), 22f, TextAlignmentOptions.Right, new Color(0.8f, 0.8f, 0.8f));
+            skipText.rectTransform.pivot = new Vector2(1f, 0f);
+            var skipBg = UIImage("BarraSaltar", canvas, new Color(1f, 1f, 1f, 0.15f));
+            skipBg.rectTransform.pivot = new Vector2(1f, 0f);
+            Anchor(skipBg.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 40f), new Vector2(220f, 4f));
+            var skipFill = UIImage("Relleno", skipBg.transform, Color.white);
+            skipFill.rectTransform.pivot = new Vector2(0f, 0.5f);
+            skipFill.rectTransform.anchorMin = Vector2.zero;
+            skipFill.rectTransform.anchorMax = Vector2.one;
+            skipFill.rectTransform.offsetMin = skipFill.rectTransform.offsetMax = Vector2.zero;
+            skipFill.rectTransform.localScale = new Vector3(0f, 1f, 1f);
+            var subs = canvas.gameObject.AddComponent<Nexus7.UI.SubtitleUI>();
+            SetRef(subs, "text", subText);
+            SetRef(subs, "background", subBg);
+            SetRef(subs, "barTop", barTop.rectTransform);
+            SetRef(subs, "barBottom", barBottom.rectTransform);
+            SetRef(subs, "skipText", skipText);
+            SetRef(subs, "skipFill", skipFill);
+            SetRef(subs, "skipBar", skipBg.gameObject);
+
+            if (playerGo != null)
+            {
+                SetRef(hotbarUi, "hotbar", playerGo.GetComponent<Nexus7.Inventory.Hotbar>());
+                SetRef(hotbarUi, "inventory", playerGo.GetComponent<Nexus7.Inventory.InventorySystem>());
+                SetRef(shieldUi, "shield", playerGo.GetComponent<SuitShield>());
+                var dev = playerGo.GetComponent<Nexus7.Devices.DeviceQuickbar>();
+                if (dev != null) SetRef(hotbarUi, "devices", dev);
+                var st = playerGo.GetComponent<Nexus7.Stealth.PlayerStealth>();
+                if (st != null) SetRef(hotbarUi, "stealth", st);
+            }
         }
 
         internal static void EmergencyLamp(Transform parent, Vector3 pos, Material lampMat, EmergencyLight.Mode mode)
@@ -440,6 +699,41 @@ namespace Nexus7.EditorTools
             p.arraySize = values.Length;
             for (int i = 0; i < values.Length; i++) p.GetArrayElementAtIndex(i).stringValue = values[i];
             so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        internal static void SetBool(Object target, string field, bool value)
+        {
+            var p = Prop(target, field, out var so);
+            if (p == null) return;
+            p.boolValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        internal static void SetObjects(Object target, string field, Object[] values)
+        {
+            var p = Prop(target, field, out var so);
+            if (p == null) return;
+            p.arraySize = values.Length;
+            for (int i = 0; i < values.Length; i++) p.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>Asigna un RigMaterials serializado (clase anidada) campo a campo.</summary>
+        internal static void SetRigMaterials(Object target, string field, Nexus7.Characters.RigMaterials m)
+        {
+            var so = new SerializedObject(target);
+            PutMat(so, target, field, "body", m.body);   PutMat(so, target, field, "accent", m.accent);
+            PutMat(so, target, field, "suit", m.suit);   PutMat(so, target, field, "visor", m.visor);
+            PutMat(so, target, field, "eye", m.eye);     PutMat(so, target, field, "skin", m.skin);
+            PutMat(so, target, field, "metal", m.metal); PutMat(so, target, field, "glow", m.glow);
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void PutMat(SerializedObject so, Object target, string field, string sub, Material mat)
+        {
+            var p = so.FindProperty(field + "." + sub);
+            if (p == null) { Debug.LogWarning($"[Nexus-7] Campo '{field}.{sub}' no encontrado en {target.GetType().Name}"); return; }
+            p.objectReferenceValue = mat;
         }
 
         internal static void SetEnum(Object target, string field, int index)

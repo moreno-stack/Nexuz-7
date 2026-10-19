@@ -154,7 +154,7 @@ namespace Nexus7.EditorTools
             // ---------- 5. Jugador ----------
             var (player, interactor) = B.BuildPlayer();
             player.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, -3.2f), Quaternion.identity);
-            var inventory = player.gameObject.AddComponent<InventorySystem>();
+            var inventory = B.GetOrAdd<InventorySystem>(player.gameObject);
             A.SetStacks(inventory, "startingItems", new[]
             {
                 new ItemStack(items.Scrap, 6), new ItemStack(items.Circuit, 3), new ItemStack(items.Battery, 1),

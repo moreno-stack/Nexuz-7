@@ -61,19 +61,24 @@ namespace Nexus7.Gameplay
         /// <summary>Lo llama el enemigo al alcanzar al jugador.</summary>
         public void Caught() => Respawn(caughtMessage);
 
+        [SerializeField, TextArea] private string knockedOutMessage = "FUERA DE COMBATE. Reiniciando sistemas vitales en el último punto seguro...";
+
         /// <summary>Reaparición genérica (captura, muerte por descarga...). Muestra 'message' durante el fundido.</summary>
         public void Respawn(string message)
         {
             if (isRespawning) return;
+            // Lo primero, en el mismo frame: bloquear al jugador y avisar (las interfaces abiertas se cierran).
+            isRespawning = true;
+            if (controller != null) controller.InputEnabled = false;
+            PlayerCaught?.Invoke();
             StartCoroutine(RespawnRoutine(message));
         }
 
+        /// <summary>Vida a 0 por un golpe: "Fuera de combate".</summary>
+        public void KnockedOut() => Respawn(knockedOutMessage);
+
         private IEnumerator RespawnRoutine(string message)
         {
-            isRespawning = true;
-            controller.InputEnabled = false;
-            PlayerCaught?.Invoke();
-
             var hud = HUDManager.Instance;
             if (hud != null)
             {

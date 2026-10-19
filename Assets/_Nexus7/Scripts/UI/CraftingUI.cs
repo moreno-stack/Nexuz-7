@@ -49,8 +49,9 @@ namespace Nexus7.UI
             if (progressRoot != null) progressRoot.SetActive(false);
         }
 
-        private void OnEnable() => PlayerRespawn.PlayerCaught += ForceClose;
-        private void OnDisable() => PlayerRespawn.PlayerCaught -= ForceClose;
+        private void OnEnable() { PlayerRespawn.PlayerCaught += ForceClose; PlayerHealth.PlayerHit += OnPlayerHit; }
+        private void OnDisable() { PlayerRespawn.PlayerCaught -= ForceClose; PlayerHealth.PlayerHit -= OnPlayerHit; }
+        private void OnPlayerHit(Vector3 attacker) { if (IsOpen) ForceClose(); }   // un golpe corta la fabricación (no gasta nada)
         private void OnDestroy() { if (Instance == this) Instance = null; }
 
         public void Open(Workbench bench, CraftingSystem system)

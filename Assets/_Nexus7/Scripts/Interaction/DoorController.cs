@@ -31,6 +31,9 @@ namespace Nexus7.Interaction
         [SerializeField] private string lockedPrompt = "Puerta bloqueada";
         [SerializeField, TextArea] private string lockedMessage = "ACCESO DENEGADO — Puerta sin energía.";
         [SerializeField] private float lockedMessageCooldown = 2f;
+        [Tooltip("Solo se abre con el traje espacial puesto (Fase 1: salida de la sala de la cápsula).")]
+        [SerializeField] private bool requiresSuit;
+        [SerializeField, TextArea] private string suitMessage = "IA NEXUS-7: Sin traje no sobrevivirás fuera de esta sala.";
 
         [Header("Requisito de objetos (opcional, Fase 2)")]
         [Tooltip("Objetos necesarios para desbloquear. Vacío = solo se desbloquea con Unlock().")]
@@ -65,6 +68,7 @@ namespace Nexus7.Interaction
         {
             get
             {
+                if (!IsLocked && requiresSuit && !IsOpen && !Nexus7.Core.GameSession.HasSuit) return "Puerta (necesitas el traje espacial)";
                 if (!IsLocked) return IsOpen ? "Cerrar puerta" : "Abrir puerta";
                 if (!HasItemRequirement) return lockedPrompt;
                 return $"{lockedPrompt} ({RequirementProgress(PlayerInventory)})";
@@ -132,6 +136,14 @@ namespace Nexus7.Interaction
                     hud.QueueMessage(lockedMessage, 2f);
                     if (HasItemRequirement) hud.QueueMessage("Necesitas: " + RequirementProgress(interactor.GetComponentInParent<InventorySystem>()), 2.5f);
                 }
+                Play(deniedClip);
+                return;
+            }
+            if (requiresSuit && !IsOpen && !Nexus7.Core.GameSession.HasSuit)
+            {
+                if (Time.time - lastDeniedTime < lockedMessageCooldown) return;
+                lastDeniedTime = Time.time;
+                if (HUDManager.Instance != null) HUDManager.Instance.QueueMessage(suitMessage, 2.5f);
                 Play(deniedClip);
                 return;
             }

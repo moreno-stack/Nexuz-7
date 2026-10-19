@@ -9,48 +9,51 @@ using Nexus7.UI;
 namespace Nexus7.Devices
 {
     /// <summary>
-    /// Barra de acceso rápido de dispositivos y su uso:
-    ///   [1] [2] [3]   → seleccionar ranura (LB en el mando = siguiente)
-    ///   mantener [G]  → apuntar (se dibuja la trayectoria) · soltar → lanzar     (RB en el mando)
-    ///   pulsar [G]    → activar los dispositivos de uso propio (camuflaje)
-    /// Las ranuras son fijas (Slots): muestran el dispositivo aunque tengas 0 para que sepas qué fabricar.
+    /// Uso de los dispositivos seleccionados en la barra rápida 1–9 (Hotbar):
+    ///   mantener [G] / clic izquierdo / Y del mando → apuntar (se dibuja la trayectoria) · soltar → lanzar
+    ///   pulsar  [G] / clic → activar los de uso propio (camuflaje, kit de reparación)
+    /// La selección de casilla la hace Hotbar ([1]–[9], rueda, LB/RB).
     ///
     /// Colocar en: el GameObject raíz "Player". "Throw Origin" = la cámara.
     /// </summary>
     [RequireComponent(typeof(InventorySystem))]
     public class DeviceQuickbar : MonoBehaviour
     {
-        [SerializeField] private DeviceItemData[] slots = new DeviceItemData[3];
         [SerializeField] private Transform throwOrigin;
         [SerializeField] private LineRenderer trajectoryLine;
         [SerializeField] private int trajectorySteps = 40;
+        [SerializeField] private Hotbar hotbar;
 
         [Header("Controles")]
         [SerializeField] private KeyCode useKey = KeyCode.G;
-        [SerializeField] private KeyCode[] slotKeys = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3 };
-        [SerializeField] private KeyCode padUse = KeyCode.JoystickButton5;   // RB
-        [SerializeField] private KeyCode padCycle = KeyCode.JoystickButton4; // LB
+        [SerializeField] private KeyCode useMouse = KeyCode.Mouse0;
+        [Tooltip("JoystickButton3 = botón Y (LB/RB cambian de casilla).")]
+        [SerializeField] private KeyCode padUseButton = KeyCode.JoystickButton3;
 
         private InventorySystem inventory;
         private PlayerController controller;
         private PlayerStealth stealth;
+        private PlayerHealth health;
         private Collider playerCollider;
         private bool aiming;
         private readonly Vector3[] trajectory = new Vector3[64];
 
-        public int SelectedIndex { get; private set; }
-        public int SlotCount => slots.Length;
+        // ---- Compatibilidad con la UI antigua (QuickbarUI): ahora todo sale de la barra rápida ----
+        public int SelectedIndex => hotbar != null ? hotbar.Model.Selected : 0;
+        public int SlotCount => hotbar != null ? hotbar.Model.Count : 0;
         public event Action SelectionChanged;
-
-        public DeviceItemData GetSlot(int index) => index >= 0 && index < slots.Length ? slots[index] : null;
-        public int GetCount(int index) => GetSlot(index) != null ? inventory.GetCount(GetSlot(index)) : 0;
-        public DeviceItemData Selected => GetSlot(SelectedIndex);
+        public DeviceItemData GetSlot(int index) => hotbar != null ? hotbar.Model.Get(index) as DeviceItemData : null;
+        public int GetCount(int index) => hotbar != null && hotbar.Model.Get(index) != null ? inventory.GetCount(hotbar.Model.Get(index)) : 0;
+        public DeviceItemData Selected => hotbar != null ? hotbar.SelectedItem as DeviceItemData : null;
         public bool IsAiming => aiming;
 
         private void Awake()
         {
             inventory = GetComponent<InventorySystem>();
             controller = GetComponent<PlayerController>();
+            health = GetComponent<PlayerHealth>();
+            if (hotbar == null) hotbar = GetComponent<Hotbar>();
+            if (hotbar == null) hotbar = gameObject.AddComponent<Hotbar>();   // escenas antiguas sin barra rápida
             stealth = GetComponent<PlayerStealth>();
             playerCollider = GetComponent<CharacterController>();
             if (trajectoryLine != null) trajectoryLine.enabled = false;
@@ -60,15 +63,17 @@ namespace Nexus7.Devices
         {
             if (controller != null && !controller.InputEnabled) { CancelAim(); return; }
 
-            for (int i = 0; i < slotKeys.Length && i < slots.Length; i++)
-                if (Input.GetKeyDown(slotKeys[i])) Select(i);
-            if (Input.GetKeyDown(padCycle)) Select((SelectedIndex + 1) % slots.Length);
-
             var device = Selected;
-            bool down = Input.GetKeyDown(useKey) || Input.GetKeyDown(padUse);
-            bool held = Input.GetKey(useKey) || Input.GetKey(padUse);
+            bool mouseOk = Cursor.lockState == CursorLockMode.Locked;   // el primer clic solo captura el ratón
+            bool down = Input.GetKeyDown(useKey) || (mouseOk && Input.GetKeyDown(useMouse)) || Input.GetKeyDown(padUseButton);
+            bool held = Input.GetKey(useKey) || (mouseOk && Input.GetKey(useMouse)) || Input.GetKey(padUseButton);
 
-            if (device == null) return;
+            if (device == null)
+            {
+                if (down && hotbar != null && hotbar.SelectedItem != null)
+                    PickupNotificationUI.Notify($"{hotbar.SelectedItem.DisplayName}: no se puede usar directamente.", new Color(0.8f, 0.85f, 0.9f));
+                return;
+            }
 
             if (down && inventory.GetCount(device) <= 0)
             {
@@ -97,14 +102,34 @@ namespace Nexus7.Devices
 
         public void Select(int index)
         {
-            if (index < 0 || index >= slots.Length || index == SelectedIndex) return;
-            SelectedIndex = index;
-            CancelAim();
-            SelectionChanged?.Invoke();
+            if (hotbar == null) return;
+            hotbar.Select(index);
         }
 
-        private Vector3 LaunchPosition => throwOrigin.position + throwOrigin.forward * 0.5f - throwOrigin.up * 0.15f;
+        private void OnEnable() { if (hotbar != null) hotbar.SelectionChanged += OnHotbarChanged; }
+        private void OnDisable() { if (hotbar != null) hotbar.SelectionChanged -= OnHotbarChanged; }
+        private void OnHotbarChanged() { CancelAim(); SelectionChanged?.Invoke(); }
+
+        // Se lanza desde el pecho del jugador (también en 3ª persona, donde la cámara está detrás) hacia donde mira la cámara.
+        private Vector3 LaunchPosition => transform.position + Vector3.up * 1.35f + Flat(throwOrigin.forward) * 0.45f;
         private Vector3 LaunchVelocity(DeviceItemData d) => (throwOrigin.forward + Vector3.up * 0.25f).normalized * d.ThrowForce;
+        private static Vector3 Flat(Vector3 v) { v.y = 0f; return v.sqrMagnitude > 0.0001f ? v.normalized : Vector3.forward; }
+
+        /// <summary>Primer impacto del segmento que no sea el propio jugador.</summary>
+        private bool LinecastIgnoringPlayer(Vector3 a, Vector3 b, out RaycastHit hit)
+        {
+            hit = default(RaycastHit);
+            Vector3 d = b - a; float len = d.magnitude;
+            if (len < 0.0001f) return false;
+            var hits = Physics.RaycastAll(new Ray(a, d / len), len, ~(1 << 2), QueryTriggerInteraction.Ignore);
+            bool found = false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (hits[i].collider.transform.IsChildOf(transform)) continue;
+                if (!found || hits[i].distance < hit.distance) { hit = hits[i]; found = true; }
+            }
+            return found;
+        }
 
         private void Throw(DeviceItemData device)
         {
@@ -113,12 +138,23 @@ namespace Nexus7.Devices
             DeviceFactory.SpawnThrown(device, LaunchPosition, LaunchVelocity(device), transform.position, playerCollider);
         }
 
+        public const float RepairKitHeal = 40f;
+
         private void Activate(DeviceItemData device)
         {
+            if (device.Type == DeviceKind.RepairKit && health != null && health.Current >= health.Max)
+            {
+                PickupNotificationUI.Notify("Integridad al máximo: guarda el kit para luego.", device.DeviceColor);
+                return;
+            }
             if (!inventory.TryRemove(device, 1)) return;
             RunStats.RecordDeviceUse((int)device.Type);
             switch (device.Type)
             {
+                case DeviceKind.RepairKit:
+                    if (health != null) health.Heal(RepairKitHeal);
+                    PickupNotificationUI.Notify($"Kit de reparación: +{RepairKitHeal:0} de integridad", device.DeviceColor);
+                    break;
                 case DeviceKind.OpticalCamo:
                     if (stealth != null) stealth.ApplyCloak(device.Duration, device.EffectValue);
                     PickupNotificationUI.Notify($"Camuflaje óptico activo ({device.Duration:0} s)", device.DeviceColor);
@@ -142,7 +178,7 @@ namespace Nexus7.Devices
             {
                 Vector3 next = p + v * dt;
                 v += Physics.gravity * dt;
-                if (Physics.Linecast(p, next, out RaycastHit hit, ~(1 << 2), QueryTriggerInteraction.Ignore))
+                if (LinecastIgnoringPlayer(p, next, out RaycastHit hit))
                 {
                     trajectory[count++] = hit.point;
                     break;

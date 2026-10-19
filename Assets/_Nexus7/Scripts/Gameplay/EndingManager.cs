@@ -80,7 +80,8 @@ namespace Nexus7.Gameplay
                 distinctDeviceKinds = RunStats.DistinctDeviceKinds, hacksSucceeded = RunStats.HacksSucceeded, hacksFailed = s.hackFailures,
                 sectorsDisabled = RunStats.SectorsDisabled, empTargetsHit = RunStats.EmpTargetsHit, decoysTriggered = RunStats.DecoysTriggered,
                 deaths = RunStats.Deaths,
-                escaped = escaped
+                escaped = escaped,
+                difficultyMultiplier = DifficultySettings.ScoreMultiplier
             };
         }
 

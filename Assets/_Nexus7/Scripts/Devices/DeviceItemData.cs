@@ -3,7 +3,7 @@ using Nexus7.Inventory;
 
 namespace Nexus7.Devices
 {
-    public enum DeviceKind { SonicDecoy, EmpPulse, OpticalCamo }
+    public enum DeviceKind { SonicDecoy, EmpPulse, OpticalCamo, RepairKit }
     public enum DeviceUseMode { Throw, SelfActivate }
 
     /// <summary>

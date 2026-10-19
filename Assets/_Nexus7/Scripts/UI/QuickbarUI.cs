@@ -14,6 +14,7 @@ namespace Nexus7.UI
     ///
     /// Colocar en: el Canvas "HUD".
     /// </summary>
+    [System.Obsolete("Usa HotbarUI (barra rápida 1–9). Se mantiene solo para escenas sin reconstruir.")]
     public class QuickbarUI : MonoBehaviour
     {
         [SerializeField] private DeviceQuickbar quickbar;
