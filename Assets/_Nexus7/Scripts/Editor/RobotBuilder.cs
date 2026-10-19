@@ -52,6 +52,19 @@ namespace Nexus7.EditorTools
             };
         }
 
+        /// <summary>Robot guardia: amarillo industrial, detalles oscuros, ojo ámbar.</summary>
+        internal static RigMaterials GuardMaterials()
+        {
+            var metal = B.CreateMat("MR_Metal", new Color(0.45f, 0.48f, 0.52f), null, 0.6f, 0.9f);
+            var eye = B.CreateMat("MR_OjoGuardia", new Color(1f, 0.7f, 0.2f), new Color(1f, 0.7f, 0.2f) * 3f);
+            return new RigMaterials
+            {
+                body   = B.CreateMat("MR_GuardiaCuerpo", new Color(0.85f, 0.68f, 0.12f), null, 0.45f, 0.5f),
+                accent = B.CreateMat("MR_GuardiaDetalle", new Color(0.18f, 0.18f, 0.2f), null, 0.4f, 0.7f),
+                metal  = metal, eye = eye, glow = eye, visor = eye, suit = metal, skin = metal,
+            };
+        }
+
         /// <summary>Robot armado con el arma de su estilo (WeaponCatalog.ForRobot) en la mano derecha.</summary>
         internal static EnemyPatrol ArmedRobot(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route,
                                                RobotStyle style, RigMaterials mats)

@@ -52,5 +52,22 @@ namespace Nexus7.Cinematics
                      new SubtitleLine("Tú", "Baterías, montacargas... y nada de correr.", 4.0f, 1.9f)),
             };
         }
+
+        /// <summary>Fase 3 — «Energía» (19 s): el reactor apagado, un guardia con llave inglesa y la barrera.</summary>
+        public static List<CinematicShot> Energia()
+        {
+            return new List<CinematicShot>
+            {
+                Shot(new Vector3(0f, 3.2f, 1.5f), new Vector3(0f, 3.6f, 8f), new Vector3(0f, 1.5f, 30f), new Vector3(0f, 1.5f, 34f), 7f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Sala de Energía. El reactor está en parada y la nave funciona con energía de emergencia.", 0.3f, 3.3f),
+                     new SubtitleLine("IA NEXUS-7", "Necesitas 4 bloques en la red: dos zócalos de batería, el interruptor del ala este y el reactor.", 3.8f, 3.0f)),
+                Shot(new Vector3(-3.8f, 1.8f, 25.6f), new Vector3(-4.3f, 1.6f, 25.2f), new Vector3(-6f, 1.4f, 25f), new Vector3(-6f, 1.4f, 25f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Un robot guardia armado con una llave inglesa gigante. No se aparta de las consolas.", 0.2f, 3.4f),
+                     new SubtitleLine("Tú", "Pasaré por arriba, por las pasarelas.", 3.9f, 1.9f)),
+                Shot(new Vector3(-12f, 2f, 5f), new Vector3(-13.5f, 1.8f, 6.5f), new Vector3(-16f, 1.5f, 10f), new Vector3(-16f, 1.5f, 10f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "La barrera del ala oeste se puede hackear. En el banco de trabajo puedes fabricar kits de reparación.", 0.2f, 3.6f),
+                     new SubtitleLine("Tú", "Energía, reactor y salida. Entendido.", 4.0f, 1.8f)),
+            };
+        }
     }
 }

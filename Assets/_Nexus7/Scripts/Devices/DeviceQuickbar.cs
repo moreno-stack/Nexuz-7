@@ -134,7 +134,7 @@ namespace Nexus7.Devices
         private void Throw(DeviceItemData device)
         {
             if (throwOrigin == null || !inventory.TryRemove(device, 1)) return;
-            RunStats.RecordDeviceUse((int)device.Type);
+            RunStats.RecordDeviceUse((int)device.Type, device.Type != DeviceKind.RepairKit);   // el kit no cuenta para «tipos distintos» (arsenal = 3)
             DeviceFactory.SpawnThrown(device, LaunchPosition, LaunchVelocity(device), transform.position, playerCollider);
         }
 
@@ -148,7 +148,7 @@ namespace Nexus7.Devices
                 return;
             }
             if (!inventory.TryRemove(device, 1)) return;
-            RunStats.RecordDeviceUse((int)device.Type);
+            RunStats.RecordDeviceUse((int)device.Type, device.Type != DeviceKind.RepairKit);   // el kit no cuenta para «tipos distintos» (arsenal = 3)
             switch (device.Type)
             {
                 case DeviceKind.RepairKit:

@@ -46,7 +46,7 @@ namespace Nexus7.Core
 
         public static void RecordCollected(int amount) { if (amount > 0) ItemsCollected += amount; }
         public static void RecordCrafted(int amount) { if (amount > 0) ItemsCrafted += amount; }
-        public static void RecordDeviceUse(int kind) { DevicesUsed++; deviceKindsUsed.Add(kind); }
+        public static void RecordDeviceUse(int kind, bool countsAsKind = true) { DevicesUsed++; if (countsAsKind) deviceKindsUsed.Add(kind); }
         public static void RecordHackSuccess() => HacksSucceeded++;
         public static void RecordSectorDisabled(string sectorId) { if (!string.IsNullOrEmpty(sectorId)) sectorsUsed.Add(sectorId); }
         public static void RecordEmpHits(int hits) { if (hits > 0) EmpTargetsHit += hits; }

@@ -19,6 +19,8 @@ using Nexus7.Stealth;
 using Nexus7.Tutorial;
 using A = Nexus7.EditorTools.AlmacenCargaBuilder;   // ayudantes de la Fase 2
 using B = Nexus7.EditorTools.SalaInicialBuilder;    // ayudantes de la Fase 1
+using L4 = Nexus7.EditorTools.LaboratorioBuilder;   // banco de trabajo, dispositivos y panel de fabricación
+using R = Nexus7.EditorTools.RobotBuilder;          // robots armados
 
 namespace Nexus7.EditorTools
 {
@@ -41,7 +43,7 @@ namespace Nexus7.EditorTools
     ///  z=0  ════════════════[entrada]══════════════════   ZÓCALO A junto a la entrada
     ///                        vestíbulo
     ///
-    /// Energía (4 bloques): Zócalo A (+1) · Interruptor ala este (+1) · Zócalo B ala oeste (+1) · Reactor (+1, requiere 3 y un circuito)
+    /// Energía (4 bloques): Zócalo A (+1) · Interruptor ala este (+1) · Zócalo B ala oeste (+1) · Reactor (+1, requiere 3 y el módulo de control del reactor)
     /// Rutas al ala oeste: barrera (hackear con circuito) · foso bajo el muro (escotilla con la llave) · pasarelas (desde el ala este).
     /// </summary>
     public static class SalaEnergiaBuilder
@@ -67,7 +69,12 @@ namespace Nexus7.EditorTools
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             A.CreateMaterials();
             CreateMaterials();
+            L4.CreateMaterials();   // materiales compartidos del banco de trabajo
             ConfigureLighting();
+            var p4 = L4.EnsurePhase4Data(items);   // señuelo + kit de reparación y sus recetas
+            // Módulo de control del reactor: pieza propia (los hackeos y las recetas gastan circuitos, nunca el módulo)
+            var reactorModule = A.CreateItem("Item_ModuloReactor", "key_reactor_module", "Módulo de control del reactor",
+                "Repuesto de la consola del reactor. Solo sirve para arrancarlo.", ItemCategory.Tool, 1, true, new Color(0.4f, 1f, 0.8f));
 
             var env = new GameObject("Entorno").transform;
             var gameplay = new GameObject("Gameplay").transform;
@@ -92,7 +99,7 @@ namespace Nexus7.EditorTools
             BuildInteriorWalls(env);
             BuildCatwalks(env);
             BuildTrench(env, gameplay, items.Wrench);
-            var (reactorConsole, reactorDoor) = BuildReactor(env, gameplay, items.Circuit);
+            var (reactorConsole, reactorDoor) = BuildReactor(env, gameplay, reactorModule);
             BuildTransformers(env);
 
             // ---------- 3. Fuentes de energía ----------
@@ -126,6 +133,7 @@ namespace Nexus7.EditorTools
             var barrier = Barrier(security, new Vector3(-16f, 1.5f, 10f));
             Terminal("TerminalHackeo_Barrera", security, new Vector3(-12.9f, 0f, 9.5f), 0f, barrier, items.Circuit, 25f);
             var cam = SecurityCam(security, new Vector3(-4.6f, 1f, 37f), 150f);
+            B.SetString(cam, "alarmMessage", "¡ALARMA! Una cámara de seguridad te ha detectado. Los robots guardia acuden a tu posición.");
             Terminal("TerminalHackeo_Camara", security, new Vector3(-3f, CatwalkY, 39.3f), 0f, cam, items.Circuit, 30f);
 
             // ---------- 7. Luces dinámicas ----------
@@ -133,16 +141,19 @@ namespace Nexus7.EditorTools
             Sparks("ChispasPanelSur", env, new Vector3(8f, 2.2f, 0.25f));
             Sparks("ChispasAlaOeste", env, new Vector3(-17.9f, 2.5f, 30f));
 
-            // ---------- 8. Botín ----------
+            // ---------- 8. Botín: al azar por partida, con garantizados repartidos para no bloquear la progresión ----------
+            // (ver EnergyRoomProgress: el spawner «Sur» es accesible sin energía; el «Interior» con 1–2 bloques)
             var loot = new GameObject("Botin").transform;
             A.Container("Contenedor_AlaOeste", loot, new Vector3(-17.2f, 0f, 22f), -90f,
-                new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Scrap, 2) });
+                new[] { new ItemStack(items.Scrap, 2) });
             A.Container("Contenedor_AlaEste", loot, new Vector3(16.9f, 0f, 13f), 90f,
-                new[] { new ItemStack(items.Circuit, 2), new ItemStack(items.Battery, 1), new ItemStack(items.Scrap, 2) });
-            // (2 baterías en la sala: los dos zócalos se pueden llenar aunque llegues sin ninguna del almacén;
-            //  2 circuitos: el del reactor no se puede quedar sin repuesto por gastar uno en un hackeo)
-            foreach (var p in new[] { new Vector3(-6f, 0f, 6f), new Vector3(6.6f, 0f, 23f), new Vector3(-14.5f, 0f, 36.5f) })
-                A.Pickup("Pickup_Chatarra", loot, p, items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), A.scrapMat, 3f, false);
+                new[] { new ItemStack(items.Circuit, 1), new ItemStack(items.Scrap, 2) });
+            var table = EnergyLootTable(items);
+            LootSpawner("Botin_Sur", loot, SouthLootPoints, table, new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Circuit, 1), new ItemStack(reactorModule, 1) });
+            LootSpawner("Botin_Interior", loot, InteriorLootPoints, table, new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Circuit, 1) });
+
+            // Banco de trabajo (zona sur, contra el muro; señuelo + kit de reparación)
+            L4.WorkbenchAt("BancoTrabajo_Energia", gameplay, new Vector3(5f, 0f, 1.0f), 180f);
 
             var log = B.Box("DiarioIngeniero", env, new Vector3(-2.47f, 1.4f, -3f), new Vector3(0.06f, 0.4f, 0.5f), A.warningMat);
             var logMsg = log.AddComponent<InteractableMessage>();
@@ -150,8 +161,8 @@ namespace Nexus7.EditorTools
             B.SetStrings(logMsg, "messages", new[]
             {
                 "DIARIO DEL INGENIERO JEFE: «Tras la brecha, el reactor entró en parada. Para rearrancarlo hacen falta 3 bloques en la red: dos baterías y el interruptor general del ala este.»",
-                "«La consola del reactor quedó dañada: lleva un circuito de control de repuesto.»",
-                "«Los drones de guardia no se separan de las consolas. Las pasarelas superiores son el camino más discreto: agáchate tras las barandillas.»"
+                "«La consola del reactor quedó dañada. Dejé el módulo de control de repuesto en la zona sur: sin él no arranca.»",
+                "«Los robots guardia no se separan de las consolas y llevan llaves inglesas enormes. Las pasarelas superiores son el camino más discreto: agáchate tras las barandillas.»"
             });
 
             // ---------- 9. Jugador ----------
@@ -166,8 +177,21 @@ namespace Nexus7.EditorTools
             var stealth = player.gameObject.AddComponent<PlayerStealth>();
             player.gameObject.AddComponent<PlayerRespawn>();
             var health = B.GetOrAdd<PlayerHealth>(player.gameObject);
+            var crafting = player.gameObject.AddComponent<Nexus7.Crafting.CraftingSystem>();
+            A.SetObjectArray(crafting, "knownRecipes", new Object[] { p4.Recipes[0], p4.Recipes[3] });   // señuelo + kit de reparación
 
-            // ---------- 10. Drones de guardia ----------
+            var trajGo = new GameObject("Trayectoria");
+            trajGo.transform.SetParent(player.transform, false);
+            var traj = trajGo.AddComponent<LineRenderer>();
+            traj.useWorldSpace = true;
+            traj.sharedMaterial = arcMat;
+            traj.widthMultiplier = 0.025f;
+            traj.shadowCastingMode = ShadowCastingMode.Off;
+            var quickbar = player.gameObject.AddComponent<Nexus7.Devices.DeviceQuickbar>();
+            B.SetRef(quickbar, "throwOrigin", interactor.transform);
+            B.SetRef(quickbar, "trajectoryLine", traj);
+
+            // ---------- 10. Robots guardia (llave inglesa gigante) ----------
             var enemies = new GameObject("Enemigos").transform;
             var routeG1 = A.Route("Ruta_G1_Reactor", enemies, PatrolRoute.RouteMode.PingPong, new[]
             {
@@ -181,8 +205,9 @@ namespace Nexus7.EditorTools
                 new A.WP(new Vector3(-11.5f, 0f, 34f), 1f, false, 0f),
                 new A.WP(new Vector3(-11.5f, 0f, 24f), 2f, true, 180f),     // vigila rampa y salida del foso
             });
-            var g1 = A.Drone("DronGuardia_Reactor", enemies, new Vector3(-6f, 0f, 25f), 90f, routeG1);
-            var g2 = A.Drone("DronGuardia_AlaOeste", enemies, new Vector3(-16f, 0f, 16f), 0f, routeG2);
+            var guardMats = R.GuardMaterials();
+            var g1 = R.ArmedRobot("RobotGuardia_Reactor", enemies, new Vector3(-6f, 0f, 25f), 90f, routeG1, Nexus7.Characters.RobotStyle.Guard, guardMats);
+            var g2 = R.ArmedRobot("RobotGuardia_AlaOeste", enemies, new Vector3(-16f, 0f, 16f), 0f, routeG2, Nexus7.Characters.RobotStyle.Guard, guardMats);
 
             var navGo = new GameObject("NavMesh");
             navGo.transform.position = new Vector3(0f, 5f, 19f);
@@ -213,7 +238,7 @@ namespace Nexus7.EditorTools
             A.MessageZone("Aviso_Escotilla", zones, new Vector3(-12.5f, 1.5f, 4.6f), new Vector3(3f, 3f, 1.4f),
                 "IA NEXUS-7: Escotilla de mantenimiento. El foso pasa por DEBAJO del muro hasta el ala oeste. Tendrás que ir agachado.");
             A.MessageZone("Aviso_Rampa", zones, new Vector3(9.8f, 1.5f, 13f), new Vector3(3f, 3f, 1.2f),
-                "IA NEXUS-7: Rampa a las pasarelas superiores. Agachado, las barandillas te ocultan de los drones de abajo.");
+                "IA NEXUS-7: Rampa a las pasarelas superiores. Agachado, las barandillas te ocultan de los robots de abajo.");
             A.MessageZone("Aviso_Arco", zones, new Vector3(0f, 1.5f, 17.5f), new Vector3(6f, 3f, 1f),
                 "IA NEXUS-7: Con energía en la red, el arco entre transformadores está vivo. Rodéalo por los laterales.");
             A.MessageZone("Aviso_Salto", zones, new Vector3(3.5f, CatwalkY + 1f, 38.7f), new Vector3(3f, 2f, 1.8f),
@@ -230,19 +255,24 @@ namespace Nexus7.EditorTools
             var hud = B.BuildHUD();
             A.BuildPhase2UI(hud.transform, inventory, stealth);
             BuildPhase3UI(hud.transform, health);
+            L4.BuildPhase4UI(hud.transform, quickbar, stealth);   // panel de fabricación
 
             var systems = new GameObject("GameSystems");
+            var director = systems.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            B.SetRef(director, "player", player);
+            B.SetRef(director, "cameraTransform", interactor.transform);
+            B.SetRef(director, "subtitles", hud.GetComponent<Nexus7.UI.SubtitleUI>());
+            B.SetShots(director, "shots", Nexus7.Cinematics.CinematicScripts.Energia());
+
             var intro = systems.AddComponent<LevelIntro>();
+            A.SetBool(intro, "waitForCinematic", true);
             B.SetRef(intro, "player", player);
             B.SetRef(intro, "hud", hud);
             B.SetStrings(intro, "messages", new[]
             {
-                "IA NEXUS-7: Sala de Energía del Módulo C. La nave funciona con energía de emergencia.",
-                "IA NEXUS-7: Para abrir la compuerta principal hay que restaurar los 4 bloques de energía de la sala.",
-                "IA NEXUS-7: Los circuitos dañados hieren o aturden. Puedes aislarlos con chatarra.",
-                "IA NEXUS-7: Con un circuito de control puedes hackear barreras y cámaras durante unos segundos."
+                "IA NEXUS-7: Los circuitos dañados hieren o aturden: aíslalos con chatarra. Con un circuito puedes hackear barreras y cámaras."
             });
-            B.SetString(intro, "hint", "Empieza conectando una batería en el zócalo junto a la entrada · [Tab] inventario");
+            B.SetString(intro, "hint", "Empieza conectando una batería en el zócalo junto a la entrada · [Tab] inventario · [1]–[9] objeto · [G] usar");
 
             // ---------- 13. Prefabs, guardado y enlace con la Fase 2 ----------
             B.SavePrefab(socketA, "ZocaloBateria");
@@ -263,8 +293,7 @@ namespace Nexus7.EditorTools
         }
 
         /// <summary>
-        /// Enlaza la salida del Almacén con esta escena y asegura la batería extra del Almacén
-        /// (para llegar con una batería que conectar en el zócalo A).
+        /// Enlaza la salida del Almacén con esta escena. (La batería de sobra llega del almacén, que garantiza 3.)
         /// </summary>
         [MenuItem("Nexus-7/Fase 3/Conectar salida de la Fase 2")]
         public static void ConnectPhase2()
@@ -284,30 +313,9 @@ namespace Nexus7.EditorTools
                 if (trig != null) B.SetString(trig, "sceneName", SceneName);
             }
 
-            var center = GameObject.Find("Contenedor_Centro");
-            var battery = A.EnsureItems().Battery;
-            if (center != null)
-            {
-                var loot = center.GetComponent<LootContainer>();
-                if (loot != null)
-                {
-                    var so = new SerializedObject(loot);
-                    var contents = so.FindProperty("contents");
-                    bool hasBattery = false;
-                    for (int i = 0; i < contents.arraySize; i++)
-                        if (contents.GetArrayElementAtIndex(i).FindPropertyRelative("item").objectReferenceValue == battery) hasBattery = true;
-                    if (!hasBattery)
-                    {
-                        contents.arraySize++;
-                        var e = contents.GetArrayElementAtIndex(contents.arraySize - 1);
-                        e.FindPropertyRelative("item").objectReferenceValue = battery;
-                        e.FindPropertyRelative("amount").intValue = 1;
-                        so.ApplyModifiedPropertiesWithoutUndo();
-                    }
-                }
-            }
+            // (Desde la Etapa 2 el almacén garantiza 3 baterías: la sobrante llega aquí. Ya no se añade otra al contenedor central.)
             EditorSceneManager.SaveScene(phase2);
-            Debug.Log("[Nexus-7] Almacén de Carga enlazado con " + SceneName + " (y con batería extra en el contenedor central).");
+            Debug.Log("[Nexus-7] Almacén de Carga enlazado con " + SceneName + ".");
 
             if (!string.IsNullOrEmpty(current) && current != Phase2ScenePath)
                 EditorSceneManager.OpenScene(current, OpenSceneMode.Single);
@@ -476,7 +484,7 @@ namespace Nexus7.EditorTools
             B.SetRef(pl, "emissiveRenderer", core.GetComponent<Renderer>());
             A.SetFloat(pl, "emissionStrength", 4f);
 
-            // Consola dañada: necesita 3 bloques en la red + 1 circuito de control
+            // Consola dañada: necesita 3 bloques en la red + el módulo de control del reactor
             var body = B.Box("ConsolaReactor", gameplay, new Vector3(0f, 1.6f, 33.6f), new Vector3(1.8f, 1.2f, 0.7f), A.metalMat);
             var screen = B.NoCollider(B.Box("Pantalla", body.transform.parent, new Vector3(0f, 1.95f, 33.24f), new Vector3(1.4f, 0.5f, 0.05f), screenMat));
             var (ind, indLight) = Indicator(gameplay, new Vector3(0.75f, 2.35f, 33.24f));
@@ -485,7 +493,7 @@ namespace Nexus7.EditorTools
             A.SetInt(console, "requiredGridPower", 3);
             A.SetStacks(console, "requiredItems", new[] { new ItemStack(circuit, 1) });
             B.SetString(console, "objectiveLabel", "Consola del reactor (plataforma norte)");
-            B.SetString(console, "activatedMessage", "IA NEXUS-7: Circuito instalado. Secuencia de arranque del reactor... ¡completada!");
+            B.SetString(console, "activatedMessage", "IA NEXUS-7: Módulo de control instalado. Secuencia de arranque del reactor... ¡completada!");
             A.SetFloat(console, "activationNoiseRadius", 12f);   // el reactor al arrancar se oye en toda la sala
             B.SetRef(console, "glowRenderer", screen.GetComponent<Renderer>());
             B.SetRef(console, "statusRenderer", ind);
@@ -880,6 +888,53 @@ namespace Nexus7.EditorTools
             B.SetRef(pUi, "label", pLabel);
             B.SetRef(pUi, "barFill", pFill);
             B.SetRef(pUi, "hackList", hacks);
+        }
+
+        // ---------- Botín de la Fase 3 ----------
+        /// <summary>Zona sur y sala central (accesibles sin energía).</summary>
+        internal static readonly Vector3[] SouthLootPoints =
+        {
+            new Vector3(-6f, 0f, 6f), new Vector3(7f, 0f, 5f), new Vector3(2f, 0f, 7.5f), new Vector3(-9f, 0f, 3f),
+            new Vector3(16f, 0f, 3f), new Vector3(0f, 0f, 16.8f), new Vector3(-6f, 0f, 24f), new Vector3(6f, 0f, 27f),
+        };
+        /// <summary>Alas este/oeste (1 bloque) y plataforma del reactor (2 bloques, a 1 m de altura).</summary>
+        internal static readonly Vector3[] InteriorLootPoints =
+        {
+            new Vector3(-14.5f, 0f, 36.5f), new Vector3(-16f, 0f, 30f), new Vector3(-11.5f, 0f, 26f), new Vector3(-15f, 0f, 17f),
+            new Vector3(12f, 0f, 15f), new Vector3(14f, 0f, 30f), new Vector3(11.5f, 0f, 36f), new Vector3(-3.5f, 1f, 37f),
+        };
+
+        internal static LootTable EnergyLootTable(A.ItemSet items)
+        {
+            B.EnsureFolder(Root + "/Data", "Loot");
+            string path = Root + "/Data/Loot/Tabla_Energia.asset";
+            var table = AssetDatabase.LoadAssetAtPath<LootTable>(path);
+            if (table == null) { table = ScriptableObject.CreateInstance<LootTable>(); AssetDatabase.CreateAsset(table, path); }
+            table.entries = new List<LootEntry> { new LootEntry(items.Scrap, 4f, 1, 3), new LootEntry(items.Circuit, 1f, 1, 1) };
+            EditorUtility.SetDirty(table);
+            AssetDatabase.SaveAssets();
+            return table;
+        }
+
+        internal static RoomLootSpawner LootSpawner(string name, Transform parent, Vector3[] points, LootTable table, ItemStack[] guaranteed)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(parent);
+            var spawner = root.AddComponent<RoomLootSpawner>();
+            var pts = new List<Object>();
+            for (int i = 0; i < points.Length; i++)
+            {
+                var p = new GameObject("PuntoBotin_" + (i + 1));
+                p.transform.SetParent(root.transform);
+                p.transform.position = points[i];
+                var lp = p.AddComponent<LootSpawnPoint>();
+                lp.emptyChance = 0.4f;
+                pts.Add(lp);
+            }
+            B.SetRef(spawner, "table", table);
+            A.SetStacks(spawner, "guaranteed", guaranteed);
+            A.SetObjectArray(spawner, "points", pts.ToArray());
+            return spawner;
         }
 
         /// <summary>Integridad del jugador (abajo a la izquierda, bajo el escudo), destello de daño y aviso de aturdido.</summary>

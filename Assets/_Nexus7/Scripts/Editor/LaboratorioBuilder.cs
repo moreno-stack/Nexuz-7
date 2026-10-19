@@ -264,7 +264,7 @@ namespace Nexus7.EditorTools
         internal class Phase4Data
         {
             public ItemData Crystal, Keycard;
-            public DeviceItemData Decoy, Emp, Camo;
+            public DeviceItemData Decoy, Emp, Camo, RepairKit;
             public CraftingRecipe[] Recipes;
         }
 
@@ -286,6 +286,9 @@ namespace Nexus7.EditorTools
             d.Camo = CreateDevice("Item_CamuflajeOptico", "device_optical_camo", "Camuflaje óptico",
                 "Reduce drásticamente tu visibilidad durante unos segundos. Los sensores láser no te detectan.",
                 DeviceKind.OpticalCamo, DeviceUseMode.SelfActivate, 3, 0f, 12f, 0f, 0.1f, new Color(0.75f, 0.55f, 1f));
+            d.RepairKit = CreateDevice("Item_KitReparacion", "device_repair_kit", "Kit de reparación",
+                "Parches y sellador para el traje. Restaura 40 de integridad (no se gasta con la integridad al máximo).",
+                DeviceKind.RepairKit, DeviceUseMode.SelfActivate, 4, 0f, 0f, 0f, 40f, new Color(0.4f, 1f, 0.5f));
 
             d.Recipes = new[]
             {
@@ -295,6 +298,8 @@ namespace Nexus7.EditorTools
                     new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Circuit, 1), new ItemStack(items.Scrap, 2) }, d.Emp, 1, 3f),
                 CreateRecipe("Receta_CamuflajeOptico", "Camuflaje óptico temporal", "Visibilidad al 10 % durante 12 s. Invisible para los sensores láser.",
                     new[] { new ItemStack(items.Battery, 1), new ItemStack(d.Crystal, 1), new ItemStack(items.Circuit, 1) }, d.Camo, 1, 3.5f),
+                CreateRecipe("Receta_KitReparacion", "Kit de reparación", "Restaura 40 de integridad. Solo necesita chatarra.",
+                    new[] { new ItemStack(items.Scrap, 4) }, d.RepairKit, 1, 2.5f),
             };
             AssetDatabase.SaveAssets();
             return d;
