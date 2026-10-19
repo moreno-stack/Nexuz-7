@@ -471,6 +471,14 @@ namespace Nexus7.EditorTools
             SetRef(shieldUi, "label", shieldLabel);
             SetRef(shieldUi, "shieldFlash", shieldFlash);
 
+            // --- Indicador de banco de trabajo cercano (encima de la barra rápida) ---
+            var benchIcon = UIImage("IconoBanco", canvas, new Color(1f, 0.65f, 0.15f, 0.9f));
+            Anchor(benchIcon.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-300f, 100f), new Vector2(22f, 22f));
+            var benchLabel = UIText("TextoBanco", canvas, new Vector2(0.5f, 0f), new Vector2(0f, 100f), new Vector2(560f, 36f), 24f, TextAlignmentOptions.Center, new Color(1f, 0.75f, 0.35f));
+            var benchUi = canvas.gameObject.AddComponent<Nexus7.UI.WorkbenchIndicatorUI>();
+            SetRef(benchUi, "label", benchLabel);
+            SetRef(benchUi, "icon", benchIcon);
+
             // --- Subtítulos y franjas de cinemática (encima de todo lo anterior) ---
             var barTop = UIImage("FranjaSuperior", canvas, Color.black);
             barTop.rectTransform.anchorMin = new Vector2(0f, 1f); barTop.rectTransform.anchorMax = new Vector2(1f, 1f);

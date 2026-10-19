@@ -96,6 +96,8 @@ namespace Nexus7.Player
 
         /// <summary>Empujón externo (golpe de un robot). Se suma al movimiento y se amortigua.</summary>
         public void AddImpulse(Vector3 velocity) => impulse += velocity;
+        /// <summary>Tras un teletransporte (reaparición): el siguiente aterrizaje no hace ruido y se pierde el impulso.</summary>
+        public void OnTeleported() { impulse = Vector3.zero; if (jump != null) jump.SuppressLanding(Time.time, 3f); }
 
         public bool IsGrounded => controller != null && controller.isGrounded;
         public bool IsJumping => jump != null && jump.IsAirborne;

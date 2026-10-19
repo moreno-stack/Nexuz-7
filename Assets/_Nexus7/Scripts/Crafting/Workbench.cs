@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Nexus7.Core;
 using Nexus7.Interaction;
@@ -21,6 +22,9 @@ namespace Nexus7.Crafting
         [SerializeField] private float craftNoiseRadius = 5f;
         [SerializeField] private Renderer screenRenderer;
 
+        /// <summary>Bancos activos en la escena (para el indicador del HUD).</summary>
+        public static readonly List<Workbench> All = new List<Workbench>();
+
         private float lastUsedTime = -999f;
         private bool tampered;
 
@@ -28,6 +32,23 @@ namespace Nexus7.Crafting
         public Vector3 InspectionPosition => inspectionPoint != null ? inspectionPoint.position : transform.position;
 
         public override string Prompt => $"Usar {stationName} (fabricar)";
+
+        private void OnEnable()  { if (!All.Contains(this)) All.Add(this); }
+        private void OnDisable() => All.Remove(this);
+
+        /// <summary>Índice del banco más cercano a 'from' dentro de 'radius' (distancia en el plano), o -1. En empate, el primero.</summary>
+        public static int NearestInRange(Vector3 from, IList<Vector3> benches, float radius)
+        {
+            int best = -1;
+            float bestSq = radius * radius;
+            for (int i = 0; i < benches.Count; i++)
+            {
+                float dx = benches[i].x - from.x, dz = benches[i].z - from.z;
+                float sq = dx * dx + dz * dz;
+                if (sq <= bestSq && (best < 0 || sq < bestSq)) { best = i; bestSq = sq; }
+            }
+            return best;
+        }
 
         protected override void OnInteract(PlayerInteractor interactor)
         {

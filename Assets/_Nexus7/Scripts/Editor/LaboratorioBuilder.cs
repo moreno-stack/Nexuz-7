@@ -493,6 +493,21 @@ namespace Nexus7.EditorTools
             point.SetParent(root.transform, false);
             point.localPosition = new Vector3(0f, 0f, -1.5f);
 
+            // Cartel luminoso «BANCO DE TRABAJO» (se ve de lejos en la penumbra)
+            var signMat = B.CreateMat("MB_CartelBanco", new Color(1f, 0.65f, 0.15f), new Color(1f, 0.6f, 0.1f) * 1.6f);
+            Local(B.NoCollider(B.Box("Cartel", root.transform, Vector3.zero, new Vector3(1.5f, 0.32f, 0.04f), signMat)), new Vector3(0f, 1.9f, 0.5f));
+            var textGo = new GameObject("TextoCartel");
+            textGo.transform.SetParent(root.transform, false);
+            textGo.transform.localPosition = new Vector3(0f, 1.9f, 0.47f);
+            // Sin girar: el texto TMP se lee desde −Z local, el lado del punto de inspección (donde está el jugador)
+            var sign = textGo.AddComponent<TextMeshPro>();
+            sign.text = "BANCO DE TRABAJO";
+            sign.fontSize = 2.2f;
+            sign.alignment = TextAlignmentOptions.Center;
+            sign.color = new Color(0.08f, 0.05f, 0.02f);
+            sign.rectTransform.sizeDelta = new Vector2(1.45f, 0.3f);
+            A.PointLight("LuzCartel", root.transform, new Vector3(0f, 1.9f, 0.1f), new Color(1f, 0.65f, 0.2f), 3f, 1.2f, false);
+
             var bench = root.AddComponent<Workbench>();
             B.SetRef(bench, "inspectionPoint", point);
             B.SetRef(bench, "screenRenderer", monitor.GetComponent<Renderer>());

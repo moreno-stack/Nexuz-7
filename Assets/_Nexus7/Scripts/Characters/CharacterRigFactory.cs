@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 using UnityEngine.Rendering;
 
 namespace Nexus7.Characters
@@ -44,8 +46,19 @@ namespace Nexus7.Characters
         public static Transform BuildWeapon(Transform hand, WeaponShape shape, RigMaterials mats)
         {
             var root = Build(hand, "Arma_" + shape, CharacterRigSpec.Weapon(shape), mats, 1f);
-            root.localRotation = Quaternion.Euler(-80f, 0f, 0f);   // el arma apunta hacia delante con el brazo colgando
+            root.localRotation = Quaternion.Euler(WeaponPitch, 0f, 0f);
             return root;
+        }
+
+        /// <summary>Inclinación (grados sobre X) del arma respecto a la mano.</summary>
+        public const float WeaponPitch = 55f;   // hacia delante y abajo con el brazo colgando (≈40° bajo la horizontal)
+
+        /// <summary>Dirección (en el espacio del brazo) hacia la que apunta el arma con el antebrazo a 'forearmPitch' grados.
+        /// Las piezas del arma van a lo largo de +Z; una rotación positiva sobre X inclina +Z hacia abajo.</summary>
+        public static Vector3 WeaponForward(float forearmPitch)
+        {
+            double a = (WeaponPitch + forearmPitch) * Math.PI / 180.0;
+            return new Vector3(0f, (float)-Math.Sin(a), (float)Math.Cos(a));
         }
 
         public static Transform Build(Transform parent, string rootName, List<RigPart> parts, RigMaterials mats, float scale)

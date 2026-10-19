@@ -35,5 +35,22 @@ namespace Nexus7.Cinematics
                      new SubtitleLine("Tú", "Entendido. Vamos allá.", 3.6f, 2.2f)),
             };
         }
+
+        /// <summary>Fase 2 — «Almacén» (19 s): recorrido aéreo, robot de seguridad con bate y el montacargas al fondo.</summary>
+        public static List<CinematicShot> Almacen()
+        {
+            return new List<CinematicShot>
+            {
+                Shot(new Vector3(0f, 5.2f, 1f), new Vector3(0f, 5.0f, 13f), new Vector3(0f, 0.5f, 12f), new Vector3(0f, 0.5f, 27f), 7f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Almacén de Carga del Módulo C. El montacargas del muro norte no tiene energía.", 0.3f, 3.2f),
+                     new SubtitleLine("IA NEXUS-7", "Necesitará dos baterías de iones. Hay suministros repartidos por todo el almacén.", 3.7f, 3.1f)),
+                Shot(new Vector3(-5.2f, 1.7f, 6.2f), new Vector3(-5.6f, 1.5f, 5.5f), new Vector3(-6f, 1.3f, 4f), new Vector3(-6f, 1.2f, 4f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Cuidado: un robot de seguridad armado con un bate. Si te alcanza, te golpeará.", 0.2f, 3.3f),
+                     new SubtitleLine("Tú", "Entonces mejor que no me vea.", 3.8f, 2.0f)),
+                Shot(new Vector3(5.5f, 2.6f, 23.5f), new Vector3(7.5f, 2.2f, 26.5f), new Vector3(10f, 1.6f, 30.2f), new Vector3(10f, 1.6f, 30.2f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Agáchate en las zonas oscuras. En el banco de trabajo puedes fabricar un señuelo.", 0.2f, 3.6f),
+                     new SubtitleLine("Tú", "Baterías, montacargas... y nada de correr.", 4.0f, 1.9f)),
+            };
+        }
     }
 }

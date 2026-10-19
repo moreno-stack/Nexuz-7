@@ -24,6 +24,10 @@ namespace Nexus7.Player
         }
 
         public bool IsAirborne => airborne;
+        private float suppressUntil = -999f;
+
+        /// <summary>Los aterrizajes durante 'seconds' no cuentan como caída (p. ej. al reaparecer en un punto algo elevado).</summary>
+        public void SuppressLanding(float now, float seconds) => suppressUntil = now + seconds;
 
         /// <summary>Llamar cada frame. Al aterrizar devuelve la altura de la caída (desde el punto más alto); si no, 0.</summary>
         public float NotifyGrounded(bool grounded, float now, float y)
@@ -31,7 +35,7 @@ namespace Nexus7.Player
             if (grounded)
             {
                 float fall = 0f;
-                if (airborne) { fall = peakY - y; airborne = false; }
+                if (airborne) { fall = now <= suppressUntil ? 0f : peakY - y; airborne = false; }
                 if (now - jumpTime > RegroundDelay) jumped = false;
                 lastGroundedTime = now;
                 return fall < 0f ? 0f : fall;

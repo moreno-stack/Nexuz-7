@@ -80,7 +80,9 @@ namespace Nexus7.Enemies
             SetEyeFlash(model.Current == MeleeAttackModel.Phase.Windup && Mathf.Repeat(Time.time * 8f, 1f) < 0.5f);
 
             float angle = dist > 0.01f ? Vector3.Angle(transform.forward, to) : 0f;
-            var ev = model.Tick(Time.time, MeleeAttackModel.InArc(angle, weapon.ArcDegrees), dist <= weapon.Range);
+            // Si una pared se interpone en el momento del golpe, cuenta como esquivado.
+            bool reach = dist <= weapon.Range && (model.Current != MeleeAttackModel.Phase.Windup || HasClearLine());
+            var ev = model.Tick(Time.time, MeleeAttackModel.InArc(angle, weapon.ArcDegrees), reach);
             if (ev == MeleeEvent.Hit && playerHealth != null)
             {
                 playerHealth.TakeDamage(weapon.Damage, transform.position);
@@ -91,6 +93,34 @@ namespace Nexus7.Enemies
                 SetEyeFlash(false);
                 if (agent != null && agent.isOnNavMesh && (patrol == null || patrol.CanMove)) agent.isStopped = false;
             }
+        }
+
+        /// <summary>¿Algo que no es el robot ni el jugador se interpone (pared, estantería, caja, techo del conducto)?</summary>
+        public static bool LineBlocked(RaycastHit[] hits, Transform self, Transform target)
+        {
+            if (hits == null) return false;
+            foreach (var h in hits)
+            {
+                var t = h.collider != null ? h.collider.transform : h.transform;
+                if (t == null) continue;
+                if (self != null && t.IsChildOf(self)) continue;
+                if (target != null && t.IsChildOf(target)) continue;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>Línea despejada de pecho a pecho (sin atravesar paredes ni el techo del conducto).</summary>
+        public bool HasClearLine()
+        {
+            if (player == null) return false;
+            Vector3 from = transform.position + Vector3.up * 1.2f;
+            Vector3 to = player.position + Vector3.up * 1.0f;
+            Vector3 d = to - from;
+            float len = d.magnitude;
+            if (len < 0.01f) return true;
+            var hits = Physics.RaycastAll(new Ray(from, d / len), len, ~0, QueryTriggerInteraction.Ignore);
+            return !LineBlocked(hits, transform, player);
         }
 
         private void SetEyeFlash(bool on)

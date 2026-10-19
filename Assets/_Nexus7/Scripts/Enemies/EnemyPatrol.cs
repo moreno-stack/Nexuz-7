@@ -334,7 +334,7 @@ namespace Nexus7.Enemies
             {
                 // Robot armado: golpea al llegar al alcance del arma (se puede esquivar apartándose).
                 if (melee.IsAttacking) return;
-                if (Vector3.Distance(transform.position, player.position) <= melee.Range * 0.9f) { melee.TryAttack(); return; }
+                if (Vector3.Distance(transform.position, player.position) <= melee.Range * 0.9f && melee.HasClearLine()) { melee.TryAttack(); return; }
             }
             else if (Vector3.Distance(transform.position, player.position) <= catchDistance)
             {

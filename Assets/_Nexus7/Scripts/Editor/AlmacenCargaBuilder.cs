@@ -16,6 +16,9 @@ using Nexus7.Inventory;
 using Nexus7.Stealth;
 using Nexus7.Tutorial;
 using B = Nexus7.EditorTools.SalaInicialBuilder; // reutilizamos los ayudantes de la Fase 1
+using S3 = Nexus7.EditorTools.SalaEnergiaBuilder;   // barra de vida
+using L4 = Nexus7.EditorTools.LaboratorioBuilder;   // banco de trabajo, señuelo y panel de fabricación
+using R = Nexus7.EditorTools.RobotBuilder;          // robots armados
 
 namespace Nexus7.EditorTools
 {
@@ -69,7 +72,10 @@ namespace Nexus7.EditorTools
             // ---------- 2. Escena, materiales e iluminación ----------
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             CreateMaterials();
+            S3.CreateMaterials();   // materiales compartidos (pantalla del banco, arco de la trayectoria)
+            L4.CreateMaterials();   // materiales compartidos (cuerpo y tablero del banco)
             ConfigureLighting();
+            var p4 = L4.EnsurePhase4Data(items);   // señuelo sonoro + su receta
 
             var env = new GameObject("Entorno").transform;
             var props = new GameObject("Atrezo").transform;
@@ -83,20 +89,15 @@ namespace Nexus7.EditorTools
             var gate = BuildGateAndLift(env, gameplay, battery);
             BuildLights(env);
 
-            // ---------- 3. Botín ----------
+            // ---------- 3. Botín: al azar por partida, con los imprescindibles garantizados ----------
             var loot = new GameObject("Botin").transform;
-            var pBattery = Pickup("Pickup_Bateria", loot, new Vector3(0f, 0f, 18f), battery, 1, PrimitiveType.Cylinder, new Vector3(0.18f, 0.14f, 0.18f), batteryMat, 0f, true);
-            var pScrap = Pickup("Pickup_Chatarra", loot, new Vector3(-5f, 0f, 12f), scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), scrapMat, 3f, false);
-            Pickup("Pickup_Chatarra", loot, new Vector3(5f, 0f, 19.5f), scrap, 1, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), scrapMat, 3f, false);
-            Pickup("Pickup_Chatarra", loot, new Vector3(-12f, 0f, 2.2f), scrap, 1, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), scrapMat, 3f, false);
-            Pickup("Pickup_Chatarra", loot, new Vector3(1.5f, 0f, 28.9f), scrap, 3, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), scrapMat, 3f, false);
-
             var cWest = Container("Contenedor_Oeste", loot, new Vector3(-12.4f, 0f, 20.8f), -90f,
-                new[] { new ItemStack(battery, 1), new ItemStack(scrap, 2) });
+                new[] { new ItemStack(scrap, 2), new ItemStack(circuit, 1) });
             Container("Contenedor_Este", loot, new Vector3(13.6f, 0f, 10f), 90f,
-                new[] { new ItemStack(wrench, 1), new ItemStack(circuit, 1) });
+                new[] { new ItemStack(circuit, 1), new ItemStack(scrap, 1) });
             Container("Contenedor_Centro", loot, new Vector3(1.6f, 0f, 9.2f), 0f,
-                new[] { new ItemStack(circuit, 2), new ItemStack(scrap, 3), new ItemStack(battery, 1) }); // batería extra → Fase 3
+                new[] { new ItemStack(circuit, 2), new ItemStack(scrap, 3) });
+            BuildLootSpawner(loot, battery, wrench, scrap, circuit);
 
             // Bitácora en el vestíbulo
             var log = B.Box("RegistroSeguridad", env, new Vector3(2.47f, 1.4f, -3f), new Vector3(0.06f, 0.4f, 0.5f), warningMat);
@@ -104,9 +105,9 @@ namespace Nexus7.EditorTools
             B.SetString(logMsg, "promptText", "Leer registro de seguridad");
             B.SetStrings(logMsg, "messages", new[]
             {
-                "REGISTRO DE SEGURIDAD — Almacén C: Drones en protocolo de contención. Patrullas automáticas activas.",
-                "«Los drones solo ven lo que ilumina su foco. Las zonas sin luz detrás de las cajas son seguras si vas agachado.»",
-                "«Nota de mantenimiento: la llave hidráulica quedó en el contenedor del pasillo este. Abre la rejilla del conducto oeste.»"
+                "REGISTRO DE SEGURIDAD — Almacén C: Robots de seguridad en protocolo de contención. Van armados con bates.",
+                "«Los robots solo ven lo que ilumina su foco. Las zonas sin luz detrás de las cajas son seguras si vas agachado.»",
+                "«Nota de mantenimiento: la llave hidráulica se perdió por el almacén; busca su brillo. Con ella se abre la rejilla del conducto oeste.»"
             });
 
             // ---------- 4. Jugador ----------
@@ -115,6 +116,24 @@ namespace Nexus7.EditorTools
             var inventory = B.GetOrAdd<InventorySystem>(player.gameObject);
             var stealth = player.gameObject.AddComponent<PlayerStealth>();
             player.gameObject.AddComponent<PlayerRespawn>();
+            var health = B.GetOrAdd<Nexus7.Player.PlayerHealth>(player.gameObject);
+            var crafting = player.gameObject.AddComponent<Nexus7.Crafting.CraftingSystem>();
+            SetObjectArray(crafting, "knownRecipes", new Object[] { p4.Recipes[0] });   // Fase 2: solo el señuelo
+
+            var trajGo = new GameObject("Trayectoria");
+            trajGo.transform.SetParent(player.transform, false);
+            var traj = trajGo.AddComponent<LineRenderer>();
+            traj.useWorldSpace = true;
+            traj.sharedMaterial = S3.arcMat;
+            traj.widthMultiplier = 0.025f;
+            traj.shadowCastingMode = ShadowCastingMode.Off;
+            var quickbar = player.gameObject.AddComponent<Nexus7.Devices.DeviceQuickbar>();
+            SetObjectArray(quickbar, "slots", new Object[] { p4.Decoy });
+            B.SetRef(quickbar, "throwOrigin", interactor.transform);
+            B.SetRef(quickbar, "trajectoryLine", traj);
+
+            // Banco de trabajo (rincón suroeste, a la sombra del muro; los robots pasan cerca)
+            L4.WorkbenchAt("BancoTrabajo_Almacen", gameplay, new Vector3(-4.5f, 0f, 0.75f), 180f);
 
             // ---------- 5. Enemigos y rutas ----------
             var enemies = new GameObject("Enemigos").transform;
@@ -132,8 +151,9 @@ namespace Nexus7.EditorTools
                 new WP(new Vector3(0f, 0f, 27f),    1.0f, false, 0f),
                 new WP(new Vector3(12.5f, 0f, 25f), 3.0f, true, 180f),   // vigila el pasillo este
             });
-            var droneA = Drone("DronSeguridad_A", enemies, new Vector3(-6f, 0f, 4f), 0f, routeA);
-            var droneB = Drone("DronSeguridad_B", enemies, new Vector3(-12f, 0f, 27f), 90f, routeB);
+            var robotMats = R.SecurityMaterials();
+            var droneA = R.ArmedRobot("RobotSeguridad_A", enemies, new Vector3(-6f, 0f, 4f), 0f, routeA, Nexus7.Characters.RobotStyle.Security, robotMats);
+            var droneB = R.ArmedRobot("RobotSeguridad_B", enemies, new Vector3(-12f, 0f, 27f), 90f, routeB, Nexus7.Characters.RobotStyle.Security, robotMats);
 
             // ---------- 6. NavMesh en tiempo de ejecución ----------
             var navGo = new GameObject("NavMesh");
@@ -164,9 +184,9 @@ namespace Nexus7.EditorTools
             MessageZone("Aviso_Derrumbe", zones, new Vector3(12.3f, 1.5f, 13.5f), new Vector3(5.4f, 3f, 2f),
                 "IA NEXUS-7: El pasillo este está bloqueado por un derrumbe. Tendrás que rodear por el centro.");
             MessageZone("Aviso_Conducto", zones, new Vector3(-13.3f, 1.5f, 1.4f), new Vector3(3.4f, 3f, 2f),
-                "IA NEXUS-7: Un conducto de ventilación. Si retiras la rejilla podrás avanzar agachado, fuera de la vista de los drones.");
+                "IA NEXUS-7: Un conducto de ventilación. Si retiras la rejilla podrás avanzar agachado, fuera de la vista de los robots.");
             MessageZone("Aviso_Dron", zones, new Vector3(0f, 1.5f, 0.6f), new Vector3(3f, 3f, 1f),
-                "IA NEXUS-7: Dron a la vista. Su foco de luz es su campo de visión: si cambia a amarillo, te está viendo.");
+                "IA NEXUS-7: Robot a la vista. Su foco de luz es su campo de visión: si cambia a amarillo, te está viendo.");
 
             var exit = Zone("Salida_Montacargas", zones, new Vector3(10f, 1.5f, 33f), new Vector3(4f, 3f, 3f));
             var exitMsg = exit.AddComponent<TutorialTrigger>();
@@ -178,29 +198,33 @@ namespace Nexus7.EditorTools
             // ---------- 8. HUD ampliado ----------
             var hud = B.BuildHUD();
             BuildPhase2UI(hud.transform, inventory, stealth);
+            S3.BuildHealthUI(hud.transform, health);
+            L4.BuildPhase4UI(hud.transform, quickbar, stealth);   // panel de fabricación
 
             // ---------- 9. Sistemas ----------
             var systems = new GameObject("GameSystems");
+            var director = systems.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            B.SetRef(director, "player", player);
+            B.SetRef(director, "cameraTransform", interactor.transform);
+            B.SetRef(director, "subtitles", hud.GetComponent<Nexus7.UI.SubtitleUI>());
+            B.SetShots(director, "shots", Nexus7.Cinematics.CinematicScripts.Almacen());
+
             var intro = systems.AddComponent<LevelIntro>();
+            SetBool(intro, "waitForCinematic", true);
             B.SetRef(intro, "player", player);
             B.SetRef(intro, "hud", hud);
             B.SetStrings(intro, "messages", new[]
             {
-                "IA NEXUS-7: Has llegado al Almacén de Carga del Módulo C.",
-                "IA NEXUS-7: El montacargas del muro norte no tiene energía. Necesitará dos baterías de iones.",
-                "IA NEXUS-7: Advertencia: los drones de seguridad siguen activos y su protocolo los ha vuelto hostiles.",
-                "IA NEXUS-7: Observa sus rutas. Agáchate en las zonas oscuras y muévete cuando te den la espalda."
+                "IA NEXUS-7: Las baterías y la llave brillan: búscalas por el almacén."
             });
-            B.SetString(intro, "hint", "[Tab] abre el inventario · Agachado en la sombra = OCULTO · Correr y abrir contenedores hace ruido");
+            B.SetString(intro, "hint", "[Tab] abre el inventario · Agachado en la sombra = OCULTO · Correr y abrir contenedores hace ruido · [1]–[9] elige objeto · [G] lanza el señuelo");
             B.SetString(intro, "objective", "Objetivo: Consigue 2 baterías de iones y lleva la energía al montacargas (muro norte).");
 
             // ---------- 10. Prefabs ----------
             B.SavePrefab(player.gameObject, "Player_Fase2");
             B.SavePrefab(hud.gameObject, "HUD_Fase2");
-            B.SavePrefab(droneA.gameObject, "DronSeguridad");
+            B.SavePrefab(droneA.gameObject, "RobotSeguridad");
             B.SavePrefab(cWest, "ContenedorCarga");
-            B.SavePrefab(pBattery, "Pickup_Bateria");
-            B.SavePrefab(pScrap, "Pickup_Chatarra");
             B.SavePrefab(gate.gameObject, "PuertaMontacargas");
 
             // ---------- 11. Guardar y conectar con la Fase 1 ----------
@@ -549,6 +573,42 @@ namespace Nexus7.EditorTools
         {
             public Vector3 pos; public float wait; public bool face; public float rotY;
             public WP(Vector3 pos, float wait, bool face, float rotY) { this.pos = pos; this.wait = wait; this.face = face; this.rotY = rotY; }
+        }
+
+        /// <summary>Puntos de botín del almacén (suelo, fuera del conducto) + RoomLootSpawner con los garantizados de la Fase 2.</summary>
+        internal static readonly Vector3[] LootPoints =
+        {
+            new Vector3(-5f, 0f, 12f),  new Vector3(5f, 0f, 19.5f),  new Vector3(-12f, 0f, 2.2f),   new Vector3(1.5f, 0f, 28.9f),
+            new Vector3(0f, 0f, 18f),   new Vector3(-6f, 0f, 15f),   new Vector3(6f, 0f, 11f),      new Vector3(12f, 0f, 8f),
+            new Vector3(13f, 0f, 25f),  new Vector3(-12.5f, 0f, 26.5f), new Vector3(-6f, 0f, 26f),  new Vector3(7f, 0f, 2f),
+        };
+
+        internal static RoomLootSpawner BuildLootSpawner(Transform parent, ItemData battery, ItemData wrench, ItemData scrap, ItemData circuit)
+        {
+            B.EnsureFolder(Root + "/Data", "Loot");
+            string path = Root + "/Data/Loot/Tabla_Almacen.asset";
+            var table = AssetDatabase.LoadAssetAtPath<LootTable>(path);
+            if (table == null) { table = ScriptableObject.CreateInstance<LootTable>(); AssetDatabase.CreateAsset(table, path); }
+            table.entries = new List<LootEntry> { new LootEntry(scrap, 4f, 1, 3), new LootEntry(circuit, 2f, 1, 1) };
+            EditorUtility.SetDirty(table);
+
+            var root = new GameObject("Botin_Almacen");
+            root.transform.SetParent(parent);
+            var spawner = root.AddComponent<RoomLootSpawner>();
+            var pts = new List<Object>();
+            for (int i = 0; i < LootPoints.Length; i++)
+            {
+                var p = new GameObject("PuntoBotin_" + (i + 1));
+                p.transform.SetParent(root.transform);
+                p.transform.position = LootPoints[i];
+                var lp = p.AddComponent<LootSpawnPoint>();
+                lp.emptyChance = 0.4f;
+                pts.Add(lp);
+            }
+            B.SetRef(spawner, "table", table);
+            SetStacks(spawner, "guaranteed", new[] { new ItemStack(battery, 3), new ItemStack(wrench, 1) });
+            SetObjectArray(spawner, "points", pts.ToArray());
+            return spawner;
         }
 
         internal static PatrolRoute Route(string name, Transform parent, PatrolRoute.RouteMode mode, WP[] points)

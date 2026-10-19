@@ -91,6 +91,7 @@ namespace Nexus7.Gameplay
             if (characterController != null) characterController.enabled = false;
             transform.SetPositionAndRotation(respawnPosition, respawnRotation);
             if (characterController != null) characterController.enabled = true;
+            if (controller != null) controller.OnTeleported();
 
             GraceUntil = Time.time + fadeInTime + graceAfterRespawn;
             PlayerRespawned?.Invoke();
