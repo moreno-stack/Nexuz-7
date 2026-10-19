@@ -82,7 +82,7 @@ namespace Nexus7.Security
         private void Sweep()
         {
             if (pauseTimer > 0f) { pauseTimer -= Time.deltaTime; return; }
-            offset += direction * sweepSpeed * Time.deltaTime;
+            offset += direction * sweepSpeed * AlertSystem.Profile.sweepSpeed * Time.deltaTime;
             if (Mathf.Abs(offset) >= sweepAngle)
             {
                 offset = Mathf.Sign(offset) * sweepAngle;
@@ -104,7 +104,8 @@ namespace Nexus7.Security
         private void RaiseAlarm()
         {
             nextAlarm = Time.time + alarmCooldown;
-            AlarmSystem.Raise(vision.LastSeenPosition, alarmRadius);
+            float radius = alarmRadius * (AlertSystem.Level == AlertLevel.Red ? 1.5f : 1f);
+            AlarmSystem.Raise(vision.LastSeenPosition, radius);
             if (HUDManager.Instance != null) HUDManager.Instance.QueueMessage(alarmMessage, 2.5f);
             if (audioSource != null && alarmClip != null) audioSource.PlayOneShot(alarmClip);
         }
@@ -112,7 +113,7 @@ namespace Nexus7.Security
         public void Disable(float duration)
         {
             hacked = true;
-            disabledUntil = Time.time + duration;
+            disabledUntil = Mathf.Max(disabledUntil, Time.time + duration);   // un PEM no acorta un apagado más largo
             if (vision != null) { vision.ResetAwareness(); vision.enabled = false; }
             if (visionLight != null) visionLight.enabled = false;
             SetStatus(Color.black);

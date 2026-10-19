@@ -37,7 +37,11 @@ namespace Nexus7.Tutorial
             if (!string.IsNullOrEmpty(objective)) hud.SetObjective(objective);
 
             yield return hud.WaitForMessages();
-            if (player != null) player.InputEnabled = true;
+            if (player != null && lockInputDuringMessages)
+            {
+                var respawn = player.GetComponent<Nexus7.Gameplay.PlayerRespawn>();
+                if (respawn == null || !respawn.IsRespawning) player.InputEnabled = true;   // no devolver el control a mitad de una reaparición
+            }
 
             if (!string.IsNullOrEmpty(hint))
             {

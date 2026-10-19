@@ -41,6 +41,9 @@ namespace Nexus7.Core
             if (ignoreRoots != null)
                 foreach (var root in ignoreRoots)
                     if (root != null) markups.Add(new NavMeshBuildMarkup { root = root, ignoreFromBuild = true });
+            // Los paneles de puerta no se hornean (estarían cerrados para siempre): los talla su NavMeshObstacle.
+            foreach (var door in FindObjectsByType<Nexus7.Interaction.DoorController>(FindObjectsSortMode.None))
+                if (door.Panel != door.transform) markups.Add(new NavMeshBuildMarkup { root = door.Panel, ignoreFromBuild = true });
 
             var sources = new List<NavMeshBuildSource>();
             var worldBounds = new Bounds(transform.position, size);

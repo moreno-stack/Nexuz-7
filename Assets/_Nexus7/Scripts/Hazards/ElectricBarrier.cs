@@ -93,7 +93,7 @@ namespace Nexus7.Hazards
         public void Disable(float duration)
         {
             hacked = true;
-            disabledUntil = Time.time + duration;
+            disabledUntil = Mathf.Max(disabledUntil, Time.time + duration);   // un PEM no acorta un apagado más largo
             if (blockingCollider != null) blockingCollider.enabled = false;
             SetBeams(false);
             if (barrierLight != null) barrierLight.intensity = 0f;

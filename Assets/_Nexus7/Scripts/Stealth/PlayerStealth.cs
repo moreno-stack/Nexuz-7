@@ -44,6 +44,12 @@ namespace Nexus7.Stealth
 
         private void Awake() => controller = GetComponent<PlayerController>();
 
+        // Al teletransportar el CharacterController (reaparición) Unity no llama a OnTriggerExit de las zonas
+        // de sombra que deja atrás: se reinicia el contador y las zonas del nuevo punto vuelven a avisar al entrar.
+        private void OnEnable() => Nexus7.Gameplay.PlayerRespawn.PlayerRespawned += ResetShadows;
+        private void OnDisable() => Nexus7.Gameplay.PlayerRespawn.PlayerRespawned -= ResetShadows;
+        public void ResetShadows() => shadowZoneCount = 0;
+
         private void Update()
         {
             float v = 1f;

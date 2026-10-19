@@ -32,7 +32,12 @@ namespace Nexus7.Enemies
         /// <summary>Todos los enemigos activos (lo usa el indicador de sigilo del HUD).</summary>
         public static readonly List<EnemyPatrol> All = new List<EnemyPatrol>();
 
+        /// <summary>Se dispara cuando un dron empieza a perseguir al jugador (alertas, escuadrones).</summary>
+        public static event System.Action<EnemyPatrol> PlayerSpotted;
+
         [SerializeField] private PatrolRoute route;
+        [Tooltip("Waypoint por el que empieza (útil para desfasar varios drones en la misma ruta).")]
+        [SerializeField, Min(0)] private int startWaypoint = 0;
 
         [Header("Velocidades")]
         [SerializeField] private float patrolSpeed = 1.8f;
@@ -67,6 +72,13 @@ namespace Nexus7.Enemies
         [Tooltip("Efecto visual mientras está aturdido por un PEM (chispas, luz...).")]
         [SerializeField] private GameObject stunEffect;
 
+        [Header("Alerta de la nave (Fase 5)")]
+        [Tooltip("En ALERTA ROJA caza activamente: acude cada pocos segundos a la última posición conocida del jugador.")]
+        [SerializeField] private bool aggressiveOnRed = false;
+        [SerializeField] private float huntInterval = 6f;
+        [Tooltip("Antigüedad máxima (s) de un avistamiento para ir a cazar.")]
+        [SerializeField] private float huntMemory = 45f;
+
         [Header("Audio (opcional)")]
         [SerializeField] private AudioSource audioSource;
         [SerializeField] private AudioClip suspiciousClip;
@@ -96,6 +108,10 @@ namespace Nexus7.Enemies
         private float lastDistractionTime = -999f;
         private float stunTimer;
         private float currentSearchDuration;
+        private float huntTimer;
+
+        /// <summary>Velocidad base afectada por el nivel de alerta de la nave.</summary>
+        private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed;
 
         private void Awake()
         {
@@ -113,6 +129,7 @@ namespace Nexus7.Enemies
             EmpRegistry.Register(this);
             NoiseSystem.NoiseEmitted += OnNoiseHeard;
             AlarmSystem.AlarmRaised += OnAlarm;
+            AlertSystem.LevelChanged += OnAlertLevelChanged;
             PlayerRespawn.PlayerCaught += OnPlayerCaught;
             PlayerRespawn.PlayerRespawned += ResetToStart;
         }
@@ -123,6 +140,7 @@ namespace Nexus7.Enemies
             EmpRegistry.Unregister(this);
             NoiseSystem.NoiseEmitted -= OnNoiseHeard;
             AlarmSystem.AlarmRaised -= OnAlarm;
+            AlertSystem.LevelChanged -= OnAlertLevelChanged;
             PlayerRespawn.PlayerCaught -= OnPlayerCaught;
             PlayerRespawn.PlayerRespawned -= ResetToStart;
         }
@@ -142,7 +160,7 @@ namespace Nexus7.Enemies
             else
                 Debug.LogWarning($"[EnemyPatrol] {name} no está sobre el NavMesh. ¿Existe un RuntimeNavMeshBaker en la escena?", this);
 
-            ResumePatrol(0);
+            ResumePatrol(startWaypoint);
         }
 
         private void Update()
@@ -150,6 +168,18 @@ namespace Nexus7.Enemies
             if (frozen || !agent.isOnNavMesh) return;
 
             if (CurrentState == EnemyState.Stunned) { UpdateStunned(); return; }
+
+            // Lo que ve un dron lo sabe toda la nave (para la caza en Alerta Roja).
+            if (vision.CanSeePlayer && vision.Awareness >= suspicionThreshold)
+                AlertSystem.ReportPlayerPosition(vision.LastSeenPosition);
+
+            // ---------- Alerta Roja: caza activa ----------
+            if (aggressiveOnRed && AlertSystem.Level == AlertLevel.Red
+                && (CurrentState == EnemyState.Patrol || CurrentState == EnemyState.Search))
+            {
+                huntTimer -= Time.deltaTime;
+                if (huntTimer <= 0f) Hunt();
+            }
 
             // ---------- Transiciones por percepción ----------
             if (CurrentState != EnemyState.Chase && vision.Awareness >= 1f)
@@ -213,7 +243,7 @@ namespace Nexus7.Enemies
         private void ResumePatrol(int index)
         {
             CurrentState = EnemyState.Patrol;
-            agent.speed = patrolSpeed;
+            agent.speed = Speed(patrolSpeed);
             waitTimer = 0f;
             if (scanLight != null) scanLight.enabled = false;
             if (route == null || route.Count == 0) return;
@@ -226,7 +256,7 @@ namespace Nexus7.Enemies
         {
             if (CurrentState != EnemyState.Investigate) Play(suspiciousClip);
             CurrentState = EnemyState.Investigate;
-            agent.speed = investigateSpeed;
+            agent.speed = Speed(investigateSpeed);
             if (scanLight != null) scanLight.enabled = false;
             if (NavMesh.SamplePosition(point, out NavMeshHit hit, 3f, NavMesh.AllAreas)) point = hit.position;
             agent.SetDestination(point);
@@ -241,7 +271,7 @@ namespace Nexus7.Enemies
             // Llegó a un señuelo: lo neutraliza y queda receloso.
             if (currentDistraction != null)
             {
-                if (currentDistraction.IsActive) currentDistraction.Neutralize();
+                if (currentDistraction.IsActive) { currentDistraction.Neutralize(); RunStats.RecordDecoyTriggered(); }
                 currentDistraction = null;
                 vision.BoostDetection(wariness, warinessDuration);
                 currentSearchDuration = searchDuration * 1.5f;
@@ -265,11 +295,12 @@ namespace Nexus7.Enemies
         {
             CurrentState = EnemyState.Chase;
             currentDistraction = null;
-            agent.speed = chaseSpeed;
+            agent.speed = Speed(chaseSpeed);
             lostSightTimer = 0f;
             repathTimer = 0f;
             if (scanLight != null) scanLight.enabled = false;
             Play(alertClip);
+            PlayerSpotted?.Invoke(this);
         }
 
         private void UpdateChase()
@@ -301,7 +332,7 @@ namespace Nexus7.Enemies
         {
             if (frozen || source == gameObject || CurrentState == EnemyState.Chase
                 || CurrentState == EnemyState.Stunned || !agent.isOnNavMesh) return;
-            if (Vector3.Distance(transform.position, position) > radius * hearingMultiplier) return;
+            if (Vector3.Distance(transform.position, position) > radius * hearingMultiplier * AlertSystem.Profile.hearing) return;
 
             var distraction = source != null ? source.GetComponent<IDistraction>() : null;
             if (distraction != null) { OnDistraction(distraction); return; }
@@ -328,7 +359,7 @@ namespace Nexus7.Enemies
                 if (HUDManager.Instance != null)
                     HUDManager.Instance.QueueMessage($"IA NEXUS-7: El {displayName.ToLowerInvariant()} ha deducido el engaño. Busca el origen del señuelo.", 2.5f);
                 Investigate(distraction.Origin);
-                agent.speed = alarmSpeed;
+                agent.speed = Speed(alarmSpeed);
                 return;
             }
 
@@ -343,7 +374,33 @@ namespace Nexus7.Enemies
             if (Vector3.Distance(transform.position, position) > radius) return;
             currentDistraction = null;
             Investigate(position);
-            agent.speed = alarmSpeed; // acude corriendo
+            agent.speed = Speed(alarmSpeed); // acude corriendo
+        }
+
+        // =============== ALERTA DE LA NAVE Y ESCUADRÓN ===============
+        private void OnAlertLevelChanged(AlertLevel from, AlertLevel to)
+        {
+            if (to == AlertLevel.Red && aggressiveOnRed) Hunt();
+        }
+
+        /// <summary>Caza: va corriendo a la última posición conocida del jugador.</summary>
+        private void Hunt()
+        {
+            huntTimer = huntInterval;
+            if (frozen || !agent.isOnNavMesh || CurrentState == EnemyState.Chase || CurrentState == EnemyState.Stunned) return;
+            if (!AlertSystem.HasRecentSighting(huntMemory)) return;
+            currentDistraction = null;
+            Investigate(AlertSystem.LastKnownPlayerPosition);
+            agent.speed = Speed(alarmSpeed);
+        }
+
+        /// <summary>Un compañero de escuadrón ha visto al jugador: acude a esa posición.</summary>
+        public void RespondToSquad(Vector3 position)
+        {
+            if (frozen || !agent.isOnNavMesh || CurrentState == EnemyState.Chase || CurrentState == EnemyState.Stunned) return;
+            currentDistraction = null;
+            Investigate(position);
+            agent.speed = Speed(alarmSpeed);
         }
 
         // =============== PULSO PEM ===============
@@ -399,7 +456,7 @@ namespace Nexus7.Enemies
             agent.Warp(startPosition);
             transform.rotation = startRotation;
             agent.isStopped = false;
-            ResumePatrol(0);
+            ResumePatrol(startWaypoint);
         }
 
         // =============== UTILIDADES ===============

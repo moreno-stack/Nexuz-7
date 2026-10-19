@@ -76,7 +76,7 @@ namespace Nexus7.Security
 
         public void Disable(float duration)
         {
-            disabledUntil = Time.time + duration;
+            disabledUntil = Mathf.Max(disabledUntil, Time.time + duration);   // un PEM no acorta un apagado más largo
             SetDisabled(true);
         }
 

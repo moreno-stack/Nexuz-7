@@ -157,7 +157,8 @@ namespace Nexus7.EditorTools
             foreach (var z in shadowZones)
                 Zone("ZonaSombra", zones, z.pos, z.size).AddComponent<ShadowZone>();
 
-            var cp = Zone("Checkpoint_Conducto", zones, new Vector3(-12.3f, 1.5f, 22.5f), new Vector3(5f, 3f, 1.5f));
+            // A la salida norte del conducto, dentro de la zona de sombra (no delante del puesto del dron B).
+            var cp = Zone("Checkpoint_Conducto", zones, new Vector3(-14.1f, 1.5f, 19.8f), new Vector3(1.8f, 3f, 1f));
             cp.AddComponent<Checkpoint>();
 
             MessageZone("Aviso_Derrumbe", zones, new Vector3(12.3f, 1.5f, 13.5f), new Vector3(5.4f, 3f, 2f),

@@ -75,7 +75,8 @@ namespace Nexus7.Tutorial
             for (int i = 1; i < wakeUpMessages.Length; i++) hud.QueueMessage(wakeUpMessages[i]);
             yield return hud.WaitForMessages();
 
-            player.InputEnabled = true;
+            var respawn = player.GetComponent<Nexus7.Gameplay.PlayerRespawn>();
+            if (respawn == null || !respawn.IsRespawning) player.InputEnabled = true;
 
             // --- 3. Pasos del tutorial: cada uno espera a que el jugador haga la acción ---
             yield return Step("Usa [W][A][S][D] o el stick izquierdo para moverte. Mueve el ratón para mirar.",
@@ -90,8 +91,8 @@ namespace Nexus7.Tutorial
             yield return Step("Apunta a un objeto cercano y pulsa [E] (A en el mando) para interactuar. Prueba con la bitácora de la pared.",
                               () => hasInteracted, holdSeconds: 0f);
 
-            // --- 4. Primer objetivo ---
-            hud.SetObjective(firstObjective);
+            // --- 4. Primer objetivo (si el jugador ya usó la terminal, no se pisa su objetivo "cruza la puerta") ---
+            if (string.IsNullOrEmpty(hud.CurrentObjective)) hud.SetObjective(firstObjective);
         }
 
         /// <summary>Muestra una pista y espera a que la condición se cumpla durante holdSeconds acumulados.</summary>

@@ -45,6 +45,7 @@ namespace Nexus7.Devices
             detonated = true;
 
             int hit = EmpRegistry.Pulse(transform.position, data.Radius, data.Duration);
+            RunStats.RecordEmpHits(hit);
             NoiseSystem.Emit(transform.position, data.Radius * 1.8f, gameObject);
             PulseRing.Spawn(transform.position, data.Radius, data.DeviceColor, 0.5f);
             PulseRing.Spawn(transform.position, data.Radius * 0.6f, Color.white, 0.35f);

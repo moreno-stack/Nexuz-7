@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using Nexus7.Core;
 using Nexus7.Gameplay;
 
 namespace Nexus7.Player
@@ -19,6 +20,8 @@ namespace Nexus7.Player
         [Tooltip("Segundos sin recibir daño antes de empezar a regenerar.")]
         [SerializeField] private float regenDelay = 5f;
         [SerializeField] private float regenPerSecond = 6f;
+        [Tooltip("false = en la zona final la muerte no reaparece: la gestiona EndingManager (final crítico).")]
+        [SerializeField] private bool respawnOnDeath = true;
         [SerializeField, TextArea] private string deathMessage =
             "Descarga eléctrica letal. Reiniciando sistemas vitales en el último punto seguro...";
 
@@ -26,6 +29,9 @@ namespace Nexus7.Player
         public float Max => maxHealth;
         public float Normalized => maxHealth > 0f ? Current / maxHealth : 0f;
         public bool IsStunned { get; private set; }
+
+        /// <summary>Se dispara cuando la integridad llega a 0.</summary>
+        public static event Action PlayerDied;
 
         /// <summary>Cantidad de daño recibida (la UI hace un destello rojo).</summary>
         public event Action<float> Damaged;
@@ -57,6 +63,7 @@ namespace Nexus7.Player
         {
             if (amount <= 0f || Current <= 0f || (respawn != null && respawn.IsRespawning)) return;
 
+            RunStats.RecordDamage(Mathf.Min(amount, Current));
             Current = Mathf.Max(0f, Current - amount);
             lastDamageTime = Time.time;
             Damaged?.Invoke(amount);
@@ -100,6 +107,9 @@ namespace Nexus7.Player
         private void Die()
         {
             EndStun();
+            RunStats.RecordDeath();
+            PlayerDied?.Invoke();
+            if (!respawnOnDeath) return;               // la gestiona el final (EndingManager)
             if (respawn != null) respawn.Respawn(deathMessage);
             else Heal(maxHealth);
         }

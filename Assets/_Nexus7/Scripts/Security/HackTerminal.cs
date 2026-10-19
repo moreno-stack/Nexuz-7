@@ -114,8 +114,10 @@ namespace Nexus7.Security
             Finish(controller, hud);
 
             if (!inventory.TryConsume(cost)) { Deny("El hackeo ha fallado: faltan recursos."); yield break; }
-            foreach (var target in Targets) target.Disable(disableDuration);
-            PickupNotificationUI.Notify($"{TargetLabel}: desactivada {disableDuration:0} s", new Color(0.4f, 0.8f, 1f));
+            RunStats.RecordHackSuccess();
+            float duration = disableDuration * AlertSystem.Profile.hackDuration; // en alerta, la seguridad se recupera antes
+            foreach (var target in Targets) target.Disable(duration);
+            PickupNotificationUI.Notify($"{TargetLabel}: desactivada {duration:0} s", new Color(0.4f, 0.8f, 1f));
         }
 
         private void Finish(PlayerController controller, HUDManager hud)

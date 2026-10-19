@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Nexus7.Core;
 using Nexus7.Inventory;
 using Nexus7.Player;
 using Nexus7.Stealth;
@@ -108,12 +109,14 @@ namespace Nexus7.Devices
         private void Throw(DeviceItemData device)
         {
             if (throwOrigin == null || !inventory.TryRemove(device, 1)) return;
+            RunStats.RecordDeviceUse((int)device.Type);
             DeviceFactory.SpawnThrown(device, LaunchPosition, LaunchVelocity(device), transform.position, playerCollider);
         }
 
         private void Activate(DeviceItemData device)
         {
             if (!inventory.TryRemove(device, 1)) return;
+            RunStats.RecordDeviceUse((int)device.Type);
             switch (device.Type)
             {
                 case DeviceKind.OpticalCamo:

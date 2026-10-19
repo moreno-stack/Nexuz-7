@@ -138,7 +138,9 @@ namespace Nexus7.EditorTools
             A.Container("Contenedor_AlaOeste", loot, new Vector3(-17.2f, 0f, 22f), -90f,
                 new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Scrap, 2) });
             A.Container("Contenedor_AlaEste", loot, new Vector3(16.9f, 0f, 13f), 90f,
-                new[] { new ItemStack(items.Circuit, 1), new ItemStack(items.Scrap, 2) });
+                new[] { new ItemStack(items.Circuit, 2), new ItemStack(items.Battery, 1), new ItemStack(items.Scrap, 2) });
+            // (2 baterías en la sala: los dos zócalos se pueden llenar aunque llegues sin ninguna del almacén;
+            //  2 circuitos: el del reactor no se puede quedar sin repuesto por gastar uno en un hackeo)
             foreach (var p in new[] { new Vector3(-6f, 0f, 6f), new Vector3(6.6f, 0f, 23f), new Vector3(-14.5f, 0f, 36.5f) })
                 A.Pickup("Pickup_Chatarra", loot, p, items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), A.scrapMat, 3f, false);
 
@@ -201,7 +203,7 @@ namespace Nexus7.EditorTools
 
             Checkpoint("Checkpoint_Sala", zones, new Vector3(0f, 1.5f, 11f), new Vector3(15f, 3f, 1.5f));
             Checkpoint("Checkpoint_AlaEste", zones, new Vector3(13.5f, 1.5f, 12f), new Vector3(9f, 3f, 1.5f));
-            Checkpoint("Checkpoint_AlaOeste", zones, new Vector3(-14f, 1.5f, 15.5f), new Vector3(9f, 3f, 1.2f));
+            Checkpoint("Checkpoint_AlaOeste", zones, new Vector3(-14f, 1.5f, 12.8f), new Vector3(9f, 3f, 1.2f));   // a la espalda del puesto de G2 (no a 2 m)
             Checkpoint("Checkpoint_Pasarela", zones, new Vector3(0f, CatwalkY + 1f, 38.7f), new Vector3(14f, 2f, 1.8f));
 
             A.MessageZone("Aviso_CableEste", zones, new Vector3(13.5f, 1.5f, 6.5f), new Vector3(5f, 3f, 1.5f),

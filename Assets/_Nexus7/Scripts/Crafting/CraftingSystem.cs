@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Nexus7.Core;
 using Nexus7.Inventory;
 
 namespace Nexus7.Crafting
@@ -63,6 +64,7 @@ namespace Nexus7.Crafting
                 return CraftResult.NoSpace;
             }
 
+            RunStats.RecordCrafted(recipe.ResultAmount);
             Crafted?.Invoke(recipe);
             return CraftResult.Success;
         }

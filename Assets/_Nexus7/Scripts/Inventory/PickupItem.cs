@@ -72,6 +72,7 @@ namespace Nexus7.Inventory
             }
 
             amount -= added;
+            RunStats.RecordCollected(added);
             if (pickupClip != null) AudioSource.PlayClipAtPoint(pickupClip, transform.position);
             NoiseSystem.Emit(transform.position, pickupNoiseRadius, gameObject);
 

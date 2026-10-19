@@ -69,6 +69,7 @@ namespace Nexus7.Inventory
                 if (!stack.IsValid) continue;
 
                 int added = inventory.Add(stack.item, stack.amount);
+                RunStats.RecordCollected(added);
                 stack.amount -= added;
                 contents[i] = stack; // ItemStack es struct: hay que reasignarlo
                 if (stack.amount > 0) somethingLeft = true;

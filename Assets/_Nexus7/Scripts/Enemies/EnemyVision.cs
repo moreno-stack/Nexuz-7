@@ -43,6 +43,8 @@ namespace Nexus7.Enemies
         public bool CanSeePlayer { get; private set; }
         public Vector3 LastSeenPosition { get; private set; }
         public float ViewDistance => viewDistance;
+        /// <summary>Alcance real: aumenta con el nivel de alerta de la nave.</summary>
+        public float EffectiveViewDistance => viewDistance * Nexus7.Core.AlertSystem.Profile.viewDistance;
         public float ViewAngle => viewAngle;
 
         private float boostMultiplier = 1f;
@@ -82,15 +84,17 @@ namespace Nexus7.Enemies
         {
             if (blinded) { CanSeePlayer = false; return; }
 
-            CanSeePlayer = player != null && CheckLineOfSight(out float distance);
+            // Margen tras reaparecer: evita capturas en cadena justo al recuperar el control.
+            CanSeePlayer = player != null && !Nexus7.Gameplay.PlayerRespawn.InGrace && CheckLineOfSight(out float distance);
 
             if (CanSeePlayer)
             {
                 LastSeenPosition = player.position;
                 float visibility = playerStealth != null ? playerStealth.Visibility : 1f;
-                float distanceFactor = Mathf.Lerp(2.5f, 0.4f, distance / viewDistance); // de cerca se detecta mucho antes
+                float distanceFactor = Mathf.Lerp(2.5f, 0.4f, distance / EffectiveViewDistance); // de cerca se detecta mucho antes
                 float wary = IsWary ? boostMultiplier : 1f;
-                Awareness += detectionSpeed * visibility * distanceFactor * wary * Time.deltaTime;
+                float alert = Nexus7.Core.AlertSystem.Profile.detection;
+                Awareness += detectionSpeed * visibility * distanceFactor * wary * alert * Time.deltaTime;
             }
             else
             {
@@ -100,6 +104,7 @@ namespace Nexus7.Enemies
 
             if (visionLight != null)
             {
+                visionLight.range = EffectiveViewDistance;
                 visionLight.color = Awareness >= 1f
                     ? alertColor
                     : Color.Lerp(calmColor, suspiciousColor, Mathf.InverseLerp(0f, 0.6f, Awareness));
@@ -115,7 +120,7 @@ namespace Nexus7.Enemies
 
             Vector3 toPlayer = chest - eyePos;
             distance = toPlayer.magnitude;
-            if (distance > viewDistance) return false;
+            if (distance > EffectiveViewDistance) return false;
 
             bool inProximity = distance <= proximityRadius;
             if (!inProximity && Vector3.Angle(eye.forward, toPlayer) > viewAngle * 0.5f) return false;

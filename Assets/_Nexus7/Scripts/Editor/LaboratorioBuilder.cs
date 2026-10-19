@@ -48,8 +48,8 @@ namespace Nexus7.EditorTools
         private const float H = 6f, T = 0.3f;
         private const int IgnoreRaycastLayer = 2;
 
-        private static Material labFloor, labWall, tableMat, liquidMat, rackMat, barrelMat, droneWhite, visorPurple, paperMat, crystalMat, labLamp;
-        private static readonly Color LabCold = new Color(0.65f, 0.82f, 1f);
+        internal static Material labFloor, labWall, tableMat, liquidMat, rackMat, barrelMat, droneWhite, visorPurple, paperMat, crystalMat, labLamp;
+        internal static readonly Color LabCold = new Color(0.65f, 0.82f, 1f);
 
         [MenuItem("Nexus-7/Fase 4/Construir Laboratorio")]
         public static void Build()
@@ -59,32 +59,9 @@ namespace Nexus7.EditorTools
             B.CreateFolders();
             B.EnsureFolder(Root + "/Data", "Recipes");
             var items = A.EnsureItems();
-            var crystal = A.CreateItem("Item_CristalOptico", "component_optic_crystal", "Cristal óptico",
-                "Cristal refractivo del proyecto ESPECTRO. Desvía la luz alrededor de un objeto.", ItemCategory.Component, 5, false, new Color(0.75f, 0.55f, 1f));
-            var keycard = A.CreateItem("Item_TarjetaDirector", "key_director_card", "Tarjeta del director",
-                "Tarjeta de acceso del director del laboratorio. Abre la puerta de contención.", ItemCategory.Tool, 1, true, new Color(1f, 0.85f, 0.35f));
-
-            // ---------- 1. Dispositivos y recetas ----------
-            var decoy = CreateDevice("Item_SenueloSonoro", "device_sonic_decoy", "Señuelo sonoro",
-                "Emisor de pulsos sonoros. Lánzalo: atrae a los drones durante unos segundos.",
-                DeviceKind.SonicDecoy, DeviceUseMode.Throw, 1, 12f, 10f, 14f, 1.2f, new Color(1f, 0.6f, 0.15f));
-            var emp = CreateDevice("Item_PulsoPEM", "device_emp", "Pulso PEM",
-                "Granada electromagnética. Aturde drones y apaga cámaras, barreras y láseres cercanos.",
-                DeviceKind.EmpPulse, DeviceUseMode.Throw, 2, 11f, 6f, 6f, 0f, new Color(0.3f, 0.85f, 1f));
-            var camo = CreateDevice("Item_CamuflajeOptico", "device_optical_camo", "Camuflaje óptico",
-                "Reduce drásticamente tu visibilidad durante unos segundos. Los sensores láser no te detectan.",
-                DeviceKind.OpticalCamo, DeviceUseMode.SelfActivate, 3, 0f, 12f, 0f, 0.1f, new Color(0.75f, 0.55f, 1f));
-
-            var recipes = new[]
-            {
-                CreateRecipe("Receta_SenueloSonoro", "Emisor de pulso sonoro", "Señuelo que emite pulsos de ruido durante 10 s (radio 14 m).",
-                    new[] { new ItemStack(items.Scrap, 3), new ItemStack(items.Circuit, 1) }, decoy, 1, 2f),
-                CreateRecipe("Receta_PulsoPEM", "Pulso PEM temporal", "Aturde 6 s a los drones en 6 m y apaga cámaras, barreras y láseres.",
-                    new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Circuit, 1), new ItemStack(items.Scrap, 2) }, emp, 1, 3f),
-                CreateRecipe("Receta_CamuflajeOptico", "Camuflaje óptico temporal", "Visibilidad al 10 % durante 12 s. Invisible para los sensores láser.",
-                    new[] { new ItemStack(items.Battery, 1), new ItemStack(crystal, 1), new ItemStack(items.Circuit, 1) }, camo, 1, 3.5f),
-            };
-            AssetDatabase.SaveAssets();
+            var p4 = EnsurePhase4Data(items);
+            var crystal = p4.Crystal; var keycard = p4.Keycard;
+            var decoy = p4.Decoy; var emp = p4.Emp; var camo = p4.Camo; var recipes = p4.Recipes;
 
             // ---------- 2. Escena ----------
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -244,7 +221,7 @@ namespace Nexus7.EditorTools
             var exitMsg = exit.AddComponent<TutorialTrigger>();
             B.SetStrings(exitMsg, "messages", new[] { "IA NEXUS-7: Has salido del laboratorio. Siguiente parada: el puente de mando." });
             var exitTrig = exit.AddComponent<SceneExitTrigger>();
-            B.SetString(exitTrig, "sceneName", "");
+            B.SetString(exitTrig, "sceneName", "CentroControl"); // Fase 5
             B.SetString(exitTrig, "fallbackMessage", "— FIN DE LA FASE 4 —");
 
             // ---------- 8. HUD ----------
@@ -283,6 +260,46 @@ namespace Nexus7.EditorTools
             Debug.Log("<color=cyan>[Nexus-7]</color> Laboratorio construido en " + ScenePath + ". Pulsa Play.");
         }
 
+        /// <summary>Objetos, dispositivos y recetas de la Fase 4 (crea o actualiza los assets). Reutilizado por fases posteriores.</summary>
+        internal class Phase4Data
+        {
+            public ItemData Crystal, Keycard;
+            public DeviceItemData Decoy, Emp, Camo;
+            public CraftingRecipe[] Recipes;
+        }
+
+        internal static Phase4Data EnsurePhase4Data(AlmacenCargaBuilder.ItemSet items)
+        {
+            B.EnsureFolder(Root + "/Data", "Recipes");
+            var d = new Phase4Data();
+            d.Crystal = A.CreateItem("Item_CristalOptico", "component_optic_crystal", "Cristal óptico",
+                "Cristal refractivo del proyecto ESPECTRO. Desvía la luz alrededor de un objeto.", ItemCategory.Component, 5, false, new Color(0.75f, 0.55f, 1f));
+            d.Keycard = A.CreateItem("Item_TarjetaDirector", "key_director_card", "Tarjeta del director",
+                "Tarjeta de acceso del director del laboratorio. Abre la puerta de contención.", ItemCategory.Tool, 1, true, new Color(1f, 0.85f, 0.35f));
+
+            d.Decoy = CreateDevice("Item_SenueloSonoro", "device_sonic_decoy", "Señuelo sonoro",
+                "Emisor de pulsos sonoros. Lánzalo: atrae a los drones durante unos segundos.",
+                DeviceKind.SonicDecoy, DeviceUseMode.Throw, 1, 12f, 10f, 14f, 1.2f, new Color(1f, 0.6f, 0.15f));
+            d.Emp = CreateDevice("Item_PulsoPEM", "device_emp", "Pulso PEM",
+                "Granada electromagnética. Aturde drones y apaga cámaras, barreras y láseres cercanos.",
+                DeviceKind.EmpPulse, DeviceUseMode.Throw, 2, 11f, 6f, 6f, 0f, new Color(0.3f, 0.85f, 1f));
+            d.Camo = CreateDevice("Item_CamuflajeOptico", "device_optical_camo", "Camuflaje óptico",
+                "Reduce drásticamente tu visibilidad durante unos segundos. Los sensores láser no te detectan.",
+                DeviceKind.OpticalCamo, DeviceUseMode.SelfActivate, 3, 0f, 12f, 0f, 0.1f, new Color(0.75f, 0.55f, 1f));
+
+            d.Recipes = new[]
+            {
+                CreateRecipe("Receta_SenueloSonoro", "Emisor de pulso sonoro", "Señuelo que emite pulsos de ruido durante 10 s (radio 14 m).",
+                    new[] { new ItemStack(items.Scrap, 3), new ItemStack(items.Circuit, 1) }, d.Decoy, 1, 2f),
+                CreateRecipe("Receta_PulsoPEM", "Pulso PEM temporal", "Aturde 6 s a los drones en 6 m y apaga cámaras, barreras y láseres.",
+                    new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Circuit, 1), new ItemStack(items.Scrap, 2) }, d.Emp, 1, 3f),
+                CreateRecipe("Receta_CamuflajeOptico", "Camuflaje óptico temporal", "Visibilidad al 10 % durante 12 s. Invisible para los sensores láser.",
+                    new[] { new ItemStack(items.Battery, 1), new ItemStack(d.Crystal, 1), new ItemStack(items.Circuit, 1) }, d.Camo, 1, 3.5f),
+            };
+            AssetDatabase.SaveAssets();
+            return d;
+        }
+
         [MenuItem("Nexus-7/Fase 4/Conectar salida de la Fase 3")]
         public static void ConnectPhase3()
         {
@@ -309,7 +326,7 @@ namespace Nexus7.EditorTools
         //  DATOS: dispositivos y recetas
         // =====================================================================
 
-        private static DeviceItemData CreateDevice(string file, string id, string displayName, string description,
+        internal static DeviceItemData CreateDevice(string file, string id, string displayName, string description,
             DeviceKind kind, DeviceUseMode mode, int slot, float force, float duration, float radius, float effect, Color color)
         {
             string path = $"{Root}/Data/Items/{file}.asset";
@@ -339,7 +356,7 @@ namespace Nexus7.EditorTools
             return item;
         }
 
-        private static CraftingRecipe CreateRecipe(string file, string displayName, string description,
+        internal static CraftingRecipe CreateRecipe(string file, string displayName, string description,
             ItemStack[] ingredients, ItemData result, int amount, float time)
         {
             string path = $"{Root}/Data/Recipes/{file}.asset";
@@ -363,7 +380,7 @@ namespace Nexus7.EditorTools
         //  ESTRUCTURA
         // =====================================================================
 
-        private static void BuildShell(Transform env)
+        internal static void BuildShell(Transform env)
         {
             A.Tiled("Suelo", env, new Vector3(0f, -0.1f, 18f), new Vector3(32.6f, 0.2f, 36.6f), labFloor);
             A.Tiled("Techo", env, new Vector3(0f, H + 0.1f, 18f), new Vector3(32.6f, 0.2f, 36.6f), labWall);
@@ -403,7 +420,7 @@ namespace Nexus7.EditorTools
             BuildLights(env);
         }
 
-        private static void BuildOffice(Transform env)
+        internal static void BuildOffice(Transform env)
         {
             var root = new GameObject("DespachoDirector").transform;
             root.SetParent(env);
@@ -417,7 +434,7 @@ namespace Nexus7.EditorTools
             screen.AddComponent<BlinkingScreen>();
         }
 
-        private static void BuildLights(Transform env)
+        internal static void BuildLights(Transform env)
         {
             var root = new GameObject("IluminacionLaboratorio").transform;
             root.SetParent(env);
@@ -447,7 +464,7 @@ namespace Nexus7.EditorTools
             A.PointLight("LuzSalida", root, new Vector3(7.5f, 3.7f, 38.4f), LabCold, 6f, 0.8f, false);
         }
 
-        private static void ConfigureLighting()
+        internal static void ConfigureLighting()
         {
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Flat;
@@ -462,7 +479,7 @@ namespace Nexus7.EditorTools
         //  MOBILIARIO
         // =====================================================================
 
-        private static Workbench WorkbenchAt(string name, Transform parent, Vector3 pos, float rotY)
+        internal static Workbench WorkbenchAt(string name, Transform parent, Vector3 pos, float rotY)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent);
@@ -482,7 +499,7 @@ namespace Nexus7.EditorTools
             return bench;
         }
 
-        private static void LabTable(Transform parent, Vector3 pos)
+        internal static void LabTable(Transform parent, Vector3 pos)
         {
             var root = new GameObject("MesaLaboratorio").transform;
             root.SetParent(parent);
@@ -508,7 +525,7 @@ namespace Nexus7.EditorTools
             }
         }
 
-        private static void Tank(Transform parent, Vector3 pos, bool broken)
+        internal static void Tank(Transform parent, Vector3 pos, bool broken)
         {
             var root = new GameObject(broken ? "TanqueContencion_Averiado" : "TanqueContencion").transform;
             root.SetParent(parent);
@@ -529,7 +546,7 @@ namespace Nexus7.EditorTools
             if (broken) S3.Sparks("ChispasTanque", root, new Vector3(1f, 3.2f, 0f));
         }
 
-        private static void Rack(Transform parent, Vector3 pos)
+        internal static void Rack(Transform parent, Vector3 pos)
         {
             var root = new GameObject("EstanteriaQuimica").transform;
             root.SetParent(parent);
@@ -542,7 +559,7 @@ namespace Nexus7.EditorTools
             }
         }
 
-        private static void Clutter(Transform parent)
+        internal static void Clutter(Transform parent)
         {
             // Atmósfera de abandono: papeles y cajas por el suelo
             var rng = new System.Random(4);
@@ -556,7 +573,7 @@ namespace Nexus7.EditorTools
             box.transform.rotation = Quaternion.Euler(0f, 25f, 0f);
         }
 
-        private static GameObject Cyl(string name, Transform parent, Vector3 localPos, Vector3 scale, Material mat, bool collider)
+        internal static GameObject Cyl(string name, Transform parent, Vector3 localPos, Vector3 scale, Material mat, bool collider)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             go.name = name;
@@ -568,13 +585,13 @@ namespace Nexus7.EditorTools
             return go;
         }
 
-        private static GameObject Local(GameObject go, Vector3 localPos)
+        internal static GameObject Local(GameObject go, Vector3 localPos)
         {
             go.transform.localPosition = localPos;
             return go;
         }
 
-        private static void Note(Transform parent, string name, Vector3 pos, string[] messages)
+        internal static void Note(Transform parent, string name, Vector3 pos, string[] messages)
         {
             var go = B.Box(name, parent, pos, new Vector3(0.3f, 0.02f, 0.4f), paperMat);
             var msg = go.AddComponent<InteractableMessage>();
@@ -586,7 +603,7 @@ namespace Nexus7.EditorTools
         //  SEGURIDAD Y DRONES
         // =====================================================================
 
-        private static LaserTripwire Laser(string name, Transform parent, float x0, float x1, float z, float[] heights, float zoneMin, float zoneMax)
+        internal static LaserTripwire Laser(string name, Transform parent, float x0, float x1, float z, float[] heights, float zoneMin, float zoneMax)
         {
             float width = x1 - x0, cy = (zoneMin + zoneMax) / 2f;
             var root = new GameObject(name) { layer = IgnoreRaycastLayer };
@@ -616,7 +633,7 @@ namespace Nexus7.EditorTools
             return laser;
         }
 
-        private static EnemyPatrol ResearchDrone(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route, string label)
+        internal static EnemyPatrol ResearchDrone(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route, string label)
         {
             var drone = A.Drone(name, parent, pos, rotY, route);
             var body = drone.transform.Find("Cuerpo");
@@ -654,7 +671,7 @@ namespace Nexus7.EditorTools
         //  UI DE LA FASE 4
         // =====================================================================
 
-        private static void BuildPhase4UI(Transform canvas, DeviceQuickbar quickbar, PlayerStealth stealth)
+        internal static void BuildPhase4UI(Transform canvas, DeviceQuickbar quickbar, PlayerStealth stealth)
         {
             // Tinte del camuflaje (pantalla completa, detrás de los textos)
             var overlay = B.UIImage("TinteCamuflaje", canvas, new Color(0.35f, 0.6f, 1f, 0f));
@@ -692,7 +709,7 @@ namespace Nexus7.EditorTools
         //  MATERIALES
         // =====================================================================
 
-        private static void CreateMaterials()
+        internal static void CreateMaterials()
         {
             labFloor    = B.CreateMat("M4_SueloLaboratorio", new Color(0.42f, 0.46f, 0.5f), null, 0.7f, 0.2f);
             labWall     = B.CreateMat("M4_ParedLaboratorio", new Color(0.62f, 0.67f, 0.72f), null, 0.5f, 0.1f);

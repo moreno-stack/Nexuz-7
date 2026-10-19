@@ -67,6 +67,15 @@ namespace Nexus7.UI
             if (messageRoutine == null) messageRoutine = StartCoroutine(ProcessQueue());
         }
 
+        /// <summary>Mensaje urgente: vacía la cola y se muestra YA (cuenta atrás, lanzamiento...).</summary>
+        public void ShowMessageNow(string text, float duration = -1f)
+        {
+            messageQueue.Clear();
+            if (messageRoutine != null) StopCoroutine(messageRoutine);
+            messageRoutine = null;
+            QueueMessage(text, duration);
+        }
+
         /// <summary>Para usar en corrutinas: yield return hud.WaitForMessages();</summary>
         public IEnumerator WaitForMessages()
         {
@@ -107,6 +116,7 @@ namespace Nexus7.UI
         public void SetHint(string text) => SetText(hintText, text);
         public void ClearHint() => SetText(hintText, "");
         public void SetObjective(string text) => SetText(objectiveText, text);
+        public string CurrentObjective => objectiveText != null ? objectiveText.text : "";
 
         // ---------------- Fundido ----------------
         public void SetFade(float alpha)

@@ -23,6 +23,12 @@ namespace Nexus7.Gameplay
         public static event Action PlayerCaught;
         public static event Action PlayerRespawned;
 
+        /// <summary>Tras reaparecer, los drones no pueden verte hasta este instante (margen para orientarte).</summary>
+        public static float GraceUntil { get; private set; } = -999f;
+        public static bool InGrace => Time.time < GraceUntil;
+        [Tooltip("Segundos de 'invisibilidad' tras recuperar el control al reaparecer.")]
+        [SerializeField] private float graceAfterRespawn = 2.5f;
+
         [SerializeField, TextArea] private string caughtMessage =
             "¡DETECTADO! Un dron de seguridad te ha neutralizado. Reiniciando desde el último punto seguro...";
         [SerializeField] private float fadeOutTime = 0.6f;
@@ -81,6 +87,7 @@ namespace Nexus7.Gameplay
             transform.SetPositionAndRotation(respawnPosition, respawnRotation);
             if (characterController != null) characterController.enabled = true;
 
+            GraceUntil = Time.time + fadeInTime + graceAfterRespawn;
             PlayerRespawned?.Invoke();
 
             if (hud != null) yield return hud.Fade(1f, 0f, fadeInTime);

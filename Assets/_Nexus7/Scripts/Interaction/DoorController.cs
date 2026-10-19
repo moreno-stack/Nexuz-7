@@ -88,8 +88,24 @@ namespace Nexus7.Interaction
         {
             if (doorPanel == null) doorPanel = transform;
             closedLocalPos = doorPanel.localPosition;
+            AddNavMeshCarving();
             IsLocked = startLocked;
             UpdateStatusVisual();
+        }
+
+        /// <summary>Panel móvil de la puerta (el NavMesh no lo hornea: lo "talla" un NavMeshObstacle que se mueve con él).</summary>
+        public Transform Panel => doorPanel != null ? doorPanel : transform;
+
+        private void AddNavMeshCarving()
+        {
+            var box = doorPanel.GetComponent<BoxCollider>();
+            if (box == null || doorPanel == transform || doorPanel.GetComponent<UnityEngine.AI.NavMeshObstacle>() != null) return;
+            var obstacle = doorPanel.gameObject.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+            obstacle.shape = UnityEngine.AI.NavMeshObstacleShape.Box;
+            obstacle.center = box.center;
+            obstacle.size = box.size;
+            obstacle.carving = true;
+            obstacle.carveOnlyStationary = false;   // al abrirse, el hueco se libera para los drones
         }
 
         private void Update()
