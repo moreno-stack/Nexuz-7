@@ -466,6 +466,9 @@ namespace Nexus7.Enemies
         {
             frozen = false;
             stunTimer = 0f;
+            huntTimer = huntInterval;                 // en Alerta Roja no salen a cazar nada más reaparecer
+            AlertSystem.ForgetPlayerPosition();       // ni van al sitio donde te dejaron fuera de combate
+            if (melee != null) melee.Cancel();        // ningún golpe a medias tras el reinicio
             currentDistraction = null;
             lastDistraction = null;
             if (stunEffect != null) stunEffect.SetActive(false);

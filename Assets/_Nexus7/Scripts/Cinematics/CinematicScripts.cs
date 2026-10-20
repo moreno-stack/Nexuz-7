@@ -86,5 +86,22 @@ namespace Nexus7.Cinematics
                      new SubtitleLine("Tú", "A trabajar.", 4.0f, 1.6f)),
             };
         }
+
+        /// <summary>Fase 5 — «Centro de Control» (19 s): el holograma, la pareja de élite con hachas y la compuerta blindada.</summary>
+        public static List<CinematicShot> CentroControl()
+        {
+            return new List<CinematicShot>
+            {
+                Shot(new Vector3(0f, 3.5f, 4f), new Vector3(-2f, 3f, 8f), new Vector3(0f, 2.6f, 16f), new Vector3(0f, 2.6f, 16f), 7f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Centro de Control: desde aquí se gobierna toda la nave. La seguridad responde al nivel de alerta.", 0.3f, 3.4f),
+                     new SubtitleLine("IA NEXUS-7", "Las consolas desactivan sectores y autorizan compuertas... si superas el hackeo.", 3.9f, 2.9f)),
+                Shot(new Vector3(-6.6f, 1.8f, 10.4f), new Vector3(-7f, 1.6f, 9.8f), new Vector3(-8f, 1.5f, 8f), new Vector3(-8f, 1.5f, 8f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Robots de élite con hachas. Patrullan en pareja y en Alerta Roja te cazarán.", 0.2f, 3.3f),
+                     new SubtitleLine("Tú", "Un golpe de esos y estoy fuera.", 3.8f, 2.0f)),
+                Shot(new Vector3(0f, 2.4f, 21.5f), new Vector3(0f, 2.0f, 24.5f), new Vector3(0f, 2f, 30f), new Vector3(0f, 2f, 30f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "La compuerta blindada del puente se autoriza desde el ala oeste y se sella en Alerta Roja.", 0.2f, 3.6f),
+                     new SubtitleLine("Tú", "Puente de mando. Ya casi estoy.", 4.0f, 1.8f)),
+            };
+        }
     }
 }

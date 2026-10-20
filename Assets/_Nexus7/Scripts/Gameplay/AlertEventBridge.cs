@@ -112,12 +112,12 @@ namespace Nexus7.Gameplay
             switch (to)
             {
                 case AlertLevel.Red:
-                    hud.QueueMessage("IA NEXUS-7: ¡ALERTA ROJA! Protocolo de caza activado: los drones de élite te buscarán activamente y las compuertas blindadas se sellan.", 3f);
+                    hud.QueueMessage("IA NEXUS-7: ¡ALERTA ROJA! Protocolo de caza activado: los robots de élite te buscarán activamente y las compuertas blindadas se sellan.", 3f);
                     break;
                 case AlertLevel.Yellow:
                     hud.QueueMessage(from == AlertLevel.Red
                         ? "IA NEXUS-7: La nave baja a alerta amarilla. Las compuertas vuelven a su estado anterior."
-                        : "IA NEXUS-7: Alerta amarilla. La seguridad está más atenta: drones más rápidos y cámaras más ágiles.", 3f);
+                        : "IA NEXUS-7: Alerta amarilla. La seguridad está más atenta: robots más rápidos y cámaras más ágiles.", 3f);
                     break;
                 default:
                     hud.QueueMessage("IA NEXUS-7: La nave vuelve a la normalidad. Buen trabajo pasando desapercibido.", 2.5f);

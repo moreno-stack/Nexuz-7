@@ -42,7 +42,7 @@ namespace Nexus7.UI
 
             int elite = EnemyPatrol.All.Count;
             int stunned = EnemyPatrol.All.Count(e => e.CurrentState == EnemyPatrol.EnemyState.Stunned);
-            sb.AppendLine($"\n<color=#7FD4FF>UNIDADES</color>  Drones activos: {elite - stunned}   Fuera de servicio: {stunned}");
+            sb.AppendLine($"\n<color=#7FD4FF>UNIDADES</color>  Robots activos: {elite - stunned}   Fuera de servicio: {stunned}");
 
             if (!string.IsNullOrEmpty(extra)) sb.AppendLine($"\n<color=#7FD4FF>NOTAS</color>\n{extra}");
             return sb.ToString();

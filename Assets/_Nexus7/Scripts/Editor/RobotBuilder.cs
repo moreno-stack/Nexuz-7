@@ -106,6 +106,19 @@ namespace Nexus7.EditorTools
             A.SetFloat(robot, "hearingMultiplier", 1.2f);
         }
 
+        /// <summary>Robot de élite: negro blindado con detalles rojos y ojo rojo.</summary>
+        internal static RigMaterials EliteMaterials()
+        {
+            var metal = B.CreateMat("MR_Metal", new Color(0.45f, 0.48f, 0.52f), null, 0.6f, 0.9f);
+            var eye = B.CreateMat("MR_OjoElite", new Color(1f, 0.15f, 0.1f), new Color(1f, 0.15f, 0.1f) * 3f);
+            return new RigMaterials
+            {
+                body   = B.CreateMat("MR_EliteCuerpo", new Color(0.08f, 0.08f, 0.09f), null, 0.75f, 0.8f),
+                accent = B.CreateMat("MR_EliteDetalle", new Color(0.7f, 0.08f, 0.06f), null, 0.5f, 0.6f),
+                metal  = metal, eye = eye, glow = eye, visor = eye, suit = metal, skin = metal,
+            };
+        }
+
         /// <summary>Robot armado con el arma de su estilo (WeaponCatalog.ForRobot) en la mano derecha.</summary>
         internal static EnemyPatrol ArmedRobot(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route,
                                                RobotStyle style, RigMaterials mats)

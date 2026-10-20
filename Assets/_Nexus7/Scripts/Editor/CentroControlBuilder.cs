@@ -21,6 +21,7 @@ using A = Nexus7.EditorTools.AlmacenCargaBuilder;   // Fase 2
 using B = Nexus7.EditorTools.SalaInicialBuilder;    // Fase 1
 using S3 = Nexus7.EditorTools.SalaEnergiaBuilder;   // Fase 3
 using L4 = Nexus7.EditorTools.LaboratorioBuilder;   // Fase 4
+using R = Nexus7.EditorTools.RobotBuilder;          // robots armados
 
 namespace Nexus7.EditorTools
 {
@@ -106,6 +107,8 @@ namespace Nexus7.EditorTools
             var laserP = L4.Laser("SensorLaser_Puente", security, -4f, 4f, 26f, new[] { 0.45f, 1.0f }, 0.3f, 1.15f);
             var camP = S3.SecurityCam(security, new Vector3(3.3f, 0f, 29.2f), 200f);
             A.SetFloat(camP, "sweepAngle", 35f);
+            foreach (var c in new[] { camW, camE, camP })
+                B.SetString(c, "alarmMessage", "¡ALARMA! Una cámara de seguridad te ha detectado. Los robots acuden a tu posición.");
             var sectorW = Sector("Sector_Oeste", security, "Sector Oeste", new MonoBehaviour[] { laserW, camW });
             var sectorE = Sector("Sector_Este", security, "Sector Este", new MonoBehaviour[] { camE });
             var sectorP = Sector("Sector_Puente", security, "Sector Puente", new MonoBehaviour[] { laserP, camP });
@@ -127,7 +130,7 @@ namespace Nexus7.EditorTools
             ConsoleAt("TerminalInformacion", gameplay, new Vector3(-4.4f, 0f, 16f), 90f, "Terminal de información", new[]
             {
                 new Act { label = "Estado de la nave e incidentes", type = ConsoleActionType.ShowInfo,
-                          info = "Drones de élite: patrullan en pareja alrededor del holograma. En ALERTA ROJA cazan activamente.\n" +
+                          info = "Robots de élite (hacha): patrullan en pareja alrededor del holograma. En ALERTA ROJA cazan activamente.\n" +
                                  "Puente: tras la compuerta blindada. Antesala protegida por el Sector Puente." },
             });
             ConsoleAt("ControlCompuertas", gameplay, new Vector3(-18.5f, 0f, 27.6f), 0f, "Control de compuertas", new[]
@@ -148,8 +151,8 @@ namespace Nexus7.EditorTools
             var bench = L4.WorkbenchAt("BancoTrabajo_Este", gameplay, new Vector3(16.5f, 0f, 10f), 90f);
             A.Container("Contenedor_Este1", loot, new Vector3(18.8f, 0f, 18f), 90f, new[] { new ItemStack(items.Circuit, 2), new ItemStack(items.Scrap, 3) });
             A.Container("Contenedor_Este2", loot, new Vector3(18.8f, 0f, 23f), 90f, new[] { new ItemStack(items.Battery, 1), new ItemStack(p4.Crystal, 1) });
-            A.Pickup("Pickup_Chatarra", loot, new Vector3(-5f, 0f, 7f), items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), A.scrapMat, 3f, false);
-            A.Pickup("Pickup_CristalOptico", loot, new Vector3(-19f, 0f, 20f), p4.Crystal, 1, PrimitiveType.Capsule, new Vector3(0.12f, 0.18f, 0.12f), L4.crystalMat, 0f, true);
+            // Botín al azar (garantizado de la Fase 5: un circuito)
+            S3.LootSpawner("Botin_Centro", loot, CenterLootPoints, CenterLootTable(items, p4.Crystal), new[] { new ItemStack(items.Circuit, 1) });
 
             // ---------- 5. Jugador ----------
             var (player, interactor) = B.BuildPlayer();
@@ -162,6 +165,7 @@ namespace Nexus7.EditorTools
             });
             var stealth = player.gameObject.AddComponent<PlayerStealth>();
             player.gameObject.AddComponent<PlayerRespawn>();
+            var health = B.GetOrAdd<Nexus7.Player.PlayerHealth>(player.gameObject);
             var crafting = player.gameObject.AddComponent<CraftingSystem>();
             A.SetObjectArray(crafting, "knownRecipes", p4.Recipes.Cast<Object>().ToArray());
             var trajGo = new GameObject("Trayectoria");
@@ -176,7 +180,7 @@ namespace Nexus7.EditorTools
             B.SetRef(quickbar, "throwOrigin", interactor.transform);
             B.SetRef(quickbar, "trajectoryLine", traj);
 
-            // ---------- 6. Drones ----------
+            // ---------- 6. Robots: pareja de élite (hacha), seguridad (bate) e investigación (porra) ----------
             var enemies = new GameObject("Enemigos").transform;
             var eliteRoute = A.Route("Ruta_Elite_Anillo", enemies, PatrolRoute.RouteMode.Loop, new[]
             {
@@ -185,8 +189,8 @@ namespace Nexus7.EditorTools
                 new A.WP(new Vector3(8f, 0f, 24f),  1.5f, true, -90f),
                 new A.WP(new Vector3(8f, 0f, 8f),   1.5f, true, -90f),
             });
-            var e1 = EliteDrone("DronElite_1", enemies, new Vector3(-8f, 0f, 8f), 0f, eliteRoute, 0);
-            var e2 = EliteDrone("DronElite_2", enemies, new Vector3(8f, 0f, 24f), 180f, eliteRoute, 2); // desfasado: lado opuesto
+            var e1 = EliteRobot("RobotElite_1", enemies, new Vector3(-8f, 0f, 8f), 0f, eliteRoute, 0);
+            var e2 = EliteRobot("RobotElite_2", enemies, new Vector3(8f, 0f, 24f), 180f, eliteRoute, 2); // desfasado: lado opuesto
             var squad = new GameObject("Escuadron_Elite").AddComponent<DroneSquad>();
             squad.transform.SetParent(enemies);
             A.SetObjectArray(squad, "members", new Object[] { e1, e2 });
@@ -196,7 +200,7 @@ namespace Nexus7.EditorTools
                 new A.WP(new Vector3(-16.5f, 0f, 13f), 2f, true, 180f),   // vigila la entrada del ala
                 new A.WP(new Vector3(-16.5f, 0f, 25f), 3f, true, 0f),     // vigila el control de compuertas
             });
-            var d3 = A.Drone("DronSeguridad_AlaOeste", enemies, new Vector3(-16.5f, 0f, 13f), 180f, routeW);
+            var d3 = R.ArmedRobot("RobotSeguridad_AlaOeste", enemies, new Vector3(-16.5f, 0f, 13f), 180f, routeW, Nexus7.Characters.RobotStyle.Security, R.SecurityMaterials());
 
             var routeE = A.Route("Ruta_R3_Banco", enemies, PatrolRoute.RouteMode.PingPong, new[]
             {
@@ -204,7 +208,8 @@ namespace Nexus7.EditorTools
                 new A.WP(new Vector3(14f, 0f, 26f), 2f, true, 0f),
             });
             B.SetRef(routeE.transform.GetChild(0).GetComponent<Waypoint>(), "inspectTarget", bench);
-            var r3 = L4.ResearchDrone("DronInvestigacion_AlaEste", enemies, new Vector3(15f, 0f, 10f), 90f, routeE, "Dron de investigación");
+            var r3 = R.ArmedRobot("RobotInvestigacion_AlaEste", enemies, new Vector3(15f, 0f, 10f), 90f, routeE, Nexus7.Characters.RobotStyle.Research, R.ResearchMaterials());
+            R.ResearchExtras(r3);
 
             var navGo = new GameObject("NavMesh");
             navGo.transform.position = new Vector3(0f, 4f, 19f);
@@ -224,7 +229,8 @@ namespace Nexus7.EditorTools
 
             S3.Checkpoint("Checkpoint_Sala", zones, new Vector3(0f, 1.5f, 7f), new Vector3(12f, 3f, 1f));
             S3.Checkpoint("Checkpoint_AlaOeste", zones, new Vector3(-15.5f, 1.5f, 8f), new Vector3(5f, 3f, 1.2f));
-            S3.Checkpoint("Checkpoint_Antesala", zones, new Vector3(0f, 1.5f, 28.6f), new Vector3(7.6f, 3f, 1f));
+            // Antes del láser (no dentro de la antesala): reaparecer en un callejón sin salida con la compuerta sellada era una trampa
+            S3.Checkpoint("Checkpoint_Antesala", zones, new Vector3(0f, 1.5f, 25.2f), new Vector3(7.6f, 3f, 0.8f));
             S3.Checkpoint("Checkpoint_Puente", zones, new Vector3(0f, 1.5f, 31.5f), new Vector3(8f, 3f, 1f));
 
             A.MessageZone("Aviso_Consola", zones, new Vector3(0f, 1.5f, 9.4f), new Vector3(4f, 3f, 1f),
@@ -236,31 +242,36 @@ namespace Nexus7.EditorTools
             A.MessageZone("Aviso_Antesala", zones, new Vector3(0f, 1.5f, 24.6f), new Vector3(8f, 3f, 1f),
                 "IA NEXUS-7: Compuerta blindada del puente. Necesita autorización desde el ala oeste y se sella en Alerta Roja.");
             A.MessageZone("Aviso_AlaEste", zones, new Vector3(14f, 1.5f, 5.5f), new Vector3(6f, 3f, 1f),
-                "IA NEXUS-7: Ala este: banco de trabajo y suministros. Un dron de investigación revisa el banco.");
+                "IA NEXUS-7: Ala este: banco de trabajo y suministros. Un robot de investigación revisa el banco.");
 
             // ---------- 8. HUD y sistemas ----------
             var hud = B.BuildHUD();
             A.BuildPhase2UI(hud.transform, inventory, stealth);
             L4.BuildPhase4UI(hud.transform, quickbar, stealth);
             BuildPhase5UI(hud.transform);
+            S3.BuildHealthUI(hud.transform, health);
 
             var systems = new GameObject("GameSystems");
             systems.AddComponent<AlertAmbience>();
+            var director = systems.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            B.SetRef(director, "player", player);
+            B.SetRef(director, "cameraTransform", interactor.transform);
+            B.SetRef(director, "subtitles", hud.GetComponent<Nexus7.UI.SubtitleUI>());
+            B.SetShots(director, "shots", Nexus7.Cinematics.CinematicScripts.CentroControl());
+
             var intro = systems.AddComponent<LevelIntro>();
+            A.SetBool(intro, "waitForCinematic", true);
             B.SetRef(intro, "player", player);
             B.SetRef(intro, "hud", hud);
             B.SetStrings(intro, "messages", new[]
             {
-                "IA NEXUS-7: Centro de Control. Desde aquí se gobierna toda la nave.",
-                "IA NEXUS-7: La seguridad responde al NIVEL DE ALERTA de la nave, y todo lo que has hecho hasta ahora cuenta. Mantén la tensión baja.",
-                "IA NEXUS-7: Las consolas permiten consultar el estado de la nave, desactivar sectores de seguridad y autorizar la compuerta del puente... si superas el hackeo.",
-                "IA NEXUS-7: Los drones de élite patrullan en pareja. En Alerta Roja te cazarán."
+                "IA NEXUS-7: La seguridad responde al NIVEL DE ALERTA de la nave, y todo lo que has hecho hasta ahora cuenta. Mantén la tensión baja."
             });
             B.SetString(intro, "hint", "[E] consolas · Hackeo: teclea la secuencia con [W][A][S][D] antes de que acabe el tiempo · Arriba: nivel de alerta de la nave");
             B.SetString(intro, "objective", "Objetivo: Autoriza la compuerta blindada (control de compuertas, ala oeste) y llega a la consola de mando del puente.");
 
             // ---------- 9. Prefabs, guardado y enlace ----------
-            B.SavePrefab(e1.gameObject, "DronElite");
+            B.SavePrefab(e1.gameObject, "RobotElite");
             B.SavePrefab(blast.gameObject, "CompuertaBlindada");
             B.SavePrefab(player.gameObject, "Player_Fase5");
             B.SavePrefab(hud.gameObject, "HUD_Fase5");
@@ -549,6 +560,58 @@ namespace Nexus7.EditorTools
             B.SetString(sector, "sectorName", label);
             A.SetObjectArray(sector, "systems", systems.Cast<Object>().ToArray());
             return sector;
+        }
+
+        // ---------- Botín de la Fase 5 ----------
+        internal static readonly Vector3[] CenterLootPoints =
+        {
+            new Vector3(-5f, 0f, 7f),   new Vector3(-19f, 0f, 20f),  new Vector3(5f, 0f, 6.5f),  new Vector3(-12f, 0f, 2.5f),   new Vector3(12f, 0f, 2.5f),
+            new Vector3(13f, 0f, 15f),  new Vector3(12f, 0f, 22f),   new Vector3(-18.5f, 0f, 17f), new Vector3(-14.5f, 0f, 28.5f), new Vector3(10f, 0f, 28f),
+        };
+
+        internal static LootTable CenterLootTable(A.ItemSet items, ItemData crystal)
+        {
+            B.EnsureFolder(Root + "/Data", "Loot");
+            string path = Root + "/Data/Loot/Tabla_Centro.asset";
+            var table = AssetDatabase.LoadAssetAtPath<LootTable>(path);
+            if (table == null) { table = ScriptableObject.CreateInstance<LootTable>(); AssetDatabase.CreateAsset(table, path); }
+            table.entries = new List<LootEntry> { new LootEntry(items.Scrap, 4f, 1, 3), new LootEntry(items.Circuit, 1f, 1, 1), new LootEntry(crystal, 1f, 1, 1) };
+            EditorUtility.SetDirty(table);
+            AssetDatabase.SaveAssets();
+            return table;
+        }
+
+        /// <summary>
+        /// Robot de élite con hacha (Fase 5; la Fase 6 lo usará en su etapa): mismos ajustes de visión, velocidad,
+        /// oído y caza en Alerta Roja que el antiguo dron de élite, con modelo redondeado, arma y ataque cuerpo a cuerpo.
+        /// </summary>
+        internal static EnemyPatrol EliteRobot(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route, int startWp)
+        {
+            var robot = R.ArmedRobot(name, parent, pos, rotY, route, Nexus7.Characters.RobotStyle.Elite, R.EliteMaterials());
+
+            var stun = new GameObject("EfectoAturdido");
+            stun.transform.SetParent(robot.transform, false);
+            stun.transform.localPosition = new Vector3(0f, 2.25f, 0f);
+            A.PointLight("LuzAturdido", stun.transform, Vector3.zero, new Color(0.3f, 0.8f, 1f), 3f, 2f, false);
+            S3.Arc("ArcoAturdido", stun.transform, new Vector3(-0.35f, 0f, 0f), new Vector3(0.7f, 0f, 0f), 0.2f, 0.03f);
+            B.SetRef(robot, "stunEffect", stun);
+
+            var vision = robot.GetComponent<EnemyVision>();
+            A.SetFloat(vision, "viewDistance", 18f);
+            A.SetFloat(vision, "viewAngle", 100f);
+            A.SetFloat(vision, "detectionSpeed", 1.5f);
+            A.SetFloat(vision, "proximityRadius", 2.2f);
+            A.SetColor(vision, "calmColor", new Color(1f, 0.55f, 0.45f));
+
+            A.SetFloat(robot, "patrolSpeed", 2.2f);
+            A.SetFloat(robot, "investigateSpeed", 3.2f);
+            A.SetFloat(robot, "chaseSpeed", 4.6f);   // ×1.3 en Roja = 5.98: justo por debajo de tu carrera (6)
+            A.SetFloat(robot, "alarmSpeed", 4.4f);
+            A.SetFloat(robot, "hearingMultiplier", 1.4f);
+            A.SetFloat(robot, "searchDuration", 6f);
+            A.SetBool(robot, "aggressiveOnRed", true);
+            A.SetInt(robot, "startWaypoint", startWp);
+            return robot;
         }
 
         internal static EnemyPatrol EliteDrone(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route, int startWp)

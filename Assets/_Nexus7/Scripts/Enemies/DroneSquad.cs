@@ -33,7 +33,7 @@ namespace Nexus7.Enemies
             if (Time.time - lastMessage > messageCooldown && HUDManager.Instance != null)
             {
                 lastMessage = Time.time;
-                HUDManager.Instance.QueueMessage($"IA NEXUS-7: {squadName}: un dron te ha visto y los demás convergen en tu posición.", 2.5f);
+                HUDManager.Instance.QueueMessage($"IA NEXUS-7: {squadName}: un robot te ha visto y los demás convergen en tu posición.", 2.5f);
             }
         }
     }
