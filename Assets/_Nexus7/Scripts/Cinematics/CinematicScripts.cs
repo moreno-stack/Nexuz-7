@@ -69,5 +69,22 @@ namespace Nexus7.Cinematics
                      new SubtitleLine("Tú", "Energía, reactor y salida. Entendido.", 4.0f, 1.8f)),
             };
         }
+
+        /// <summary>Fase 4 — «Laboratorio» (19 s): los tanques, un robot de investigación con porra y el banco de trabajo.</summary>
+        public static List<CinematicShot> Laboratorio()
+        {
+            return new List<CinematicShot>
+            {
+                Shot(new Vector3(-8f, 2.4f, 10.5f), new Vector3(-9.5f, 2.0f, 13f), new Vector3(-13.5f, 1.5f, 14f), new Vector3(-13.5f, 1.5f, 19f), 7f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Laboratorio del proyecto ESPECTRO. Busca cristales ópticos por la sala: brillan y sirven para el camuflaje.", 0.3f, 3.3f),
+                     new SubtitleLine("IA NEXUS-7", "La puerta de contención del norte exige la tarjeta del director.", 3.8f, 2.9f)),
+                Shot(new Vector3(-6.4f, 1.7f, 14.6f), new Vector3(-6.8f, 1.5f, 14.0f), new Vector3(-7f, 1.2f, 12.5f), new Vector3(-7f, 1.2f, 12.5f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Robot de investigación con porra eléctrica: si te alcanza, te deja aturdido.", 0.2f, 3.3f),
+                     new SubtitleLine("Tú", "Y revisa los bancos de trabajo... Tomo nota.", 3.8f, 2.0f)),
+                Shot(new Vector3(6f, 1.9f, 2.4f), new Vector3(7f, 1.7f, 3.0f), new Vector3(8f, 1.0f, 5f), new Vector3(8f, 1.0f, 5f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Este banco nadie lo revisa: fabrica aquí señuelos, pulsos PEM, camuflaje o kits.", 0.2f, 3.6f),
+                     new SubtitleLine("Tú", "A trabajar.", 4.0f, 1.6f)),
+            };
+        }
     }
 }

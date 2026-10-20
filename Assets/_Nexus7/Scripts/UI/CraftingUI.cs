@@ -170,7 +170,7 @@ namespace Nexus7.UI
                     sb.AppendLine($"  <color={c}>{ing.item.DisplayName}  {have}/{ing.amount}</color>");
                 }
                 sb.AppendLine($"\n<color=#7FD4FF>RESULTADO</color>\n  {r.Result.DisplayName} x{r.ResultAmount}   (en inventario: {inventory.GetCount(r.Result)})");
-                sb.AppendLine($"\n<size=70%><color=#AAAAAA>Tiempo: {r.CraftTime:0.#} s · Fabricar hace ruido y los drones revisan los bancos.</color></size>");
+                sb.AppendLine($"\n<size=70%><color=#AAAAAA>Tiempo: {r.CraftTime:0.#} s · Fabricar hace ruido y los robots revisan los bancos.</color></size>");
             }
             details.text = sb.ToString();
         }

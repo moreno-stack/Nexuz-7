@@ -65,6 +65,47 @@ namespace Nexus7.EditorTools
             };
         }
 
+        /// <summary>Robot de investigación: blanco, visor morado emisivo, ojo morado.</summary>
+        internal static RigMaterials ResearchMaterials()
+        {
+            var metal = B.CreateMat("MR_Metal", new Color(0.45f, 0.48f, 0.52f), null, 0.6f, 0.9f);
+            var purple = B.CreateMat("MR_VisorInvestigacion", new Color(0.7f, 0.3f, 1f), new Color(0.7f, 0.3f, 1f) * 3f);
+            return new RigMaterials
+            {
+                body   = B.CreateMat("MR_InvestigacionCuerpo", new Color(0.88f, 0.9f, 0.92f), null, 0.8f, 0.3f),
+                accent = purple, eye = purple, glow = purple, visor = purple,
+                metal  = metal, suit = metal, skin = metal,
+            };
+        }
+
+        /// <summary>
+        /// Extras del robot de investigación (como el antiguo ResearchDrone): foco de escaneo morado que se enciende al
+        /// inspeccionar, efecto de aturdimiento (PEM) sobre la cabeza y oído más fino (×1,2).
+        /// </summary>
+        internal static void ResearchExtras(EnemyPatrol robot)
+        {
+            var scanGo = new GameObject("FocoEscaneo");
+            scanGo.transform.SetParent(robot.transform, false);
+            scanGo.transform.localPosition = new Vector3(0f, 1.3f, 0.45f);
+            scanGo.transform.localRotation = Quaternion.Euler(55f, 0f, 0f);
+            var scan = scanGo.AddComponent<Light>();
+            scan.type = LightType.Spot;
+            scan.spotAngle = 55f;
+            scan.range = 4f;
+            scan.intensity = 4f;
+            scan.color = new Color(0.75f, 0.35f, 1f);
+
+            var stun = new GameObject("EfectoAturdido");
+            stun.transform.SetParent(robot.transform, false);
+            stun.transform.localPosition = new Vector3(0f, 2.0f, 0f);
+            A.PointLight("LuzAturdido", stun.transform, Vector3.zero, new Color(0.3f, 0.8f, 1f), 3f, 2f, false);
+            SalaEnergiaBuilder.Arc("ArcoAturdido", stun.transform, new Vector3(-0.35f, 0f, 0f), new Vector3(0.7f, 0f, 0f), 0.2f, 0.03f);
+
+            B.SetRef(robot, "scanLight", scan);
+            B.SetRef(robot, "stunEffect", stun);
+            A.SetFloat(robot, "hearingMultiplier", 1.2f);
+        }
+
         /// <summary>Robot armado con el arma de su estilo (WeaponCatalog.ForRobot) en la mano derecha.</summary>
         internal static EnemyPatrol ArmedRobot(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route,
                                                RobotStyle style, RigMaterials mats)

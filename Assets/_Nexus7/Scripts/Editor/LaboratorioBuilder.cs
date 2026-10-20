@@ -20,6 +20,7 @@ using Nexus7.Tutorial;
 using A = Nexus7.EditorTools.AlmacenCargaBuilder;   // Fase 2
 using B = Nexus7.EditorTools.SalaInicialBuilder;    // Fase 1
 using S3 = Nexus7.EditorTools.SalaEnergiaBuilder;   // Fase 3
+using R = Nexus7.EditorTools.RobotBuilder;          // robots armados
 
 namespace Nexus7.EditorTools
 {
@@ -79,7 +80,7 @@ namespace Nexus7.EditorTools
             BuildShell(env);
             BuildOffice(env);
 
-            // Bancos de trabajo (W1 seguro; W2 y W3 los revisa el dron de investigación)
+            // Bancos de trabajo (W1 seguro; W2 y W3 los revisa el robot de investigación)
             var w1 = WorkbenchAt("BancoTrabajo_Acceso", gameplay, new Vector3(8f, 0f, 5f), 0f);
             var w2 = WorkbenchAt("BancoTrabajo_Oeste", gameplay, new Vector3(-4f, 0f, 16f), 0f);
             var w3 = WorkbenchAt("BancoTrabajo_Norte", gameplay, new Vector3(4f, 0f, 24f), 0f);
@@ -95,6 +96,7 @@ namespace Nexus7.EditorTools
             S3.Terminal("TerminalHackeo_Laser", security, new Vector3(3.2f, 0f, 33.4f), 0f, exitLaser, items.Circuit, 25f);
             var cam = S3.SecurityCam(security, new Vector3(15.5f, 0f, 30f), 210f);
             A.SetFloat(cam, "sweepAngle", 40f);
+            B.SetString(cam, "alarmMessage", "¡ALARMA! Una cámara de seguridad te ha detectado. Los robots acuden a tu posición.");
 
             // Puerta de contención: tarjeta del director (no se gasta)
             var exitDoor = A.SlidingDoor("PuertaContencion", gameplay, new Vector3(7.5f, 0f, 36f + T / 2f), new Vector3(3f, 3.5f, 0.2f),
@@ -112,11 +114,9 @@ namespace Nexus7.EditorTools
                 new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Circuit, 2) });
             var officeBox = A.Container("Contenedor_Despacho", loot, new Vector3(-15.3f, 0f, 32.2f), -90f,
                 new[] { new ItemStack(keycard, 1), new ItemStack(items.Circuit, 1) });
-            foreach (var p in new[] { new Vector3(-4f, 0f, 6f), new Vector3(12f, 0f, 7.5f) })
-                A.Pickup("Pickup_Chatarra", loot, p, items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), A.scrapMat, 3f, false);
-            A.Pickup("Pickup_Chatarra", loot, new Vector3(6.3f, 0f, 22.4f), items.Scrap, 3, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), A.scrapMat, 3f, false);
-            foreach (var p in new[] { new Vector3(-11f, 0f, 16.5f), new Vector3(-11f, 0f, 26.5f) })
-                A.Pickup("Pickup_CristalOptico", loot, p, crystal, 1, PrimitiveType.Capsule, new Vector3(0.12f, 0.18f, 0.12f), crystalMat, 0f, true);
+            // Botín al azar (garantizados de la Fase 4: un cristal óptico y chatarra para un señuelo)
+            S3.LootSpawner("Botin_Laboratorio", loot, LabLootPoints, LabLootTable(items, crystal),
+                new[] { new ItemStack(crystal, 1), new ItemStack(items.Scrap, 3) });
 
             var spotGo = new GameObject("PuntoInspeccion_Despacho");
             spotGo.transform.SetParent(gameplay);
@@ -127,14 +127,14 @@ namespace Nexus7.EditorTools
 
             Note(env, "RegistroProyecto", new Vector3(9.6f, 1.05f, 5.2f), new[]
             {
-                "PROYECTO ESPECTRO — Registro 14: «Los prototipos funcionan. El emisor sonoro desvía a los drones, pero los de investigación aprenden: no uses dos señuelos seguidos.»",
+                "PROYECTO ESPECTRO — Registro 14: «Los prototipos funcionan. El emisor sonoro desvía a los robots, pero los de investigación aprenden: no uses dos señuelos seguidos.»",
                 "«El pulso PEM los deja fuera de servicio unos segundos. Al reiniciarse quedan muy alerta.»",
                 "«El camuflaje óptico engaña a los sensores láser, pero no al oído: no corras.»"
             });
             Note(env, "DiarioDirector", new Vector3(-13f, 0.82f, 34.4f), new[]
             {
-                "DIARIO DEL DIRECTOR: «He reprogramado los drones de investigación para revisar los bancos de trabajo en cada ronda. Nadie debe fabricar sin autorización.»",
-                "«Guardo mi tarjeta en el armario del despacho. El dron de seguridad revisa el despacho periódicamente.»"
+                "DIARIO DEL DIRECTOR: «He reprogramado los robots de investigación para revisar los bancos de trabajo en cada ronda. Nadie debe fabricar sin autorización.»",
+                "«Guardo mi tarjeta en el armario del despacho. El robot de seguridad revisa el despacho periódicamente.»"
             });
 
             // ---------- 5. Jugador ----------
@@ -147,6 +147,7 @@ namespace Nexus7.EditorTools
             });
             var stealth = player.gameObject.AddComponent<PlayerStealth>();
             player.gameObject.AddComponent<PlayerRespawn>();
+            var health = B.GetOrAdd<Nexus7.Player.PlayerHealth>(player.gameObject);
             var crafting = player.gameObject.AddComponent<CraftingSystem>();
             A.SetObjectArray(crafting, "knownRecipes", recipes.Cast<Object>().ToArray());
 
@@ -162,7 +163,7 @@ namespace Nexus7.EditorTools
             B.SetRef(quickbar, "throwOrigin", interactor.transform);
             B.SetRef(quickbar, "trajectoryLine", traj);
 
-            // ---------- 6. Drones ----------
+            // ---------- 6. Robots: investigación (porra eléctrica) y seguridad (bate) ----------
             var enemies = new GameObject("Enemigos").transform;
             var routeR1 = A.Route("Ruta_R1_Bancos", enemies, PatrolRoute.RouteMode.Loop, new[]
             {
@@ -184,8 +185,9 @@ namespace Nexus7.EditorTools
             });
             B.SetRef(routeR2.transform.GetChild(2).GetComponent<Waypoint>(), "inspectTarget", officeSpot);
 
-            var r1 = ResearchDrone("DronInvestigacion_R1", enemies, new Vector3(-7f, 0f, 12.5f), 0f, routeR1, "Dron de investigación");
-            var r2 = ResearchDrone("DronSeguridad_R2", enemies, new Vector3(7.5f, 0f, 31.2f), 180f, routeR2, "Dron de seguridad");
+            var r1 = R.ArmedRobot("RobotInvestigacion_R1", enemies, new Vector3(-7f, 0f, 12.5f), 0f, routeR1, Nexus7.Characters.RobotStyle.Research, R.ResearchMaterials());
+            R.ResearchExtras(r1);
+            var r2 = R.ArmedRobot("RobotSeguridad_R2", enemies, new Vector3(7.5f, 0f, 31.2f), 180f, routeR2, Nexus7.Characters.RobotStyle.Security, R.SecurityMaterials());
 
             var navGo = new GameObject("NavMesh");
             navGo.transform.position = new Vector3(0f, 3f, 18f);
@@ -211,7 +213,7 @@ namespace Nexus7.EditorTools
             A.MessageZone("Aviso_Banco", zones, new Vector3(8f, 1.5f, 2.6f), new Vector3(3f, 3f, 1.2f),
                 "IA NEXUS-7: Un banco de trabajo. Aquí nadie lo revisa: es un buen sitio para fabricar tu primer dispositivo.");
             A.MessageZone("Aviso_Tanques", zones, new Vector3(-11f, 1.5f, 12.8f), new Vector3(3f, 3f, 1.2f),
-                "IA NEXUS-7: Tanques del proyecto ESPECTRO. Junto a ellos hay cristales ópticos: necesarios para el camuflaje.");
+                "IA NEXUS-7: Tanques del proyecto ESPECTRO. Los cristales ópticos que escaparon de ellos brillan por todo el laboratorio: los necesitas para el camuflaje.");
             A.MessageZone("Aviso_Almacen", zones, new Vector3(12f, 1.5f, 11f), new Vector3(4f, 3f, 1.2f),
                 "IA NEXUS-7: Almacén químico vigilado por una cámara. Un PEM la apagaría unos segundos.");
             A.MessageZone("Aviso_Salida", zones, new Vector3(7.5f, 1.5f, 29.8f), new Vector3(5f, 3f, 1.2f),
@@ -228,25 +230,30 @@ namespace Nexus7.EditorTools
             var hud = B.BuildHUD();
             A.BuildPhase2UI(hud.transform, inventory, stealth);
             BuildPhase4UI(hud.transform, quickbar, stealth);
+            S3.BuildHealthUI(hud.transform, health);
 
             var systems = new GameObject("GameSystems");
+            var director = systems.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            B.SetRef(director, "player", player);
+            B.SetRef(director, "cameraTransform", interactor.transform);
+            B.SetRef(director, "subtitles", hud.GetComponent<Nexus7.UI.SubtitleUI>());
+            B.SetShots(director, "shots", Nexus7.Cinematics.CinematicScripts.Laboratorio());
+
             var intro = systems.AddComponent<LevelIntro>();
+            A.SetBool(intro, "waitForCinematic", true);
             B.SetRef(intro, "player", player);
             B.SetRef(intro, "hud", hud);
             B.SetStrings(intro, "messages", new[]
             {
-                "IA NEXUS-7: Laboratorio de investigación del Módulo C. Abandonado desde la brecha.",
-                "IA NEXUS-7: Aquí se desarrollaba el proyecto ESPECTRO: señuelos, pulsos PEM y camuflaje óptico. Puedes fabricarlos en los bancos de trabajo.",
-                "IA NEXUS-7: Los drones de investigación revisan los bancos en su ronda. Si alguien los ha usado hace poco, darán la alarma.",
-                "IA NEXUS-7: La puerta de contención exige la tarjeta del director. Su despacho está al noroeste."
+                "IA NEXUS-7: Los robots de investigación revisan los bancos en su ronda: si alguien los ha usado hace poco, darán la alarma."
             });
-            B.SetString(intro, "hint", "[E] en un banco para fabricar · [1][2][3] elegir dispositivo · mantén [G] para apuntar y suelta para lanzar");
+            B.SetString(intro, "hint", "[E] en un banco para fabricar · [1]–[9] elegir dispositivo · mantén [G] para apuntar y suelta para lanzar");
             B.SetString(intro, "objective", "Objetivo: Consigue la tarjeta del director (despacho, noroeste) y cruza la puerta de contención (norte).");
 
             // ---------- 9. Prefabs, guardado y enlace con la Fase 3 ----------
             B.SavePrefab(w1.gameObject, "BancoTrabajo");
             B.SavePrefab(exitLaser.gameObject, "SensorLaser");
-            B.SavePrefab(r1.gameObject, "DronInvestigacion");
+            B.SavePrefab(r1.gameObject, "RobotInvestigacion");
             B.SavePrefab(player.gameObject, "Player_Fase4");
             B.SavePrefab(hud.gameObject, "HUD_Fase4");
 
@@ -278,10 +285,10 @@ namespace Nexus7.EditorTools
                 "Tarjeta de acceso del director del laboratorio. Abre la puerta de contención.", ItemCategory.Tool, 1, true, new Color(1f, 0.85f, 0.35f));
 
             d.Decoy = CreateDevice("Item_SenueloSonoro", "device_sonic_decoy", "Señuelo sonoro",
-                "Emisor de pulsos sonoros. Lánzalo: atrae a los drones durante unos segundos.",
+                "Emisor de pulsos sonoros. Lánzalo: atrae a los enemigos durante unos segundos.",
                 DeviceKind.SonicDecoy, DeviceUseMode.Throw, 1, 12f, 10f, 14f, 1.2f, new Color(1f, 0.6f, 0.15f));
             d.Emp = CreateDevice("Item_PulsoPEM", "device_emp", "Pulso PEM",
-                "Granada electromagnética. Aturde drones y apaga cámaras, barreras y láseres cercanos.",
+                "Granada electromagnética. Aturde robots y drones y apaga cámaras, barreras y láseres cercanos.",
                 DeviceKind.EmpPulse, DeviceUseMode.Throw, 2, 11f, 6f, 6f, 0f, new Color(0.3f, 0.85f, 1f));
             d.Camo = CreateDevice("Item_CamuflajeOptico", "device_optical_camo", "Camuflaje óptico",
                 "Reduce drásticamente tu visibilidad durante unos segundos. Los sensores láser no te detectan.",
@@ -294,7 +301,7 @@ namespace Nexus7.EditorTools
             {
                 CreateRecipe("Receta_SenueloSonoro", "Emisor de pulso sonoro", "Señuelo que emite pulsos de ruido durante 10 s (radio 14 m).",
                     new[] { new ItemStack(items.Scrap, 3), new ItemStack(items.Circuit, 1) }, d.Decoy, 1, 2f),
-                CreateRecipe("Receta_PulsoPEM", "Pulso PEM temporal", "Aturde 6 s a los drones en 6 m y apaga cámaras, barreras y láseres.",
+                CreateRecipe("Receta_PulsoPEM", "Pulso PEM temporal", "Aturde 6 s a los robots en 6 m y apaga cámaras, barreras y láseres.",
                     new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Circuit, 1), new ItemStack(items.Scrap, 2) }, d.Emp, 1, 3f),
                 CreateRecipe("Receta_CamuflajeOptico", "Camuflaje óptico temporal", "Visibilidad al 10 % durante 12 s. Invisible para los sensores láser.",
                     new[] { new ItemStack(items.Battery, 1), new ItemStack(d.Crystal, 1), new ItemStack(items.Circuit, 1) }, d.Camo, 1, 3.5f),
@@ -517,6 +524,25 @@ namespace Nexus7.EditorTools
             B.SetRef(bench, "inspectionPoint", point);
             B.SetRef(bench, "screenRenderer", monitor.GetComponent<Renderer>());
             return bench;
+        }
+
+        // ---------- Botín de la Fase 4 ----------
+        internal static readonly Vector3[] LabLootPoints =
+        {
+            new Vector3(-4f, 0f, 6f),   new Vector3(12f, 0f, 7.5f), new Vector3(6.3f, 0f, 22.4f), new Vector3(-11f, 0f, 16.5f), new Vector3(-11f, 0f, 26.5f),
+            new Vector3(-6f, 0f, 20f),  new Vector3(10f, 0f, 28f),  new Vector3(0f, 0f, 30f),     new Vector3(-9f, 0f, 8f),     new Vector3(2f, 0f, 13f),
+        };
+
+        internal static LootTable LabLootTable(A.ItemSet items, ItemData crystal)
+        {
+            B.EnsureFolder(Root + "/Data", "Loot");
+            string path = Root + "/Data/Loot/Tabla_Laboratorio.asset";
+            var table = AssetDatabase.LoadAssetAtPath<LootTable>(path);
+            if (table == null) { table = ScriptableObject.CreateInstance<LootTable>(); AssetDatabase.CreateAsset(table, path); }
+            table.entries = new List<LootEntry> { new LootEntry(items.Scrap, 4f, 1, 3), new LootEntry(crystal, 1f, 1, 1), new LootEntry(items.Circuit, 1f, 1, 1) };
+            EditorUtility.SetDirty(table);
+            AssetDatabase.SaveAssets();
+            return table;
         }
 
         internal static void LabTable(Transform parent, Vector3 pos)
