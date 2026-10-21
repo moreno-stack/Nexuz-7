@@ -1,0 +1,20 @@
+# Copias de entrega (zip de cada etapa): el código ya está en Assets/
+_entrega/
+*.zip
+
+# Carpetas que Unity genera (si se abre el proyecto aquí)
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+.vs/
+.idea/
