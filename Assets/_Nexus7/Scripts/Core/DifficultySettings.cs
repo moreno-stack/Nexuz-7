@@ -27,6 +27,20 @@ namespace Nexus7.Core
         public static float ScoreMultiplier => current == Difficulty.Dificil ? 1.3f : current == Difficulty.Normal ? 1.15f : 1f;
         public static string DisplayName => current == Difficulty.Dificil ? "Difícil" : current == Difficulty.Normal ? "Normal" : "Fácil";
 
+        public static string NameOf(Difficulty d) => d == Difficulty.Dificil ? "Difícil" : d == Difficulty.Normal ? "Normal" : "Fácil";
+        public static float DamageMultiplierOf(Difficulty d) => d == Difficulty.Dificil ? 2f : d == Difficulty.Normal ? 1.5f : 1f;
+        public static float ScoreMultiplierOf(Difficulty d) => d == Difficulty.Dificil ? 1.3f : d == Difficulty.Normal ? 1.15f : 1f;
+
+        /// <summary>Texto del botón del menú: nombre y multiplicador de daño («Normal ×1,5»).</summary>
+        public static string Label(Difficulty d) => $"{NameOf(d)} ×{Num(DamageMultiplierOf(d))}";
+
+        /// <summary>Línea de la pantalla de resultados: nombre y multiplicador de puntuación («Dificultad: Normal ×1,15»).</summary>
+        public static string ResultLine(Difficulty d) => $"Dificultad: {NameOf(d)} ×{Num(ScoreMultiplierOf(d))}";
+
+        /// <summary>Número con coma decimal y al menos un decimal (1 → "1,0", 1.15 → "1,15").</summary>
+        private static string Num(float v) =>
+            v.ToString("0.0#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         public static void Load()
         {

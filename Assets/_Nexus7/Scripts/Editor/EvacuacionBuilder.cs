@@ -25,6 +25,7 @@ using B = Nexus7.EditorTools.SalaInicialBuilder;     // Fase 1
 using S3 = Nexus7.EditorTools.SalaEnergiaBuilder;    // Fase 3
 using L4 = Nexus7.EditorTools.LaboratorioBuilder;    // Fase 4
 using C5 = Nexus7.EditorTools.CentroControlBuilder;  // Fase 5
+using R = Nexus7.EditorTools.RobotBuilder;           // robots armados
 
 namespace Nexus7.EditorTools
 {
@@ -142,6 +143,7 @@ namespace Nexus7.EditorTools
             var laser = L4.Laser("SensorLaser_RampaOeste", security, -13f, -11f, 25.6f, new[] { 0.45f, 1.0f }, 0.3f, 1.15f);
             var cam = S3.SecurityCam(security, new Vector3(15.5f, CatY, 36.5f), 270f);
             A.SetFloat(cam, "sweepAngle", 50f);
+            B.SetString(cam, "alarmMessage", "¡ALARMA! Una cámara de seguridad te ha detectado. Los robots acuden a tu posición.");
             var sector = C5.Sector("Sector_Pasarela", security, "Sector Pasarela", new MonoBehaviour[] { laser, cam });
 
             // Cables dañados a pie de la rampa este (ruta alternativa: sin láser, pero con descargas intermitentes)
@@ -166,8 +168,11 @@ namespace Nexus7.EditorTools
             // ---------- 4. Botín ----------
             A.Container("Contenedor_Cabina", loot, new Vector3(-21.2f, 0f, 15.4f), 270f, new[] { new ItemStack(items.Battery, 1), new ItemStack(items.Scrap, 2) });
             A.Container("Contenedor_Ventanal", loot, new Vector3(20.6f, 0f, 5f), 90f, new[] { new ItemStack(items.Circuit, 1), new ItemStack(p4.Crystal, 1) });
-            A.Pickup("Pickup_BateriaPasarela", loot, new Vector3(8f, 0f, 35.5f), items.Battery, 1, PrimitiveType.Cylinder, new Vector3(0.18f, 0.14f, 0.18f), A.batteryMat, 0f, true);
-            A.Pickup("Pickup_Chatarra", loot, new Vector3(-6.5f, 0f, 4f), items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), A.scrapMat, 3f, false);
+            // Botín al azar (garantizado de la Fase 6: una batería para la celda de ignición)
+            S3.LootSpawner("Botin_Hangar", loot, HangarLootPoints, HangarLootTable(items), new[] { new ItemStack(items.Battery, 1) });
+
+            // Banco de trabajo (rincón suroeste, junto a la entrada)
+            L4.WorkbenchAt("BancoTrabajo_Hangar", gameplay, new Vector3(-17f, 0f, 3f), 180f);
 
             // ---------- 5. Jugador ----------
             var (player, interactor) = B.BuildPlayer();
@@ -200,7 +205,7 @@ namespace Nexus7.EditorTools
             var cam3d = interactor.GetComponent<Camera>();
             if (cam3d != null) cam3d.farClipPlane = 900f;                           // para ver el planeta y las estrellas
 
-            // ---------- 6. Drones ----------
+            // ---------- 6. Robots: pareja de élite (hacha) y seguridad en la pasarela (bate) ----------
             var enemies = new GameObject("Enemigos").transform;
             var eliteRoute = A.Route("Ruta_Elite_Lanzadera", enemies, PatrolRoute.RouteMode.Loop, new[]
             {
@@ -209,8 +214,8 @@ namespace Nexus7.EditorTools
                 new A.WP(new Vector3(9f, 0f, 28f),  1.5f, true, 180f),
                 new A.WP(new Vector3(9f, 0f, 8f),   1.5f, true, 270f),
             });
-            var e1 = C5.EliteDrone("DronElite_1", enemies, new Vector3(-9f, 0f, 8f), 0f, eliteRoute, 0);
-            var e2 = C5.EliteDrone("DronElite_2", enemies, new Vector3(9f, 0f, 28f), 180f, eliteRoute, 2);
+            var e1 = C5.EliteRobot("RobotElite_1", enemies, new Vector3(-9f, 0f, 8f), 0f, eliteRoute, 0);
+            var e2 = C5.EliteRobot("RobotElite_2", enemies, new Vector3(9f, 0f, 28f), 180f, eliteRoute, 2);
             var squad = new GameObject("Escuadron_Elite").AddComponent<DroneSquad>();
             squad.transform.SetParent(enemies);
             A.SetObjectArray(squad, "members", new Object[] { e1, e2 });
@@ -220,7 +225,7 @@ namespace Nexus7.EditorTools
                 new A.WP(new Vector3(-14f, CatY, 35.5f), 3f, true, 180f),   // vigila la rampa oeste
                 new A.WP(new Vector3(14f, CatY, 35.5f),  3f, true, 180f),   // vigila la rampa este
             });
-            var dCat = A.Drone("DronSeguridad_Pasarela", enemies, new Vector3(-14f, CatY, 35.5f), 90f, catRoute);
+            var dCat = R.ArmedRobot("RobotSeguridad_Pasarela", enemies, new Vector3(-14f, CatY, 35.5f), 90f, catRoute, Nexus7.Characters.RobotStyle.Security, R.SecurityMaterials());
 
             var navGo = new GameObject("NavMesh");
             navGo.transform.position = new Vector3(0f, 7f, 18f);
@@ -288,6 +293,37 @@ namespace Nexus7.EditorTools
             B.SetRef(ending, "countdown", countdown);
             B.SetRef(ending, "cameraShake", shake);
 
+            // ---------- Cinemáticas: llegada (autodestrucción) y finales (despegue / derrota) ----------
+            var subs = hud.GetComponent<Nexus7.UI.SubtitleUI>();
+            var arrival = systems.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            B.SetRef(arrival, "player", player);
+            B.SetRef(arrival, "cameraTransform", interactor.transform);
+            B.SetRef(arrival, "subtitles", subs);
+            B.SetShots(arrival, "shots", Nexus7.Cinematics.CinematicScripts.Autodestruccion());
+
+            var (podFx, blastFx, defeatBlastFx) = BuildEndingEffects(fx);
+            var escapeGo = new GameObject("CinematicaDespegue");
+            escapeGo.transform.SetParent(systems.transform);
+            var escapeDir = escapeGo.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            var defeatGo = new GameObject("CinematicaDerrota");
+            defeatGo.transform.SetParent(systems.transform);
+            var defeatDir = defeatGo.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            foreach (var d in new[] { escapeDir, defeatDir })
+            {
+                A.SetBool(d, "playOnStart", false);
+                A.SetBool(d, "returnToPlayer", false);   // la cámara se queda en el plano final; luego fundido a los resultados
+                B.SetRef(d, "player", player);
+                B.SetRef(d, "cameraTransform", interactor.transform);
+                B.SetRef(d, "subtitles", subs);
+            }
+            B.SetShots(escapeDir, "shots", Nexus7.Cinematics.CinematicScripts.Despegue());
+            ShotActivations(escapeDir, 0, podFx);
+            ShotActivations(escapeDir, 1, blastFx);
+            B.SetShots(defeatDir, "shots", Nexus7.Cinematics.CinematicScripts.Derrota());
+            ShotActivations(defeatDir, 0, defeatBlastFx);
+            B.SetRef(ending, "escapeCinematic", escapeDir);
+            B.SetRef(ending, "defeatCinematic", defeatDir);
+
             var tremor = systems.AddComponent<ShipTremor>();
             B.SetRef(tremor, "countdown", countdown);
             B.SetRef(tremor, "cameraShake", shake);
@@ -297,13 +333,12 @@ namespace Nexus7.EditorTools
             CreateEventSystem();
 
             var intro = systems.AddComponent<LevelIntro>();
+            A.SetBool(intro, "waitForCinematic", true);
             B.SetRef(intro, "player", player);
             B.SetRef(intro, "hud", hud);
             B.SetStrings(intro, "messages", new[]
             {
-                "IA NEXUS-7: Hangar de evacuación. La autodestrucción está en marcha: tienes cinco minutos.",
-                "IA NEXUS-7: Solo la cápsula B funciona. Libera sus abrazaderas desde la cabina oeste y carga una celda de ignición en la pasarela.",
-                "IA NEXUS-7: Los drones de élite siguen activos. El humo te oculta. Todo lo que has hecho en la nave contará en tu evaluación final."
+                "IA NEXUS-7: Todo lo que has hecho en la nave contará en tu evaluación final."
             });
             B.SetString(intro, "hint", "[E] terminales y consolas · Secuencia: 2 pasos · Arriba a la derecha: cuenta atrás y estado de la cápsula B");
             B.SetString(intro, "objective", "Objetivo: Completa la secuencia de lanzamiento y embarca en la cápsula B antes de la autodestrucción.");
@@ -313,7 +348,7 @@ namespace Nexus7.EditorTools
             B.SavePrefab(hud.gameObject, "HUD_Fase6");
             EditorSceneManager.SaveScene(scene, ScenePath);
 
-            if (!System.IO.File.Exists(MenuScenePath)) BuildMainMenuScene();
+            BuildMainMenuScene();   // siempre: así el menú recibe el selector de dificultad
             ConfigureBuildSettings();
             ConnectPhase5();
             if (EditorSceneManager.GetActiveScene().path != ScenePath) EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
@@ -388,14 +423,33 @@ namespace Nexus7.EditorTools
                 "La nave se ha vuelto contra ti. Sigilo, ingenio... y una cápsula de escape.";
             var newGame = UIButton("BotonNuevaPartida", canvasGo.transform, new Vector2(-710f, -60f), new Vector2(340f, 70f), "[Intro]  Nueva partida", new Color(0.1f, 0.45f, 0.6f, 0.95f));
             var quit = UIButton("BotonSalir", canvasGo.transform, new Vector2(-710f, -150f), new Vector2(340f, 70f), "Salir", new Color(0.35f, 0.12f, 0.12f, 0.95f));
-            var best = B.UIText("Record", canvasGo.transform, c, new Vector2(-380f, -240f), new Vector2(1000f, 40f), 26f, TextAlignmentOptions.Left, new Color(1f, 0.85f, 0.35f));
+            var best = B.UIText("Record", canvasGo.transform, c, new Vector2(-380f, -350f), new Vector2(1000f, 40f), 26f, TextAlignmentOptions.Left, new Color(1f, 0.85f, 0.35f));
             B.UIText("Controles", canvasGo.transform, new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(1800f, 60f), 20f, TextAlignmentOptions.Center, new Color(0.6f, 0.65f, 0.7f)).text =
-                "[WASD] moverse · [Shift] correr · [Ctrl/C] agacharse · [E] interactuar · [Tab/I] inventario · [1-3] elegir dispositivo · [G] usar/lanzar";
+                "[WASD] moverse · [Shift] correr · [Ctrl/C] agacharse · [Espacio] saltar · [V] cámara · [E] interactuar · [Tab/I] inventario · [1-9] elegir objeto · [G] usar/lanzar";
+
+            // Selector de dificultad (3 botones; también con [←][→])
+            B.UIText("TituloDificultad", canvasGo.transform, c, new Vector2(-380f, -195f), new Vector2(1000f, 36f), 24f, TextAlignmentOptions.Left, new Color(0.6f, 0.9f, 1f)).text = "<b>DIFICULTAD</b>";
+            var diffButtons = new Object[3];
+            var diffLabels = new Object[3];
+            var diffColors = new[] { new Color(0.12f, 0.4f, 0.25f, 0.95f), new Color(0.45f, 0.35f, 0.08f, 0.95f), new Color(0.45f, 0.1f, 0.08f, 0.95f) };
+            for (int i = 0; i < 3; i++)
+            {
+                var b = UIButton("BotonDificultad_" + i, canvasGo.transform, new Vector2(-790f + i * 180f, -250f), new Vector2(170f, 56f),
+                                 Nexus7.Core.DifficultySettings.Label((Nexus7.Core.Difficulty)i), diffColors[i]);
+                diffButtons[i] = b;
+                var lbl = b.GetComponentInChildren<TextMeshProUGUI>();
+                if (lbl != null) { lbl.enableWordWrapping = false; lbl.enableAutoSizing = true; lbl.fontSizeMax = 22f; lbl.fontSizeMin = 14f; }
+                diffLabels[i] = lbl;
+            }
+            var diffHint = B.UIText("PistaDificultad", canvasGo.transform, c, new Vector2(-380f, -300f), new Vector2(1000f, 34f), 20f, TextAlignmentOptions.Left, new Color(0.75f, 0.8f, 0.85f));
 
             var menu = canvasGo.AddComponent<UI.MainMenuUI>();
             B.SetRef(menu, "newGameButton", newGame);
             B.SetRef(menu, "quitButton", quit);
             B.SetRef(menu, "bestScoreText", best);
+            A.SetObjectArray(menu, "difficultyButtons", diffButtons);
+            A.SetObjectArray(menu, "difficultyLabels", diffLabels);
+            B.SetRef(menu, "difficultyHint", diffHint);
             CreateEventSystem();
 
             EditorSceneManager.SaveScene(scene, MenuScenePath);
@@ -844,6 +898,78 @@ namespace Nexus7.EditorTools
             panel.gameObject.SetActive(false);
         }
 
+        // ---------- Botín de la Fase 6 ----------
+        internal static readonly Vector3[] HangarLootPoints =
+        {
+            new Vector3(-6.5f, 0f, 4f), new Vector3(8f, 0f, 3f),   new Vector3(-19f, 0f, 10f), new Vector3(19f, 0f, 12f), new Vector3(-18f, 0f, 27f),
+            new Vector3(17f, 0f, 30f),  new Vector3(-5f, 0f, 30f), new Vector3(5f, 0f, 30f),   new Vector3(-5f, CatY, 36.4f), new Vector3(5f, CatY, 36.4f),
+        };
+
+        private static LootTable HangarLootTable(A.ItemSet items)
+        {
+            B.EnsureFolder(Root + "/Data", "Loot");
+            string path = Root + "/Data/Loot/Tabla_Hangar.asset";
+            var table = AssetDatabase.LoadAssetAtPath<LootTable>(path);
+            if (table == null) { table = ScriptableObject.CreateInstance<LootTable>(); AssetDatabase.CreateAsset(table, path); }
+            table.entries = new List<LootEntry> { new LootEntry(items.Scrap, 4f, 1, 3), new LootEntry(items.Circuit, 1f, 1, 1) };
+            EditorUtility.SetDirty(table);
+            AssetDatabase.SaveAssets();
+            return table;
+        }
+
+        /// <summary>Cápsula B en vuelo (fuera del muro norte) y esfera de la explosión del reactor; ambas empiezan inactivas.</summary>
+        private static (GameObject pod, GameObject blast, GameObject defeatBlast) BuildEndingEffects(Transform parent)
+        {
+            var pod = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            pod.name = "CapsulaB_Vuelo";
+            Object.DestroyImmediate(pod.GetComponent<Collider>());
+            pod.transform.SetParent(parent);
+            pod.transform.SetPositionAndRotation(new Vector3(0f, 5.4f, 41.5f), Quaternion.Euler(90f, 0f, 0f));
+            pod.transform.localScale = new Vector3(2.2f, 1.8f, 2.2f);
+            pod.GetComponent<Renderer>().sharedMaterial = podMat;
+            var drift = pod.AddComponent<DebrisDrift>();
+            A.SetVector3(drift, "velocity", new Vector3(0f, 0.3f, 3f));   // lenta: se queda en el encuadre del plano 1
+            A.SetVector3(drift, "spin", new Vector3(0f, 25f, 0f));
+            A.PointLight("Propulsor", pod.transform, new Vector3(0f, -0.6f, 0f), new Color(1f, 0.55f, 0.15f), 8f, 4f, false);
+            pod.SetActive(false);
+
+            var blast = Blast("ExplosionReactor", parent, Nexus7.Cinematics.CinematicScripts.DespegueBlastCenter, Nexus7.Cinematics.CinematicScripts.DespegueBlastScale, 200f);
+            var defeatBlast = Blast("ExplosionHangar", parent, Nexus7.Cinematics.CinematicScripts.DerrotaBlastCenter, Nexus7.Cinematics.CinematicScripts.DerrotaBlastScale, 60f);
+            return (pod, blast, defeatBlast);
+        }
+
+        /// <summary>Esfera emisiva que crece hasta 'scale' (diámetro) con un destello; empieza inactiva y sin collider.</summary>
+        private static GameObject Blast(string name, Transform parent, Vector3 center, float scale, float lightRange)
+        {
+            var blast = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            blast.name = name;
+            Object.DestroyImmediate(blast.GetComponent<Collider>());
+            blast.transform.SetParent(parent);
+            blast.transform.position = center;
+            blast.GetComponent<Renderer>().sharedMaterial = B.CreateMat("M6_Explosion", new Color(1f, 0.55f, 0.15f), new Color(1f, 0.45f, 0.1f) * 6f, 0f, 0f);
+            blast.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            var flash = A.PointLight("DestelloExplosion", blast.transform, Vector3.zero, new Color(1f, 0.6f, 0.2f), lightRange, 8f, false);
+            var grow = blast.AddComponent<GrowAndFade>();
+            A.SetFloat(grow, "from", 1f);
+            A.SetFloat(grow, "to", scale);
+            A.SetFloat(grow, "duration", 4f);
+            B.SetRef(grow, "flash", flash);
+            blast.SetActive(false);
+            return blast;
+        }
+
+        /// <summary>Objetos que se activan al empezar el plano 'shot' de una cinemática.</summary>
+        private static void ShotActivations(Object director, int shot, params GameObject[] objs)
+        {
+            var so = new SerializedObject(director);
+            var p = so.FindProperty("shots");
+            if (p == null || shot >= p.arraySize) { Debug.LogWarning("[Nexus-7] Plano " + shot + " no encontrado"); return; }
+            var arr = p.GetArrayElementAtIndex(shot).FindPropertyRelative("activateOnStart");
+            arr.arraySize = objs.Length;
+            for (int i = 0; i < objs.Length; i++) arr.GetArrayElementAtIndex(i).objectReferenceValue = objs[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static Button UIButton(string name, Transform parent, Vector2 pos, Vector2 size, string label, Color color)
         {
             var c = new Vector2(0.5f, 0.5f);
@@ -852,6 +978,7 @@ namespace Nexus7.EditorTools
             B.Anchor(img.rectTransform, c, c, pos, size);
             var btn = img.gameObject.AddComponent<Button>();
             btn.targetGraphic = img;
+            btn.navigation = new Navigation { mode = Navigation.Mode.None };   // sin navegación: [Intro] no puede "pulsar" Salir por accidente
             B.UIText("Texto", img.transform, c, Vector2.zero, size, 28f, TextAlignmentOptions.Center, Color.white).text = label;
             return btn;
         }

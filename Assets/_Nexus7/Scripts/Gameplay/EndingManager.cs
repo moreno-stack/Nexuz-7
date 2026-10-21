@@ -25,15 +25,18 @@ namespace Nexus7.Gameplay
 
         [SerializeField] private EvacuationCountdown countdown;
         [SerializeField] private CameraShake cameraShake;
+        [Tooltip("Cinemáticas de los finales (CinematicDirector con 'Play On Start' desactivado). Opcionales.")]
+        [SerializeField] private Nexus7.Cinematics.CinematicDirector escapeCinematic;
+        [SerializeField] private Nexus7.Cinematics.CinematicDirector defeatCinematic;
 
         [Header("Textos de los finales")]
         [SerializeField, TextArea(3, 6)] private string optimalText =
             "La cápsula se separa del Nexus-7 en silencio. Ningún sistema registró tu huida. Detrás de ti, la nave se desintegra en una flor de luz blanca... y nadie sabrá jamás que hubo un superviviente.";
         [SerializeField, TextArea(3, 6)] private string tacticalText =
-            "Con la seguridad saturada de hackeos y pulsos PEM, la cápsula se abre paso entre los drones que aún golpean el casco. El Nexus-7 estalla a tu espalda. Escapaste a la fuerza... pero escapaste.";
+            "Con la seguridad saturada de hackeos y pulsos PEM, la cápsula se abre paso entre los restos mientras los robots aún golpean el casco. El Nexus-7 estalla a tu espalda. Escapaste a la fuerza... pero escapaste.";
         [Tooltip("Final táctico cuando apenas se usaron hackeos o dispositivos (se escapó a pura carrera).")]
         [SerializeField, TextArea(3, 6)] private string tacticalRunText =
-            "Con las alarmas aullando y los drones pisándote los talones, te lanzas dentro de la cápsula en el último instante. El Nexus-7 estalla a tu espalda. No fue limpio... pero escapaste.";
+            "Con las alarmas aullando y los robots pisándote los talones, te lanzas dentro de la cápsula en el último instante. El Nexus-7 estalla a tu espalda. No fue limpio... pero escapaste.";
         [SerializeField, TextArea(3, 6)] private string criticalTimeText =
             "La cuenta atrás llega a cero. El reactor del Nexus-7 se libera en un destello cegador. La cápsula nunca llegó a separarse.";
         [SerializeField, TextArea(3, 6)] private string criticalDeathText =
@@ -102,6 +105,22 @@ namespace Nexus7.Gameplay
             });
         }
 
+        /// <summary>Reproduce la cinemática de un final (despegue o derrota) y espera a que termine o se salte (máx. 20 s).</summary>
+        private IEnumerator PlayEndingCinematic(Nexus7.Cinematics.CinematicDirector director, HUDManager hud)
+        {
+            if (director == null || director.Shots.Count == 0) yield break;
+            if (hud != null) hud.SetFade(0f);
+            director.Play();
+            float waited = 0f;
+            yield return null;
+            while (Nexus7.Cinematics.CinematicDirector.IsPlaying && waited < 20f)
+            {
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            director.End();   // por si se agotó el tiempo máximo
+        }
+
         private IEnumerator EndRoutine(bool escaped, bool timeOut)
         {
             if (countdown != null) countdown.Stop();
@@ -133,12 +152,14 @@ namespace Nexus7.Gameplay
                 if (hud != null) hud.ShowMessageNow("IA NEXUS-7: Cápsula sellada. Ignición en 3... 2... 1... ¡Lanzamiento!", 2.5f);
                 if (cameraShake != null) cameraShake.AddTrauma(1f);
                 yield return new WaitForSeconds(2.5f);
+                yield return PlayEndingCinematic(escapeCinematic, hud);
             }
             else
             {
                 if (cameraShake != null) cameraShake.AddTrauma(1f);
                 if (hud != null) hud.ShowMessageNow(timeOut ? "IA NEXUS-7: Tiempo agotado. Fallo de contención del reactor." : "IA NEXUS-7: Constantes vitales perdidas...", 2f);
                 yield return new WaitForSeconds(1.5f);
+                yield return PlayEndingCinematic(defeatCinematic, hud);
             }
             if (hud != null) yield return hud.Fade(0f, 1f, escaped ? 2f : 0.6f);
 

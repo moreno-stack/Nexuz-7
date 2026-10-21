@@ -28,6 +28,8 @@ namespace Nexus7.Gameplay
         [SerializeField] private GameObject[] enableOnWarning;
         [Tooltip("La autodestrucción pone la nave en Alerta Amarilla al empezar (si estaba en Normal).")]
         [SerializeField] private bool raiseAlertToYellow = true;
+        [Tooltip("La cuenta atrás se detiene mientras se reproduce una cinemática (la de llegada no gasta tiempo).")]
+        [SerializeField] private bool pauseDuringCinematics = true;
 
         public float Remaining { get; private set; }
         public float Duration => duration;
@@ -38,12 +40,12 @@ namespace Nexus7.Gameplay
 
         private readonly int[] announcements = { 240, 180, 120, 90, 60, 30, 10 };
         private int nextAnnouncement;
+        private bool yellowRaised;
 
         private void Start()
         {
             Remaining = duration;
             Running = true;
-            if (raiseAlertToYellow && AlertSystem.Level == AlertLevel.Normal) AlertSystem.ForceLevel(AlertLevel.Yellow);
             SetActive(enableOnWarning, false);
             SetActive(enableOnCritical, false);
             while (nextAnnouncement < announcements.Length && announcements[nextAnnouncement] >= duration) nextAnnouncement++;
@@ -51,9 +53,19 @@ namespace Nexus7.Gameplay
 
         public void Stop() => Running = false;
 
+        /// <summary>¿Avanza la cuenta este frame?</summary>
+        public static bool ShouldTick(bool running, bool pauseDuringCinematics, bool cinematicPlaying) =>
+            running && !(pauseDuringCinematics && cinematicPlaying);
+
         private void Update()
         {
-            if (!Running) return;
+            if (!ShouldTick(Running, pauseDuringCinematics, Nexus7.Cinematics.CinematicDirector.IsPlaying)) return;
+            // La alerta amarilla se activa al empezar a correr la cuenta (no durante la cinemática de llegada)
+            if (!yellowRaised)
+            {
+                yellowRaised = true;
+                if (raiseAlertToYellow && AlertSystem.Level == AlertLevel.Normal) AlertSystem.ForceLevel(AlertLevel.Yellow);
+            }
             Remaining = Mathf.Max(0f, Remaining - Time.deltaTime);
 
             // Vibración continua creciente

@@ -28,6 +28,8 @@ namespace Nexus7.Cinematics
         [SerializeField] private SubtitleUI subtitles;
         [SerializeField] private float skipHoldSeconds = 1f;
         [SerializeField] private float returnBlendSeconds = 0.8f;
+        [Tooltip("Al terminar, devolver la cámara al jugador. Desactivado en las cinemáticas de los finales (la cámara se queda fuera).")]
+        [SerializeField] private bool returnToPlayer = true;
 
         private bool playing, ended;
         private Transform cameraParent;
@@ -100,13 +102,14 @@ namespace Nexus7.Cinematics
             IsPlaying = false;
             EnemyPatrol.Paused = false;
             if (player != null) player.RemoveInputLock(this);
-            if (cameraTransform != null && cameraParent != null)
+            if (returnToPlayer && cameraTransform != null && cameraParent != null)
             {
                 cameraTransform.SetParent(cameraParent, false);
                 cameraTransform.localPosition = cameraLocalPos;
                 cameraTransform.localRotation = cameraLocalRot;
             }
-            if (shake != null) shake.enabled = shakeWasEnabled;
+            // Si la cámara se queda fuera (finales), la vibración sigue apagada: su posición local ya no es la del jugador.
+            if (shake != null && returnToPlayer) shake.enabled = shakeWasEnabled;
             if (subtitles != null) { subtitles.Hide(); subtitles.SetLetterbox(false); subtitles.SetSkipProgress(0f); }
             Finished?.Invoke();
         }
@@ -160,7 +163,7 @@ namespace Nexus7.Cinematics
             }
 
             // Vuelta suave a la cámara del jugador
-            if (!ended && cameraTransform != null && cameraParent != null && returnBlendSeconds > 0f)
+            if (returnToPlayer && !ended && cameraTransform != null && cameraParent != null && returnBlendSeconds > 0f)
             {
                 Vector3 fromP = cameraTransform.position; Quaternion fromR = cameraTransform.rotation;
                 for (float b = 0f; b < returnBlendSeconds && !ended; b += Time.unscaledDeltaTime)

@@ -82,7 +82,8 @@ namespace Nexus7.UI
             int min = Mathf.FloorToInt(i.totalSeconds / 60f), sec = Mathf.FloorToInt(i.totalSeconds % 60f);
             const string col = "<pos=52%>";
             statsText.text =
-                "<b>ESTADÍSTICAS DE LA PARTIDA</b>\n\n" +
+                "<b>ESTADÍSTICAS DE LA PARTIDA</b>\n" +
+                $"<color=#FFD45A>{DifficultySettings.ResultLine(DifficultySettings.Current)}</color>\n\n" +
                 $"Tiempo total: <b>{min:00}:{sec:00}</b>{col}Cuenta atrás sobrante: <b>{i.evacuationRemaining:0} s</b>\n" +
                 $"Detecciones: <b>{i.detections}</b>{col}Alarmas: <b>{i.alarms}</b>\n" +
                 $"Alertas rojas: <b>{i.redAlerts}</b>{col}Capturas: <b>{i.captures}</b>\n" +

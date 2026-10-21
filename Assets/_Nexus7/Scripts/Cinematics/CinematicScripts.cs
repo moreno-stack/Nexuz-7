@@ -103,5 +103,54 @@ namespace Nexus7.Cinematics
                      new SubtitleLine("Tú", "Puente de mando. Ya casi estoy.", 4.0f, 1.8f)),
             };
         }
+
+        /// <summary>Fase 6 — «Autodestrucción» (19 s): el hangar, la pareja de élite y las cápsulas A, B y C.</summary>
+        public static List<CinematicShot> Autodestruccion()
+        {
+            return new List<CinematicShot>
+            {
+                Shot(new Vector3(0f, 6f, 2f), new Vector3(0f, 7f, 8f), new Vector3(0f, 3f, 18f), new Vector3(0f, 3f, 22f), 7f, 0.1f,
+                     new SubtitleLine("IA NEXUS-7", "Hangar de evacuación. Autodestrucción activada: tendrás cinco minutos para salir.", 0.3f, 3.2f),
+                     new SubtitleLine("IA NEXUS-7", "La cápsula A está destruida y la C tiene las abrazaderas fundidas.", 3.8f, 3.0f)),
+                Shot(new Vector3(-7.5f, 1.8f, 10.5f), new Vector3(-8f, 1.6f, 9.8f), new Vector3(-9f, 1.5f, 8f), new Vector3(-9f, 1.5f, 8f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Los robots de élite vigilan la lanzadera. El humo te ocultará.", 0.2f, 3.2f),
+                     new SubtitleLine("Tú", "Cinco minutos. Ni uno más.", 3.7f, 2.0f)),
+                Shot(new Vector3(0f, 6.5f, 30f), new Vector3(0f, 6f, 33f), new Vector3(0f, 5.4f, 38f), new Vector3(0f, 5.4f, 38f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "La cápsula B es tu única salida: libera las abrazaderas y carga la celda de ignición.", 0.2f, 3.6f),
+                     new SubtitleLine("Tú", "Vamos a casa.", 4.0f, 1.6f)),
+            };
+        }
+
+        /// <summary>Explosión del reactor en cada final: centro y escala final de la esfera (diámetro).</summary>
+        /// La cámara siempre queda fuera de la esfera (el material solo se ve por fuera).
+        public static readonly Vector3 DespegueBlastCenter = new Vector3(0f, 7f, 20f);
+        public const float DespegueBlastScale = 100f;   // radio 50: la cámara del plano 2 está a 63–71 m
+        public static readonly Vector3 DerrotaBlastCenter = new Vector3(0f, 6f, 34f);
+        public const float DerrotaBlastScale = 28f;     // radio 14 en la pasarela: la cámara está a 24–28 m
+
+        /// <summary>Final — «Despegue» (14 s): exterior, la cápsula se separa y la nave explota.</summary>
+        public static List<CinematicShot> Despegue()
+        {
+            return new List<CinematicShot>
+            {
+                Shot(new Vector3(14f, 9f, 62f), new Vector3(10f, 8f, 70f), new Vector3(0f, 6f, 44f), new Vector3(0f, 6f, 60f), 6f, 0f,
+                     new SubtitleLine("IA NEXUS-7", "Cápsula B separada del Nexus-7. Rumbo a la estación de rescate.", 0.3f, 3.0f),
+                     new SubtitleLine("Tú", "Adiós, Nexus-7.", 3.6f, 2.0f)),
+                Shot(new Vector3(30f, 14f, 75f), new Vector3(34f, 16f, 82f), new Vector3(0f, 7f, 25f), new Vector3(0f, 7f, 25f), 8f, 0.3f,
+                     new SubtitleLine("IA NEXUS-7", "Detonación del reactor confirmada. La nave ya no existe.", 1.0f, 3.2f),
+                     new SubtitleLine("IA NEXUS-7", "Has sobrevivido, tripulante.", 4.6f, 2.6f)),
+            };
+        }
+
+        /// <summary>Final — «Derrota» (7 s): la nave se desintegra contigo dentro.</summary>
+        public static List<CinematicShot> Derrota()
+        {
+            return new List<CinematicShot>
+            {
+                Shot(new Vector3(0f, 8f, 6f), new Vector3(0f, 9f, 10f), new Vector3(0f, 4f, 30f), new Vector3(0f, 4f, 30f), 7f, 0.4f,
+                     new SubtitleLine("IA NEXUS-7", "Fallo de contención del reactor...", 0.3f, 2.4f),
+                     new SubtitleLine("Tú", "No... todavía no...", 3.0f, 2.0f)),
+            };
+        }
     }
 }

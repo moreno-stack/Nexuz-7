@@ -45,6 +45,7 @@ namespace Nexus7.Environment
                 flashLight.intensity = flash;
             }
             if (countdown != null && !countdown.Running) return;
+            if (Nexus7.Cinematics.CinematicDirector.IsPlaying) return;   // sin temblores ni mensajes durante una cinemática
 
             timer -= Time.deltaTime;
             if (timer > 0f) return;
