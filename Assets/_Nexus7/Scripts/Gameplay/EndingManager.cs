@@ -28,6 +28,8 @@ namespace Nexus7.Gameplay
         [Tooltip("Cinemáticas de los finales (CinematicDirector con 'Play On Start' desactivado). Opcionales.")]
         [SerializeField] private Nexus7.Cinematics.CinematicDirector escapeCinematic;
         [SerializeField] private Nexus7.Cinematics.CinematicDirector defeatCinematic;
+        [Tooltip("Derrota por quedarse sin integridad (con tiempo de sobra). Si falta, se usa la de tiempo agotado.")]
+        [SerializeField] private Nexus7.Cinematics.CinematicDirector deathCinematic;
 
         [Header("Textos de los finales")]
         [SerializeField, TextArea(3, 6)] private string optimalText =
@@ -43,11 +45,15 @@ namespace Nexus7.Gameplay
             "Tus sistemas vitales fallan a pocos metros de la cápsula. La nave se lleva consigo a su último tripulante.";
 
         private bool ended;
+        /// <summary>Ya empezó un final (escape o derrota): el HUD de juego deja de mostrarse.</summary>
+        public static bool EndingStarted { get; private set; }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => EndingStarted = false;
 
         public bool HasEnded => ended;
 
         private void Awake() => Instance = this;
-        private void OnDestroy() { if (Instance == this) Instance = null; }
+        private void OnDestroy() { if (Instance == this) Instance = null; EndingStarted = false; }
         private void OnEnable() => PlayerHealth.PlayerDied += OnPlayerDied;
         private void OnDisable() => PlayerHealth.PlayerDied -= OnPlayerDied;
 
@@ -58,6 +64,8 @@ namespace Nexus7.Gameplay
         {
             if (ended) return;
             ended = true;
+            EndingStarted = true;
+            EndingStarted = true;
             StartCoroutine(EndRoutine(true, false));
         }
 
@@ -159,7 +167,7 @@ namespace Nexus7.Gameplay
                 if (cameraShake != null) cameraShake.AddTrauma(1f);
                 if (hud != null) hud.ShowMessageNow(timeOut ? "IA NEXUS-7: Tiempo agotado. Fallo de contención del reactor." : "IA NEXUS-7: Constantes vitales perdidas...", 2f);
                 yield return new WaitForSeconds(1.5f);
-                yield return PlayEndingCinematic(defeatCinematic, hud);
+                yield return PlayEndingCinematic(!timeOut && deathCinematic != null ? deathCinematic : defeatCinematic, hud);
             }
             if (hud != null) yield return hud.Fade(0f, 1f, escaped ? 2f : 0.6f);
 

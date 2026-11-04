@@ -152,5 +152,16 @@ namespace Nexus7.Cinematics
                      new SubtitleLine("Tú", "No... todavía no...", 3.0f, 2.0f)),
             };
         }
+
+        /// <summary>Final — «Derrota» por quedarse sin integridad con tiempo de sobra (7 s, mismo plano que Derrota).</summary>
+        public static List<CinematicShot> DerrotaMuerte()
+        {
+            return new List<CinematicShot>
+            {
+                Shot(new Vector3(0f, 8f, 6f), new Vector3(0f, 9f, 10f), new Vector3(0f, 4f, 30f), new Vector3(0f, 4f, 30f), 7f, 0.4f,
+                     new SubtitleLine("IA NEXUS-7", "Constantes vitales perdidas...", 0.3f, 2.4f),
+                     new SubtitleLine("Tú", "Lo siento... no lo he conseguido.", 3.0f, 2.4f)),
+            };
+        }
     }
 }
