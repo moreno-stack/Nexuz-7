@@ -9,10 +9,10 @@ Juego de **sigilo en primera o tercera persona** hecho en **Unity (C#)**. Despie
 ```
 Assets/_Nexus7/Scripts/   ← todo el código del juego (C#)
 docs/guias/fases/         ← guías de las 6 fases originales
-Tests/                    ← pruebas automáticas (440 comprobaciones, sin Unity)
-docs/guias/mejoras/       ← guías de las mejoras (etapas 0 a 7)
+Tests/                    ← pruebas automáticas (492 comprobaciones, sin Unity)
+docs/guias/mejoras/       ← guías de las mejoras (etapas 0 a 8)
 docs/superpowers/         ← diseño (specs) y planes de implementación
-docs/media/               ← vídeo de la maqueta
+docs/media/               ← vídeo de la maqueta y capturas
 ```
 
 ### Código (`Assets/_Nexus7/Scripts`)
@@ -73,10 +73,18 @@ docs/media/               ← vídeo de la maqueta
 
 Dificultad (menú principal): **Fácil ×1,0 · Normal ×1,5 · Difícil ×2,0** de daño.
 
+## Menú y pantalla final
+
+![Menú principal](docs/media/etapa8_menu.jpg)
+
+![Pantalla final](docs/media/etapa8_final_victoria.jpg)
+
+Capturas de previsualización generadas desde el código del proyecto (en Unity la luz y los brillos se ven mejor). Detalles en [`docs/guias/mejoras/GUIA_MEJORAS_ETAPA8.md`](docs/guias/mejoras/GUIA_MEJORAS_ETAPA8.md).
+
 ## Pruebas
 
 ```bash
 bash Tests/run_all.sh
 ```
 
-Compila todo el código, incluidos los constructores de escena, y ejecuta las 440 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).
+Compila todo el código, incluidos los constructores de escena, y ejecuta las 492 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).
