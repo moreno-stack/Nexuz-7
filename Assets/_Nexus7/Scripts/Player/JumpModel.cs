@@ -56,6 +56,10 @@ namespace Nexus7.Player
             return true;
         }
 
-        public float LandingNoiseRadius(float fallHeight) => fallHeight < 0.3f ? 0f : fallHeight <= 2f ? 6f : 9f;
+        public float LandingNoiseRadius(float fallHeight) => fallHeight < 0.5f ? 0f : fallHeight <= 2f ? 6f : 9f;   // escalones (0,3 m) en silencio
+
+        /// <summary>Al chocar con el techo subiendo, se corta la subida (no se queda "pegado" arriba).</summary>
+        public static float AfterCeilingHit(float verticalVelocity, bool hitAbove) =>
+            hitAbove && verticalVelocity > 0f ? 0f : verticalVelocity;
     }
 }

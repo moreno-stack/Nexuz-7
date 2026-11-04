@@ -26,10 +26,13 @@ namespace Nexus7.Player
         private void OnDisable() { if (hotbar != null) hotbar.SelectionChanged -= Rebuild; }
         private void Start() => Rebuild();
 
+        private Material ownMaterial;
+
         public void Rebuild()
         {
             if (current != null) Destroy(current);
-            current = null;
+            if (ownMaterial != null) Destroy(ownMaterial);   // sin fugas de materiales al cambiar de objeto
+            current = null; ownMaterial = null;
             var item = hotbar != null ? hotbar.SelectedItem : null;
             if (item == null || handSocket == null) return;
 
@@ -39,7 +42,7 @@ namespace Nexus7.Player
             current = GameObject.CreatePrimitive(shape);
             current.name = "ObjetoEnMano";
             var col = current.GetComponent<Collider>();
-            if (col != null) Destroy(col);
+            if (col != null) { col.enabled = false; Destroy(col); }
             current.transform.SetParent(handSocket, false);
             current.transform.localPosition = new Vector3(0f, 0f, size * 0.6f);
             current.transform.localScale = shape == PrimitiveType.Cube ? new Vector3(size, size * 0.6f, size)
@@ -58,6 +61,7 @@ namespace Nexus7.Player
                 m.EnableKeyword("_EMISSION");
                 m.SetColor("_EmissionColor", c * 0.4f);
                 r.sharedMaterial = m;
+                ownMaterial = m;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
         }

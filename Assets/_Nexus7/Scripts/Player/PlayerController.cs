@@ -157,7 +157,8 @@ namespace Nexus7.Player
             verticalVelocity += gravity * Time.deltaTime;
 
             impulse = Vector3.MoveTowards(impulse, Vector3.zero, impulseDamping * Time.deltaTime);
-            controller.Move((horizontalVelocity + impulse + Vector3.up * verticalVelocity) * Time.deltaTime);
+            var flags = controller.Move((horizontalVelocity + impulse + Vector3.up * verticalVelocity) * Time.deltaTime);
+            verticalVelocity = JumpModel.AfterCeilingHit(verticalVelocity, (flags & CollisionFlags.Above) != 0);
 
             // 5) Estado y ruido según la velocidad REAL (si choca con una pared, cuenta como quieto).
             Vector3 planar = controller.velocity;
