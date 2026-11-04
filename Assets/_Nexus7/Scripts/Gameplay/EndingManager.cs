@@ -23,6 +23,9 @@ namespace Nexus7.Gameplay
     {
         public static EndingManager Instance { get; private set; }
 
+        /// <summary>Fundido antes de la pantalla de resultados: parcial, para que detrás se vea la última imagen de la cinemática.</summary>
+        public const float ResultsBackdropFade = 0.4f;
+
         [SerializeField] private EvacuationCountdown countdown;
         [SerializeField] private CameraShake cameraShake;
         [Tooltip("Cinemáticas de los finales (CinematicDirector con 'Play On Start' desactivado). Opcionales.")]
@@ -169,7 +172,7 @@ namespace Nexus7.Gameplay
                 yield return new WaitForSeconds(1.5f);
                 yield return PlayEndingCinematic(!timeOut && deathCinematic != null ? deathCinematic : defeatCinematic, hud);
             }
-            if (hud != null) yield return hud.Fade(0f, 1f, escaped ? 2f : 0.6f);
+            if (hud != null) yield return hud.Fade(0f, ResultsBackdropFade, escaped ? 2f : 0.6f);
 
             bool record = GameFlow.SubmitScore(result.total, result.grade);
             string story = result.ending == EndingType.Optimal ? optimalText

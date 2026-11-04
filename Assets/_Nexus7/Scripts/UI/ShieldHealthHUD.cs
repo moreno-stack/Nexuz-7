@@ -41,7 +41,8 @@ namespace Nexus7.UI
             bool on = shield != null && shield.Equipped && shield.Model != null;
             if (on && !wasEquipped) flash = 1f;          // destello azul al sellar el traje
             wasEquipped = on;
-            if (barRoot != null && barRoot.activeSelf != on) barRoot.SetActive(on);
+            bool show = on && !GameHud.Hidden;   // nada del HUD de juego en las cinemáticas ni en los resultados
+            if (barRoot != null && barRoot.activeSelf != show) barRoot.SetActive(show);
             if (on)
             {
                 float k = shield.Model.Capacity > 0f ? shield.Model.Value / shield.Model.Capacity : 0f;

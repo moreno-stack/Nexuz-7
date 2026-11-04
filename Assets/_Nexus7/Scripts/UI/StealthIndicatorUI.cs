@@ -55,7 +55,7 @@ namespace Nexus7.UI
                 label.color = color;
             }
 
-            bool showBar = maxAwareness > 0.02f;
+            bool showBar = maxAwareness > 0.02f && !GameHud.Hidden;
             if (barRoot != null && barRoot.activeSelf != showBar) barRoot.SetActive(showBar);
             if (barFill != null)
             {
