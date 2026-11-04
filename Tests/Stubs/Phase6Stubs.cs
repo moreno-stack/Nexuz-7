@@ -1,7 +1,7 @@
 namespace UnityEngine.Events { public delegate void UnityAction(); }
 namespace UnityEngine.UI {
     public struct Navigation { public enum Mode { None, Automatic } public Mode mode; }
-    public class Selectable : Behaviour { public Graphic targetGraphic; public bool interactable; public Navigation navigation; }
+    public class Selectable : Behaviour { public Graphic targetGraphic; public bool interactable; public Navigation navigation; public ColorBlock colors; }
     public class Button : Selectable {
         public class ButtonClickedEvent { public void AddListener(UnityEngine.Events.UnityAction a) {} public void RemoveAllListeners() {} }
         public ButtonClickedEvent onClick = new ButtonClickedEvent();

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace UnityEngine
 {
     public class Object {
-        public string name;
+        public string name; public HideFlags hideFlags;
         public static void Destroy(Object o) {} public static void Destroy(Object o, float t) {} public static void DontDestroyOnLoad(Object o) {}
         public static void DestroyImmediate(Object o) {}
         public static T[] FindObjectsByType<T>(FindObjectsSortMode m) where T : Object { return new T[0]; }
@@ -39,16 +39,20 @@ namespace UnityEngine
         public Vector3 position, localPosition, localScale, eulerAngles, localEulerAngles, forward, right, up;
         public Quaternion rotation, localRotation; public Transform parent; public int childCount; public Matrix4x4 localToWorldMatrix;
         public void SetParent(Transform p) { parent = p; } public void SetParent(Transform p, bool w) { parent = p; }
-        public void Rotate(Vector3 e) {} public void Rotate(Vector3 e, Space s) {} public void Rotate(Vector3 a, float ang) {} public void Rotate(Vector3 a, float ang, Space s) {}
+        public void Rotate(Vector3 e) {} public void Rotate(float x, float y, float z) {} public void Rotate(Vector3 e, Space s) {} public void Rotate(Vector3 a, float ang) {} public void Rotate(Vector3 a, float ang, Space s) {}
         public Transform GetChild(int i) { return null; } public bool IsChildOf(Transform t) { var c = this; while (c != null) { if (c == t) return true; c = c.parent; } return false; }
         public void SetPositionAndRotation(Vector3 p, Quaternion r) {} public Vector3 InverseTransformDirection(Vector3 d) { return d; } public Vector3 TransformPoint(Vector3 p) { return p; } public Vector3 TransformDirection(Vector3 d) { return d; } public Vector3 InverseTransformPoint(Vector3 p) { return p; } public void LookAt(Vector3 p) {} public void SetSiblingIndex(int i) {} public Transform Find(string n) { return null; }
         public IEnumerator GetEnumerator() { return null; }
     }
-    public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, anchoredPosition, sizeDelta, pivot, offsetMin, offsetMax; }
+    public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, anchoredPosition, sizeDelta, pivot, offsetMin, offsetMax; public Rect rect; }
+    public class ExecuteAlways : Attribute {}
+    [Flags] public enum HideFlags { None = 0, HideInHierarchy = 1, DontSave = 52 }
+    public class CanvasGroup : Behaviour { public float alpha = 1f; public bool interactable = true, blocksRaycasts = true; }
     public struct Matrix4x4 {}
     public class Vector2 { public Vector2() {}
         public float x, y; public Vector2(float x, float y) { this.x = x; this.y = y; }
         public static Vector2 zero, one; public float magnitude;
+        public static Vector2 operator *(Vector2 a, float k) { return new Vector2(a.x * k, a.y * k); } public static Vector2 operator +(Vector2 a, Vector2 b) { return new Vector2(a.x + b.x, a.y + b.y); }
         public static Vector2 ClampMagnitude(Vector2 v, float m) { return v; }
     }
     public class Vector3 { public Vector3() {}
@@ -80,7 +84,7 @@ namespace UnityEngine
     }
     public static class ColorUtility { public static string ToHtmlStringRGB(Color c) { return ""; } public static bool TryParseHtmlString(string s, out Color c) { c = Color.white; return true; } }
     public struct Bounds { public Bounds(Vector3 c, Vector3 s) {} public bool Intersects(Bounds b) { return false; } }
-    public struct Rect { public float xMin, xMax, yMin, yMax; public Rect(float x, float y, float w, float h) { xMin=x; yMin=y; xMax=x+w; yMax=y+h; } public bool Contains(Vector2 p) { return false; } }
+    public struct Rect { public float xMin, xMax, yMin, yMax; public float width { get { return xMax - xMin; } } public float height { get { return yMax - yMin; } } public Rect(float x, float y, float w, float h) { xMin=x; yMin=y; xMax=x+w; yMax=y+h; } public bool Contains(Vector2 p) { return false; } }
     public struct Vector2Int { public int x, y; public Vector2Int(int x, int y) { this.x=x; this.y=y; } }
     public enum RuntimeInitializeLoadType { SubsystemRegistration, AfterSceneLoad, BeforeSceneLoad }
     public class RuntimeInitializeOnLoadMethodAttribute : Attribute { public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType t) {} }
@@ -167,7 +171,7 @@ namespace UnityEngine
         public static Material skybox; public static Rendering.AmbientMode ambientMode; public static Color ambientLight, fogColor;
         public static bool fog; public static FogMode fogMode; public static float fogDensity, fogStartDistance, fogEndDistance;
     }
-    public class Sprite : Object {}
+    public class Sprite : Object { public Texture2D texture; public static Sprite Create(Texture2D t, Rect r, Vector2 pivot, float ppu) { return new Sprite { texture = t }; } }
     public enum RenderMode { ScreenSpaceOverlay }
     public class Canvas : Behaviour { public RenderMode renderMode; public int sortingOrder; }
     public enum TextAnchor { LowerRight, MiddleCenter }
@@ -234,8 +238,11 @@ namespace UnityEngine.AI {
     }
 }
 namespace UnityEngine.UI {
-    public class Graphic : Behaviour { public Color color; public bool raycastTarget; public RectTransform rectTransform; }
-    public class Image : Graphic {}
+    public class CanvasRenderer : Component { public float alpha = 1f; public void SetAlpha(float a) { alpha = a; } }
+    public class Graphic : Behaviour { public Color color; public bool raycastTarget; public RectTransform rectTransform; public CanvasRenderer canvasRenderer = new CanvasRenderer(); }
+    public class Image : Graphic { public Sprite sprite; public bool preserveAspect; public enum Type { Simple, Sliced, Tiled, Filled } public Type type; }
+    public class RawImage : Graphic { public Texture texture; public Rect uvRect; }
+    public struct ColorBlock { public Color normalColor, highlightedColor, pressedColor, selectedColor, disabledColor; public float colorMultiplier, fadeDuration; public static ColorBlock defaultColorBlock; }
     public class CanvasScaler : Behaviour { public enum ScaleMode { ConstantPixelSize, ScaleWithScreenSize } public ScaleMode uiScaleMode; public Vector2 referenceResolution; public float matchWidthOrHeight; }
     public class GraphicRaycaster : Behaviour {}
     public class VerticalLayoutGroup : Behaviour { public TextAnchor childAlignment; public float spacing; public bool childControlWidth, childControlHeight, childForceExpandWidth, childForceExpandHeight; }
@@ -286,11 +293,12 @@ namespace UnityEditor.SceneManagement {
 }
 
 namespace UnityEngine {
-    public class Texture : Object { public TextureWrapMode wrapMode; }
+    public enum FilterMode { Point, Bilinear, Trilinear }
+    public class Texture : Object { public TextureWrapMode wrapMode; public FilterMode filterMode; public int width, height; }
     public enum TextureFormat { RGBA32, ARGB32 }
     public enum TextureWrapMode { Repeat, Clamp }
     public class Texture2D : Texture {
-        public Texture2D(int w, int h, TextureFormat f, bool mip) {}
+        public Texture2D(int w, int h, TextureFormat f, bool mip) { width = w; height = h; }
         public void SetPixel(int x, int y, Color c) {} public void SetPixels(Color[] c) {} public void Apply() {}
     }
     public static class PlayerPrefs {

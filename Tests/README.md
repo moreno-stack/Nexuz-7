@@ -22,6 +22,6 @@ Desde la raíz del repositorio:
 bash Tests/run_all.sh
 ```
 
-El resultado esperado es `TOTAL: 440 comprobaciones, 0 fallos`. Los ejecutables y los registros se generan en `Tests/bin/`, que no se sube a git.
+El resultado esperado es `TOTAL: 492 comprobaciones, 0 fallos`. Los ejecutables y los registros se generan en `Tests/bin/`, que no se sube a git.
 
 > Esta carpeta está **fuera de `Assets/`** a propósito: Unity no la compila, porque las definiciones de `Stubs/` chocarían con las reales de Unity.
