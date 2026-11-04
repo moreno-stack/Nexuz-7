@@ -44,6 +44,11 @@ namespace Nexus7.UI
             if (inventory != null) inventory.Changed -= Refresh;
         }
 
+        // Un golpe cierra el inventario (no se queda tapando la pantalla mientras te atacan)
+        private void OnEnable()  => Nexus7.Player.PlayerHealth.PlayerHit += OnPlayerHit;
+        private void OnDisable() => Nexus7.Player.PlayerHealth.PlayerHit -= OnPlayerHit;
+        private void OnPlayerHit(Vector3 _) { if (panel != null && panel.activeSelf) panel.SetActive(false); }
+
         private void Update()
         {
             if (Input.GetKeyDown(toggleKey) || Input.GetKeyDown(toggleKeyAlt) || Input.GetKeyDown(togglePadButton))

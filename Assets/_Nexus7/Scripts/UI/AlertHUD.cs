@@ -16,6 +16,8 @@ namespace Nexus7.UI
     {
         [SerializeField] private TextMeshProUGUI label;
         [SerializeField] private Image heatFill;
+        [Tooltip("Fondo de la barra de tensión (con sus marcas); se oculta junto con el texto.")]
+        [SerializeField] private GameObject barRoot;
         [SerializeField] private bool briefingOnStart = true;
 
         private float shown;
@@ -39,6 +41,10 @@ namespace Nexus7.UI
             ColorUtility.TryParseHtmlString(ShipStatusReport.LevelHex(level), out c);
             if (level == AlertLevel.Red && Mathf.Repeat(Time.time * 2f, 1f) < 0.35f) c = Color.white;
 
+            bool hide = GameHud.Hidden;   // nada encima de las franjas de las cinemáticas ni del final
+            if (barRoot != null && barRoot.activeSelf == hide) barRoot.SetActive(!hide);
+            if (label != null) label.enabled = !hide;
+            if (heatFill != null) heatFill.enabled = !hide;
             if (label != null)
             {
                 label.text = $"{ShipStatusReport.LevelName(level)}  <size=70%>{shown:0}</size>";

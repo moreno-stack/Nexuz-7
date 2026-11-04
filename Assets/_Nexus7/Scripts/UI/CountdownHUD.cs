@@ -20,6 +20,10 @@ namespace Nexus7.UI
         private void Update()
         {
             if (countdown == null || timerText == null) return;
+            bool hide = GameHud.Hidden;   // sin HUD durante las cinemáticas ni desde que empieza el final
+            timerText.enabled = !hide;
+            if (launchText != null) launchText.enabled = !hide;
+            if (hide) return;
 
             float r = countdown.Remaining;
             int min = Mathf.FloorToInt(r / 60f), sec = Mathf.FloorToInt(r % 60f);

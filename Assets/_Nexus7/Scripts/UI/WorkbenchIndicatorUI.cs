@@ -16,6 +16,9 @@ namespace Nexus7.UI
         [SerializeField] private Image icon;
         [SerializeField] private float radius = 4f;
 
+        /// <summary>Texto del indicador (sin prometer [E]: se interactúa a 2,5 m y el aviso sale a 4 m).</summary>
+        public const string Text = "BANCO DE TRABAJO cerca";
+
         private Transform player;
         private readonly List<Vector3> positions = new List<Vector3>();
 
@@ -36,7 +39,7 @@ namespace Nexus7.UI
 
         private void Show(bool on)
         {
-            if (label != null) label.text = on ? "BANCO DE TRABAJO cerca · [E] para fabricar" : "";
+            if (label != null) label.text = on ? Text : "";
             if (icon != null) icon.enabled = on;
         }
     }
