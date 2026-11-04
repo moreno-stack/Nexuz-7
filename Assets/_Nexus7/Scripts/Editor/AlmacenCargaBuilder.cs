@@ -29,17 +29,17 @@ namespace Nexus7.EditorTools
     ///
     ///   z=35 ┌──────┐  Montacargas (salida, requiere 2 baterías)
     ///   z=30 ════════════════════════[PUERTA]═══
-    ///        │ cajas   ← Dron B (vaivén) →  cajas │
+    ///        │ cajas  ← Robot B (vaivén) → cajas │
     ///   z=22 │ ║   ║   ║   ║   ║   ║   ║  ▓▓▓▓▓│ ← derrumbe (ruta este bloqueada)
     ///        │ ║   ║  ╔╝ B1 ╚╗  ║   ║  ║  [Llave]
     ///        │D║   ║   ║   ║   ║   ║   ║       │
     ///   z=8  │D║   ║   ║   ║   ║   ║   ║       │   ║ = estanterías,  D = conducto (agachado)
-    ///        │D ↑ Dron A (bucle por pasillos x=±6) │
+    ///        │D ↑ Robot A (bucle pasillos x=±6)  │
     ///   z=0  ════════[entrada]═══════════════════
     ///              Vestíbulo (inicio)
     ///
     /// Crea: objetos (ScriptableObjects), escena, materiales, iluminación tenue, estanterías, cajas,
-    /// conducto de ventilación (ruta alternativa), derrumbe (ruta bloqueada), botín, 2 drones con rutas,
+    /// conducto de ventilación (ruta alternativa), derrumbe (ruta bloqueada), botín al azar, 2 robots de seguridad con rutas,
     /// zonas de sombra, puntos de control, HUD ampliado y conecta la salida de la Fase 1 con esta escena.
     /// </summary>
     public static class AlmacenCargaBuilder
@@ -128,7 +128,6 @@ namespace Nexus7.EditorTools
             traj.widthMultiplier = 0.025f;
             traj.shadowCastingMode = ShadowCastingMode.Off;
             var quickbar = player.gameObject.AddComponent<Nexus7.Devices.DeviceQuickbar>();
-            SetObjectArray(quickbar, "slots", new Object[] { p4.Decoy });
             B.SetRef(quickbar, "throwOrigin", interactor.transform);
             B.SetRef(quickbar, "trajectoryLine", traj);
 
@@ -152,15 +151,15 @@ namespace Nexus7.EditorTools
                 new WP(new Vector3(12.5f, 0f, 25f), 3.0f, true, 180f),   // vigila el pasillo este
             });
             var robotMats = R.SecurityMaterials();
-            var droneA = R.ArmedRobot("RobotSeguridad_A", enemies, new Vector3(-6f, 0f, 4f), 0f, routeA, Nexus7.Characters.RobotStyle.Security, robotMats);
-            var droneB = R.ArmedRobot("RobotSeguridad_B", enemies, new Vector3(-12f, 0f, 27f), 90f, routeB, Nexus7.Characters.RobotStyle.Security, robotMats);
+            var robotA = R.ArmedRobot("RobotSeguridad_A", enemies, new Vector3(-6f, 0f, 4f), 0f, routeA, Nexus7.Characters.RobotStyle.Security, robotMats);
+            var robotB = R.ArmedRobot("RobotSeguridad_B", enemies, new Vector3(-12f, 0f, 27f), 90f, routeB, Nexus7.Characters.RobotStyle.Security, robotMats);
 
             // ---------- 6. NavMesh en tiempo de ejecución ----------
             var navGo = new GameObject("NavMesh");
             navGo.transform.position = new Vector3(0f, 3f, 15f);
             var baker = navGo.AddComponent<RuntimeNavMeshBaker>();
             SetVector3(baker, "size", new Vector3(40f, 12f, 46f));
-            SetObjectArray(baker, "ignoreRoots", new Object[] { player.transform, droneA.transform, droneB.transform });
+            SetObjectArray(baker, "ignoreRoots", new Object[] { player.transform, robotA.transform, robotB.transform });
 
             // ---------- 7. Zonas: sombras, puntos de control, mensajes, salida ----------
             var zones = new GameObject("Zonas").transform;
@@ -177,7 +176,7 @@ namespace Nexus7.EditorTools
             foreach (var z in shadowZones)
                 Zone("ZonaSombra", zones, z.pos, z.size).AddComponent<ShadowZone>();
 
-            // A la salida norte del conducto, dentro de la zona de sombra (no delante del puesto del dron B).
+            // A la salida norte del conducto, dentro de la zona de sombra (no delante del puesto del robot B).
             var cp = Zone("Checkpoint_Conducto", zones, new Vector3(-14.1f, 1.5f, 19.8f), new Vector3(1.8f, 3f, 1f));
             cp.AddComponent<Checkpoint>();
 
@@ -223,7 +222,7 @@ namespace Nexus7.EditorTools
             // ---------- 10. Prefabs ----------
             B.SavePrefab(player.gameObject, "Player_Fase2");
             B.SavePrefab(hud.gameObject, "HUD_Fase2");
-            B.SavePrefab(droneA.gameObject, "RobotSeguridad");
+            B.SavePrefab(robotA.gameObject, "RobotSeguridad");
             B.SavePrefab(cWest, "ContenedorCarga");
             B.SavePrefab(gate.gameObject, "PuertaMontacargas");
 
@@ -286,7 +285,7 @@ namespace Nexus7.EditorTools
             Tiled("MuroNorte_Der", env, new Vector3(13.35f, H / 2, L + T / 2), new Vector3(3.7f, H, T), wallMat);
             B.Box("MuroNorte_Dintel", env, new Vector3(10f, 4.75f, L + T / 2), new Vector3(3f, 2.5f, T), wallMat);
 
-            // Vestíbulo de entrada (inicio seguro, fuera de la vista de los drones)
+            // Vestíbulo de entrada (inicio seguro, fuera de la vista de los robots)
             B.Box("Vest_Suelo", env, new Vector3(0, -T / 2, -2.5f), new Vector3(5.4f, T, 5f), floorMat);
             B.Box("Vest_Techo", env, new Vector3(0, 4f + T / 2, -2.5f), new Vector3(5.4f, T, 5f), metalMat);
             B.Box("Vest_MuroO", env, new Vector3(-2.6f, 2f, -2.5f), new Vector3(T, 4f, 5f), wallMat);
@@ -299,7 +298,7 @@ namespace Nexus7.EditorTools
             // Tuberías a lo largo de los muros
             B.NoCollider(B.Box("Tuberia", env, new Vector3(-14.6f, 4.8f, L / 2), new Vector3(0.3f, 0.3f, L), metalMat));
             B.NoCollider(B.Box("Tuberia", env, new Vector3(14.6f, 4.4f, L / 2), new Vector3(0.3f, 0.3f, L), metalMat));
-            // Líneas de seguridad amarillas en el suelo (marcan la ruta del dron A)
+            // Líneas de seguridad amarillas en el suelo (marcan la ruta del robot A)
             foreach (float x in new[] { -6f, 6f })
                 B.NoCollider(B.Box("LineaSuelo", env, new Vector3(x, 0.005f, 13.75f), new Vector3(0.12f, 0.01f, 19.5f), warningMat));
         }
@@ -376,7 +375,7 @@ namespace Nexus7.EditorTools
         internal static void BuildDuct(Transform env, Transform gameplay, ItemData wrench)
         {
             // Conducto bajo (1.2 m) por el lateral oeste, de z=3 a z=19. Solo se puede recorrer agachado
-            // y los drones (NavMesh de 2 m de alto) no pueden entrar: ruta alternativa segura.
+            // y los robots (NavMesh de 2 m de alto) no pueden entrar: ruta alternativa segura.
             var root = new GameObject("ConductoVentilacion_RutaAlternativa").transform;
             root.SetParent(env);
             B.Box("ParedInterior", root, new Vector3(-13.3f, 0.7f, 11f), new Vector3(0.2f, 1.4f, 16f), metalMat);
@@ -591,6 +590,7 @@ namespace Nexus7.EditorTools
             if (table == null) { table = ScriptableObject.CreateInstance<LootTable>(); AssetDatabase.CreateAsset(table, path); }
             table.entries = new List<LootEntry> { new LootEntry(scrap, 4f, 1, 3), new LootEntry(circuit, 2f, 1, 1) };
             EditorUtility.SetDirty(table);
+            AssetDatabase.SaveAssets();
 
             var root = new GameObject("Botin_Almacen");
             root.transform.SetParent(parent);
@@ -630,65 +630,6 @@ namespace Nexus7.EditorTools
             return route;
         }
 
-        internal static EnemyPatrol Drone(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route)
-        {
-            var root = new GameObject(name);
-            root.transform.SetParent(parent);
-            root.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, rotY, 0f));
-
-            var col = root.AddComponent<CapsuleCollider>();
-            col.center = new Vector3(0f, 0.95f, 0f);
-            col.height = 1.9f;
-            col.radius = 0.4f;
-
-            var agent = root.AddComponent<NavMeshAgent>();
-            agent.radius = 0.4f;
-            agent.height = 1.9f;
-            agent.speed = 1.8f;
-            agent.angularSpeed = 300f;
-            agent.acceleration = 12f;
-            agent.stoppingDistance = 0.2f;
-            agent.enabled = false; // se activa en Start, cuando el NavMesh ya existe
-
-            // Cuerpo + visor
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Cuerpo";
-            Object.DestroyImmediate(body.GetComponent<Collider>());
-            body.transform.SetParent(root.transform, false);
-            body.transform.localPosition = new Vector3(0f, 0.95f, 0f);
-            body.transform.localScale = new Vector3(0.8f, 0.95f, 0.8f);
-            body.GetComponent<Renderer>().sharedMaterial = droneMat;
-            B.NoCollider(B.Box("Visor", root.transform, new Vector3(0f, 1.6f, 0.33f), new Vector3(0.55f, 0.14f, 0.12f), droneEyeMat));
-            B.NoCollider(B.Box("Antena", root.transform, new Vector3(0.2f, 2.0f, -0.1f), new Vector3(0.04f, 0.35f, 0.04f), metalMat));
-
-            var eye = new GameObject("Ojo").transform;
-            eye.SetParent(root.transform, false);
-            eye.localPosition = new Vector3(0f, 1.6f, 0.42f);
-            eye.localRotation = Quaternion.Euler(8f, 0f, 0f); // ligeramente hacia abajo, como un foco
-
-            var lightGo = new GameObject("FocoVision");
-            lightGo.transform.SetParent(eye, false);
-            var spot = lightGo.AddComponent<Light>();
-            spot.type = LightType.Spot;
-            spot.range = 12f;
-            spot.spotAngle = 80f;
-            spot.intensity = 4f;
-            spot.shadows = LightShadows.Soft;
-
-            var audio = root.AddComponent<AudioSource>();
-            audio.playOnAwake = false;
-            audio.spatialBlend = 1f;
-
-            var vision = root.AddComponent<EnemyVision>();
-            B.SetRef(vision, "eye", eye);
-            B.SetRef(vision, "visionLight", spot);
-
-            var patrol = root.AddComponent<EnemyPatrol>();
-            B.SetRef(patrol, "route", route);
-            B.SetRef(patrol, "audioSource", audio);
-            return patrol;
-        }
-
         internal static GameObject Zone(string name, Transform parent, Vector3 pos, Vector3 size)
         {
             var go = new GameObject(name) { layer = IgnoreRaycastLayer };
@@ -712,7 +653,13 @@ namespace Nexus7.EditorTools
 
         internal static void BuildPhase2UI(Transform canvas, InventorySystem inventory, PlayerStealth stealth)
         {
-            // Notificaciones de recogida (lateral derecho)
+            BuildPickupNotifications(canvas, inventory);
+            BuildStealthAndInventoryUI(canvas, inventory, stealth);
+        }
+
+        /// <summary>Notificaciones de recogida (lateral derecho). También las usa la Fase 1.</summary>
+        internal static void BuildPickupNotifications(Transform canvas, InventorySystem inventory)
+        {
             var notifGo = new GameObject("Notificaciones", typeof(RectTransform));
             notifGo.transform.SetParent(canvas, false);
             var notifRt = (RectTransform)notifGo.transform;
@@ -728,7 +675,10 @@ namespace Nexus7.EditorTools
             var notif = canvas.gameObject.AddComponent<UI.PickupNotificationUI>();
             B.SetRef(notif, "inventory", inventory);
             B.SetRef(notif, "container", notifRt);
+        }
 
+        internal static void BuildStealthAndInventoryUI(Transform canvas, InventorySystem inventory, PlayerStealth stealth)
+        {
             // Indicador de sigilo (esquina superior derecha)
             var label = B.UIText("TextoSigilo", canvas, new Vector2(1f, 1f), new Vector2(-40f, -40f), new Vector2(400f, 40f),
                                  28f, TextAlignmentOptions.Right, Color.white);

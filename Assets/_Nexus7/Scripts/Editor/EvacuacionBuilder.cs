@@ -36,7 +36,7 @@ namespace Nexus7.EditorTools
     /// Plano del hangar (vista cenital, Z = norte), 44 × 40 m, techo a 14 m:
     ///
     ///  z=40 ┌──────[cápsula A ✖]────────[cápsula B ✔]────────[cápsula C ✖]──────┐
-    ///  z=37 │  ═════════════ PASARELA DE EMBARQUE (y=4.2) ══ celda ignición ═ 📷 ═ │ ← dron de seguridad (vaivén)
+    ///  z=37 │  ═════════════ PASARELA DE EMBARQUE (y=4.2) ══ celda ignición ═ 📷 ═ │ ← robot de seguridad (vaivén)
     ///  z=34 │       ╱rampa O (láser)                       rampa E (cables)╲       │
     ///  z=26 │                                                                      │ V
     ///       │ ┌CABINA┐     ⟲ élite ──────────────────── élite ⟲                    │ E
@@ -197,7 +197,6 @@ namespace Nexus7.EditorTools
             traj.widthMultiplier = 0.025f;
             traj.shadowCastingMode = ShadowCastingMode.Off;
             var quickbar = player.gameObject.AddComponent<DeviceQuickbar>();
-            A.SetObjectArray(quickbar, "slots", new Object[] { p4.Decoy, p4.Emp, p4.Camo });
             B.SetRef(quickbar, "throwOrigin", interactor.transform);
             B.SetRef(quickbar, "trajectoryLine", traj);
 
@@ -308,7 +307,10 @@ namespace Nexus7.EditorTools
             var defeatGo = new GameObject("CinematicaDerrota");
             defeatGo.transform.SetParent(systems.transform);
             var defeatDir = defeatGo.AddComponent<Nexus7.Cinematics.CinematicDirector>();
-            foreach (var d in new[] { escapeDir, defeatDir })
+            var deathGo = new GameObject("CinematicaDerrotaMuerte");
+            deathGo.transform.SetParent(systems.transform);
+            var deathDir = deathGo.AddComponent<Nexus7.Cinematics.CinematicDirector>();
+            foreach (var d in new[] { escapeDir, defeatDir, deathDir })
             {
                 A.SetBool(d, "playOnStart", false);
                 A.SetBool(d, "returnToPlayer", false);   // la cámara se queda en el plano final; luego fundido a los resultados
@@ -321,6 +323,9 @@ namespace Nexus7.EditorTools
             ShotActivations(escapeDir, 1, blastFx);
             B.SetShots(defeatDir, "shots", Nexus7.Cinematics.CinematicScripts.Derrota());
             ShotActivations(defeatDir, 0, defeatBlastFx);
+            B.SetShots(deathDir, "shots", Nexus7.Cinematics.CinematicScripts.DerrotaMuerte());
+            // (la derrota por muerte no muestra la explosión del reactor: aún queda tiempo)
+            B.SetRef(ending, "deathCinematic", deathDir);
             B.SetRef(ending, "escapeCinematic", escapeDir);
             B.SetRef(ending, "defeatCinematic", defeatDir);
 
@@ -697,7 +702,7 @@ namespace Nexus7.EditorTools
 
         private static void BuildCover(Transform parent)
         {
-            // Contenedores y depósitos fuera de las rutas de los drones (anillo x=±9, z 8..28)
+            // Contenedores y depósitos fuera de las rutas de los robots (anillo x=±9, z 8..28)
             var crates = new[]
             {
                 new S3.Bx(new Vector3(-4.5f, 1f, 4.5f), new Vector3(2f, 2f, 2f)),   new S3.Bx(new Vector3(4.5f, 0.75f, 4f), new Vector3(2.4f, 1.5f, 1.6f)),
@@ -902,7 +907,7 @@ namespace Nexus7.EditorTools
         internal static readonly Vector3[] HangarLootPoints =
         {
             new Vector3(-6.5f, 0f, 4f), new Vector3(8f, 0f, 3f),   new Vector3(-19f, 0f, 10f), new Vector3(19f, 0f, 12f), new Vector3(-18f, 0f, 27f),
-            new Vector3(17f, 0f, 30f),  new Vector3(-5f, 0f, 30f), new Vector3(5f, 0f, 30f),   new Vector3(-5f, CatY, 36.4f), new Vector3(5f, CatY, 36.4f),
+            new Vector3(17f, 0f, 30f),  new Vector3(-5f, 0f, 31.5f), new Vector3(5f, 0f, 31.5f),   new Vector3(-5f, CatY, 36.4f), new Vector3(5f, CatY, 36.4f),
         };
 
         private static LootTable HangarLootTable(A.ItemSet items)

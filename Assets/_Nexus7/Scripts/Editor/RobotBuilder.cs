@@ -8,8 +8,8 @@ using B = Nexus7.EditorTools.SalaInicialBuilder;
 namespace Nexus7.EditorTools
 {
     /// <summary>
-    /// Robots armados redondeados (sustituyen a los drones «caja»). Lo usan los constructores de las Fases 2–6:
-    /// mismo colisionador, NavMeshAgent, visión, patrulla y sonido que A.Drone, más modelo, arma en la mano,
+    /// Robots armados redondeados. Lo usan los constructores de las Fases 2–6:
+    /// colisionador, NavMeshAgent, visión, patrulla y sonido, más modelo, arma en la mano,
     /// animación procedural y ataque cuerpo a cuerpo (EnemyMeleeAttack).
     /// </summary>
     public static class RobotBuilder
@@ -79,7 +79,7 @@ namespace Nexus7.EditorTools
         }
 
         /// <summary>
-        /// Extras del robot de investigación (como el antiguo ResearchDrone): foco de escaneo morado que se enciende al
+        /// Extras del robot de investigación : foco de escaneo morado que se enciende al
         /// inspeccionar, efecto de aturdimiento (PEM) sobre la cabeza y oído más fino (×1,2).
         /// </summary>
         internal static void ResearchExtras(EnemyPatrol robot)

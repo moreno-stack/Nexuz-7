@@ -176,7 +176,6 @@ namespace Nexus7.EditorTools
             traj.widthMultiplier = 0.025f;
             traj.shadowCastingMode = ShadowCastingMode.Off;
             var quickbar = player.gameObject.AddComponent<DeviceQuickbar>();
-            A.SetObjectArray(quickbar, "slots", new Object[] { p4.Decoy, p4.Emp, p4.Camo });
             B.SetRef(quickbar, "throwOrigin", interactor.transform);
             B.SetRef(quickbar, "trajectoryLine", traj);
 
@@ -265,7 +264,8 @@ namespace Nexus7.EditorTools
             B.SetRef(intro, "hud", hud);
             B.SetStrings(intro, "messages", new[]
             {
-                "IA NEXUS-7: La seguridad responde al NIVEL DE ALERTA de la nave, y todo lo que has hecho hasta ahora cuenta. Mantén la tensión baja."
+                "IA NEXUS-7: La seguridad responde al NIVEL DE ALERTA de la nave, y todo lo que has hecho hasta ahora cuenta. Mantén la tensión baja.",
+                "IA NEXUS-7: Los robots de élite llevan hachas. En Alerta Roja te cazarán: rompe su línea de visión."
             });
             B.SetString(intro, "hint", "[E] consolas · Hackeo: teclea la secuencia con [W][A][S][D] antes de que acabe el tiempo · Arriba: nivel de alerta de la nave");
             B.SetString(intro, "objective", "Objetivo: Autoriza la compuerta blindada (control de compuertas, ala oeste) y llega a la consola de mando del puente.");
@@ -565,7 +565,7 @@ namespace Nexus7.EditorTools
         // ---------- Botín de la Fase 5 ----------
         internal static readonly Vector3[] CenterLootPoints =
         {
-            new Vector3(-5f, 0f, 7f),   new Vector3(-19f, 0f, 20f),  new Vector3(5f, 0f, 6.5f),  new Vector3(-12f, 0f, 2.5f),   new Vector3(12f, 0f, 2.5f),
+            new Vector3(-5f, 0f, 5.6f), new Vector3(-19f, 0f, 20f),  new Vector3(5f, 0f, 5.6f),  new Vector3(-12f, 0f, 2.5f),   new Vector3(12f, 0f, 2.5f),
             new Vector3(13f, 0f, 15f),  new Vector3(12f, 0f, 22f),   new Vector3(-18.5f, 0f, 17f), new Vector3(-14.5f, 0f, 28.5f), new Vector3(10f, 0f, 28f),
         };
 
@@ -583,7 +583,7 @@ namespace Nexus7.EditorTools
 
         /// <summary>
         /// Robot de élite con hacha (Fase 5; la Fase 6 lo usará en su etapa): mismos ajustes de visión, velocidad,
-        /// oído y caza en Alerta Roja que el antiguo dron de élite, con modelo redondeado, arma y ataque cuerpo a cuerpo.
+        /// oído y caza en Alerta Roja de élite, con modelo redondeado, arma y ataque cuerpo a cuerpo.
         /// </summary>
         internal static EnemyPatrol EliteRobot(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route, int startWp)
         {
@@ -614,42 +614,6 @@ namespace Nexus7.EditorTools
             return robot;
         }
 
-        internal static EnemyPatrol EliteDrone(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route, int startWp)
-        {
-            var drone = A.Drone(name, parent, pos, rotY, route);
-            var body = drone.transform.Find("Cuerpo");
-            if (body != null) body.GetComponent<Renderer>().sharedMaterial = eliteMat;
-            // Hombreras blindadas
-            foreach (float x in new[] { -0.45f, 0.45f })
-                L4.Local(B.NoCollider(B.Box("Blindaje", drone.transform, Vector3.zero, new Vector3(0.25f, 0.5f, 0.6f), eliteMat)), new Vector3(x, 1.25f, 0f));
-
-            var stun = new GameObject("EfectoAturdido");
-            stun.transform.SetParent(drone.transform, false);
-            stun.transform.localPosition = new Vector3(0f, 2.1f, 0f);
-            A.PointLight("LuzAturdido", stun.transform, Vector3.zero, new Color(0.3f, 0.8f, 1f), 3f, 2f, false);
-            S3.Arc("ArcoAturdido", stun.transform, new Vector3(-0.35f, 0f, 0f), new Vector3(0.7f, 0f, 0f), 0.2f, 0.03f);
-
-            var vision = drone.GetComponent<EnemyVision>();
-            A.SetFloat(vision, "viewDistance", 18f);
-            A.SetFloat(vision, "viewAngle", 100f);
-            A.SetFloat(vision, "detectionSpeed", 1.5f);
-            A.SetFloat(vision, "proximityRadius", 2.2f);
-            A.SetColor(vision, "calmColor", new Color(1f, 0.55f, 0.45f));
-
-            A.SetFloat(drone, "patrolSpeed", 2.2f);
-            A.SetFloat(drone, "investigateSpeed", 3.2f);
-            A.SetFloat(drone, "chaseSpeed", 4.6f);   // ×1.3 en Roja = 5.98: justo por debajo de tu carrera (6)
-            A.SetFloat(drone, "alarmSpeed", 4.4f);
-            A.SetFloat(drone, "catchDistance", 1.5f);
-            A.SetFloat(drone, "hearingMultiplier", 1.4f);
-            A.SetFloat(drone, "searchDuration", 6f);
-            A.SetBool(drone, "aggressiveOnRed", true);
-            A.SetInt(drone, "startWaypoint", startWp);
-            B.SetString(drone, "displayName", "Dron de élite");
-            B.SetRef(drone, "stunEffect", stun);
-            return drone;
-        }
-
         // =====================================================================
         //  UI DE LA FASE 5
         // =====================================================================
@@ -666,6 +630,7 @@ namespace Nexus7.EditorTools
                 B.Anchor(tick.rectTransform, new Vector2(t / 100f, 0.5f), new Vector2(t / 100f, 0.5f), Vector2.zero, new Vector2(2f, 16f));
             }
             var alertHud = canvas.gameObject.AddComponent<UI.AlertHUD>();
+            B.SetRef(alertHud, "barRoot", bg.gameObject);
             B.SetRef(alertHud, "label", label);
             B.SetRef(alertHud, "heatFill", fill);
 

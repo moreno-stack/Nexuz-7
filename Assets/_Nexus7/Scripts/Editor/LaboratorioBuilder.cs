@@ -159,7 +159,6 @@ namespace Nexus7.EditorTools
             traj.widthMultiplier = 0.025f;
             traj.shadowCastingMode = ShadowCastingMode.Off;
             var quickbar = player.gameObject.AddComponent<DeviceQuickbar>();
-            A.SetObjectArray(quickbar, "slots", new Object[] { decoy, emp, camo });
             B.SetRef(quickbar, "throwOrigin", interactor.transform);
             B.SetRef(quickbar, "trajectoryLine", traj);
 
@@ -288,7 +287,7 @@ namespace Nexus7.EditorTools
                 "Emisor de pulsos sonoros. Lánzalo: atrae a los enemigos durante unos segundos.",
                 DeviceKind.SonicDecoy, DeviceUseMode.Throw, 1, 12f, 10f, 14f, 1.2f, new Color(1f, 0.6f, 0.15f));
             d.Emp = CreateDevice("Item_PulsoPEM", "device_emp", "Pulso PEM",
-                "Granada electromagnética. Aturde robots y drones y apaga cámaras, barreras y láseres cercanos.",
+                "Granada electromagnética. Aturde robots y apaga cámaras, barreras y láseres cercanos.",
                 DeviceKind.EmpPulse, DeviceUseMode.Throw, 2, 11f, 6f, 6f, 0f, new Color(0.3f, 0.85f, 1f));
             d.Camo = CreateDevice("Item_CamuflajeOptico", "device_optical_camo", "Camuflaje óptico",
                 "Reduce drásticamente tu visibilidad durante unos segundos. Los sensores láser no te detectan.",
@@ -529,8 +528,8 @@ namespace Nexus7.EditorTools
         // ---------- Botín de la Fase 4 ----------
         internal static readonly Vector3[] LabLootPoints =
         {
-            new Vector3(-4f, 0f, 6f),   new Vector3(12f, 0f, 7.5f), new Vector3(6.3f, 0f, 22.4f), new Vector3(-11f, 0f, 16.5f), new Vector3(-11f, 0f, 26.5f),
-            new Vector3(-6f, 0f, 20f),  new Vector3(10f, 0f, 28f),  new Vector3(0f, 0f, 30f),     new Vector3(-9f, 0f, 8f),     new Vector3(2f, 0f, 13f),
+            new Vector3(-4f, 0f, 6f),   new Vector3(12f, 0f, 7.5f), new Vector3(5f, 0f, 19.5f), new Vector3(-11f, 0f, 16.5f), new Vector3(-11f, 0f, 26.5f),
+            new Vector3(-6f, 0f, 20f),  new Vector3(10f, 0f, 28f),  new Vector3(0f, 0f, 30f),     new Vector3(-9f, 0f, 8f),     new Vector3(1f, 0f, 11.2f),
         };
 
         internal static LootTable LabLootTable(A.ItemSet items, ItemData crystal)
@@ -646,7 +645,7 @@ namespace Nexus7.EditorTools
         }
 
         // =====================================================================
-        //  SEGURIDAD Y DRONES
+        //  SEGURIDAD Y ROBOTS
         // =====================================================================
 
         internal static LaserTripwire Laser(string name, Transform parent, float x0, float x1, float z, float[] heights, float zoneMin, float zoneMax)
@@ -677,40 +676,6 @@ namespace Nexus7.EditorTools
             A.SetObjectArray(laser, "beams", arcs.ToArray());
             B.SetRef(laser, "beamLight", light);
             return laser;
-        }
-
-        internal static EnemyPatrol ResearchDrone(string name, Transform parent, Vector3 pos, float rotY, PatrolRoute route, string label)
-        {
-            var drone = A.Drone(name, parent, pos, rotY, route);
-            var body = drone.transform.Find("Cuerpo");
-            if (body != null) body.GetComponent<Renderer>().sharedMaterial = droneWhite;
-            var visor = drone.transform.Find("Visor");
-            if (visor != null) visor.GetComponent<Renderer>().sharedMaterial = visorPurple;
-
-            // Foco de escaneo (morado, hacia abajo): se enciende al inspeccionar
-            var scanGo = new GameObject("FocoEscaneo");
-            scanGo.transform.SetParent(drone.transform, false);
-            scanGo.transform.localPosition = new Vector3(0f, 1.3f, 0.45f);
-            scanGo.transform.localRotation = Quaternion.Euler(55f, 0f, 0f);
-            var scan = scanGo.AddComponent<Light>();
-            scan.type = LightType.Spot;
-            scan.spotAngle = 55f;
-            scan.range = 4f;
-            scan.intensity = 4f;
-            scan.color = new Color(0.75f, 0.35f, 1f);
-
-            // Efecto de aturdimiento (PEM): luz azul + arco eléctrico sobre la cabeza
-            var stun = new GameObject("EfectoAturdido");
-            stun.transform.SetParent(drone.transform, false);
-            stun.transform.localPosition = new Vector3(0f, 2.1f, 0f);
-            A.PointLight("LuzAturdido", stun.transform, Vector3.zero, new Color(0.3f, 0.8f, 1f), 3f, 2f, false);
-            S3.Arc("ArcoAturdido", stun.transform, new Vector3(-0.35f, 0f, 0f), new Vector3(0.7f, 0f, 0f), 0.2f, 0.03f);
-
-            B.SetRef(drone, "scanLight", scan);
-            B.SetRef(drone, "stunEffect", stun);
-            B.SetString(drone, "displayName", label);
-            A.SetFloat(drone, "hearingMultiplier", 1.2f);   // sensores más finos
-            return drone;
         }
 
         // =====================================================================

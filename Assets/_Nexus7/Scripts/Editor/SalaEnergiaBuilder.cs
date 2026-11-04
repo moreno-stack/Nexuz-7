@@ -895,7 +895,7 @@ namespace Nexus7.EditorTools
         internal static readonly Vector3[] SouthLootPoints =
         {
             new Vector3(-6f, 0f, 6f), new Vector3(7f, 0f, 5f), new Vector3(2f, 0f, 7.5f), new Vector3(-9f, 0f, 3f),
-            new Vector3(16f, 0f, 3f), new Vector3(0f, 0f, 16.8f), new Vector3(-6f, 0f, 24f), new Vector3(6f, 0f, 27f),
+            new Vector3(16f, 0f, 3f), new Vector3(0f, 0f, 16.8f), new Vector3(-4f, 0f, 28f), new Vector3(4f, 0f, 28f),   // a los lados de la rampa del reactor, lejos de la ruta de G1
         };
         /// <summary>Alas este/oeste (1 bloque) y plataforma del reactor (2 bloques, a 1 m de altura).</summary>
         internal static readonly Vector3[] InteriorLootPoints =

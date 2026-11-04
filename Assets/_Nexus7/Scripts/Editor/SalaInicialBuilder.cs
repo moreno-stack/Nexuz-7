@@ -125,8 +125,13 @@ namespace Nexus7.EditorTools
             Nexus7.EditorTools.AlmacenCargaBuilder.Pickup("Pickup_Chatarra", loot, new Vector3(-1.2f, 0f, 6f), items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), scrapMat, 3f, false);
             Nexus7.EditorTools.AlmacenCargaBuilder.Pickup("Pickup_Chatarra", loot, new Vector3(1.2f, 0f, 9f), items.Scrap, 2, PrimitiveType.Cube, new Vector3(0.35f, 0.1f, 0.25f), scrapMat, 3f, false);
 
+            // Barra rápida usable: con objetos que no son dispositivos avisa «no se puede usar»
+            var quickbar = player.gameObject.AddComponent<Nexus7.Devices.DeviceQuickbar>();
+            SetRef(quickbar, "throwOrigin", interactor.transform);
+
             // ---------- HUD ----------
             var hud = BuildHUD();
+            Nexus7.EditorTools.AlmacenCargaBuilder.BuildPickupNotifications(hud.transform, player.GetComponent<Nexus7.Inventory.InventorySystem>());
 
             // ---------- Sistemas ----------
             var systems = new GameObject("GameSystems");
