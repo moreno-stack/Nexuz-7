@@ -410,6 +410,17 @@ namespace Nexus7.EditorTools
             var spin = planet.AddComponent<DebrisDrift>();
             A.SetVector3(spin, "velocity", Vector3.zero);
             A.SetVector3(spin, "spin", new Vector3(0f, 1.5f, 0f));
+            var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            ring.name = "AnilloPlanetario";
+            Object.DestroyImmediate(ring.GetComponent<Collider>());
+            ring.transform.SetParent(space);
+            ring.transform.SetPositionAndRotation(planet.transform.position, Quaternion.Euler(14f, 0f, 18f));
+            ring.transform.localScale = new Vector3(215f, 0.05f, 215f);
+            ring.GetComponent<Renderer>().sharedMaterial = ringMat;
+            ring.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+
+            // Nave Nexus-7 girando, escombros flotando y vaivén de la cámara
+            MenuScreenBuilder.BuildBackdrop(space, cam);
 
             // Canvas del menú
             var canvasGo = new GameObject("CanvasMenu");
@@ -421,40 +432,8 @@ namespace Nexus7.EditorTools
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
 
-            var c = new Vector2(0.5f, 0.5f);
-            B.UIText("Titulo", canvasGo.transform, c, new Vector2(-380f, 230f), new Vector2(1000f, 140f), 96f, TextAlignmentOptions.Left, new Color(0.6f, 0.9f, 1f)).text = "<b>ESCAPE ESPACIAL</b>";
-            B.UIText("Subtitulo", canvasGo.transform, c, new Vector2(-380f, 130f), new Vector2(1000f, 80f), 60f, TextAlignmentOptions.Left, new Color(1f, 0.55f, 0.2f)).text = "NEXUS-7";
-            B.UIText("Lema", canvasGo.transform, c, new Vector2(-380f, 60f), new Vector2(1000f, 50f), 26f, TextAlignmentOptions.Left, new Color(0.75f, 0.8f, 0.85f)).text =
-                "La nave se ha vuelto contra ti. Sigilo, ingenio... y una cápsula de escape.";
-            var newGame = UIButton("BotonNuevaPartida", canvasGo.transform, new Vector2(-710f, -60f), new Vector2(340f, 70f), "[Intro]  Nueva partida", new Color(0.1f, 0.45f, 0.6f, 0.95f));
-            var quit = UIButton("BotonSalir", canvasGo.transform, new Vector2(-710f, -150f), new Vector2(340f, 70f), "Salir", new Color(0.35f, 0.12f, 0.12f, 0.95f));
-            var best = B.UIText("Record", canvasGo.transform, c, new Vector2(-380f, -350f), new Vector2(1000f, 40f), 26f, TextAlignmentOptions.Left, new Color(1f, 0.85f, 0.35f));
-            B.UIText("Controles", canvasGo.transform, new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(1800f, 60f), 20f, TextAlignmentOptions.Center, new Color(0.6f, 0.65f, 0.7f)).text =
-                "[WASD] moverse · [Shift] correr · [Ctrl/C] agacharse · [Espacio] saltar · [V] cámara · [E] interactuar · [Tab/I] inventario · [1-9] elegir objeto · [G] usar/lanzar";
-
-            // Selector de dificultad (3 botones; también con [←][→])
-            B.UIText("TituloDificultad", canvasGo.transform, c, new Vector2(-380f, -195f), new Vector2(1000f, 36f), 24f, TextAlignmentOptions.Left, new Color(0.6f, 0.9f, 1f)).text = "<b>DIFICULTAD</b>";
-            var diffButtons = new Object[3];
-            var diffLabels = new Object[3];
-            var diffColors = new[] { new Color(0.12f, 0.4f, 0.25f, 0.95f), new Color(0.45f, 0.35f, 0.08f, 0.95f), new Color(0.45f, 0.1f, 0.08f, 0.95f) };
-            for (int i = 0; i < 3; i++)
-            {
-                var b = UIButton("BotonDificultad_" + i, canvasGo.transform, new Vector2(-790f + i * 180f, -250f), new Vector2(170f, 56f),
-                                 Nexus7.Core.DifficultySettings.Label((Nexus7.Core.Difficulty)i), diffColors[i]);
-                diffButtons[i] = b;
-                var lbl = b.GetComponentInChildren<TextMeshProUGUI>();
-                if (lbl != null) { lbl.enableWordWrapping = false; lbl.enableAutoSizing = true; lbl.fontSizeMax = 22f; lbl.fontSizeMin = 14f; }
-                diffLabels[i] = lbl;
-            }
-            var diffHint = B.UIText("PistaDificultad", canvasGo.transform, c, new Vector2(-380f, -300f), new Vector2(1000f, 34f), 20f, TextAlignmentOptions.Left, new Color(0.75f, 0.8f, 0.85f));
-
-            var menu = canvasGo.AddComponent<UI.MainMenuUI>();
-            B.SetRef(menu, "newGameButton", newGame);
-            B.SetRef(menu, "quitButton", quit);
-            B.SetRef(menu, "bestScoreText", best);
-            A.SetObjectArray(menu, "difficultyButtons", diffButtons);
-            A.SetObjectArray(menu, "difficultyLabels", diffLabels);
-            B.SetRef(menu, "difficultyHint", diffHint);
+            // Nebulosas, viñeta, panel lateral, título, botones, tarjetas de dificultad, récord y controles
+            MenuScreenBuilder.BuildMenuUI(canvasGo.transform);
             CreateEventSystem();
 
             EditorSceneManager.SaveScene(scene, MenuScenePath);
@@ -848,59 +827,14 @@ namespace Nexus7.EditorTools
             timer.rectTransform.pivot = new Vector2(1f, 1f);
             var launch = B.UIText("EstadoLanzamiento", canvas, topRight, new Vector2(-30f, -230f), new Vector2(300f, 60f), 20f, TextAlignmentOptions.Right, new Color(1f, 0.75f, 0.4f));
             launch.rectTransform.pivot = new Vector2(1f, 1f);
-            var top = new Vector2(0.5f, 1f);
             var chud = canvas.gameObject.AddComponent<UI.CountdownHUD>();
             B.SetRef(chud, "countdown", countdown);
             B.SetRef(chud, "launch", sequence);
             B.SetRef(chud, "timerText", timer);
             B.SetRef(chud, "launchText", launch);
 
-            // Pantalla de resultados (pantalla completa, encima de todo)
-            var panel = B.UIImage("PanelResultados", canvas, new Color(0.01f, 0.02f, 0.04f, 0.96f));
-            B.Anchor(panel.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            var p = panel.transform;
-            var c = new Vector2(0.5f, 0.5f);
-            var title = B.UIText("Titulo", p, top, new Vector2(0f, -40f), new Vector2(1700f, 150f), 64f, TextAlignmentOptions.Top, Color.white);
-            title.rectTransform.pivot = new Vector2(0.5f, 1f);
-            var story = B.UIText("Narracion", p, top, new Vector2(0f, -195f), new Vector2(1500f, 90f), 24f, TextAlignmentOptions.Top, new Color(0.78f, 0.82f, 0.88f));
-            story.rectTransform.pivot = new Vector2(0.5f, 1f);
-            story.fontStyle = FontStyles.Italic;
-
-            B.UIText("CabeceraEvaluacion", p, c, new Vector2(-430f, 230f), new Vector2(760f, 40f), 28f, TextAlignmentOptions.Left, new Color(0.6f, 0.9f, 1f)).text = "<b>EVALUACIÓN</b>";
-            var labels = new TextMeshProUGUI[4];
-            var bars = new Image[4];
-            Color[] barColors = { new Color(0.4f, 1f, 0.7f), new Color(1f, 0.8f, 0.3f), new Color(0.4f, 0.8f, 1f), new Color(0.85f, 0.5f, 1f) };
-            for (int i = 0; i < 4; i++)
-            {
-                float y = 170f - i * 72f;
-                labels[i] = B.UIText("Categoria" + i, p, c, new Vector2(-430f, y), new Vector2(760f, 36f), 26f, TextAlignmentOptions.Left, Color.white);
-                var (fill, bg) = S3.Bar("Barra" + i, p, c, new Vector2(-810f, y - 30f));
-                B.Anchor(bg.rectTransform, c, c, new Vector2(-810f, y - 30f), new Vector2(760f, 12f));
-                fill.color = barColors[i];
-                fill.rectTransform.localScale = new Vector3(0f, 1f, 1f);
-                bars[i] = fill;
-            }
-            var breakdown = B.UIText("Destacados", p, c, new Vector2(-430f, -180f), new Vector2(760f, 150f), 22f, TextAlignmentOptions.TopLeft, Color.white);
-            var stats = B.UIText("Estadisticas", p, c, new Vector2(430f, 60f), new Vector2(800f, 400f), 22f, TextAlignmentOptions.TopLeft, Color.white);
-            var total = B.UIText("PuntuacionTotal", p, c, new Vector2(150f, -250f), new Vector2(700f, 110f), 48f, TextAlignmentOptions.Center, Color.white);
-            var grade = B.UIText("Rango", p, c, new Vector2(600f, -240f), new Vector2(220f, 180f), 140f, TextAlignmentOptions.Center, Color.white);
-            B.UIText("EtiquetaRango", p, c, new Vector2(600f, -140f), new Vector2(220f, 30f), 20f, TextAlignmentOptions.Center, new Color(0.6f, 0.65f, 0.7f)).text = "RANGO";
-            var restart = UIButton("BotonReiniciar", p, new Vector2(-220f, -440f), new Vector2(380f, 70f), "[R]  Reiniciar partida", new Color(0.1f, 0.45f, 0.6f, 0.95f));
-            var menu = UIButton("BotonMenu", p, new Vector2(220f, -440f), new Vector2(380f, 70f), "[M]  Menú principal", new Color(0.25f, 0.27f, 0.32f, 0.95f));
-
-            var ui = canvas.gameObject.AddComponent<UI.EndingUI>();
-            B.SetRef(ui, "panel", panel.gameObject);
-            B.SetRef(ui, "titleText", title);
-            B.SetRef(ui, "storyText", story);
-            B.SetRef(ui, "breakdownText", breakdown);
-            B.SetRef(ui, "statsText", stats);
-            B.SetRef(ui, "totalText", total);
-            B.SetRef(ui, "gradeText", grade);
-            A.SetObjectArray(ui, "categoryLabels", labels.Cast<Object>().ToArray());
-            A.SetObjectArray(ui, "categoryBars", bars.Cast<Object>().ToArray());
-            B.SetRef(ui, "restartButton", restart);
-            B.SetRef(ui, "menuButton", menu);
-            panel.gameObject.SetActive(false);
+            // Pantalla de resultados (pantalla completa, encima de todo): ver EndingScreenBuilder
+            EndingScreenBuilder.Build(canvas);
         }
 
         // ---------- Botín de la Fase 6 ----------
@@ -973,19 +907,6 @@ namespace Nexus7.EditorTools
             arr.arraySize = objs.Length;
             for (int i = 0; i < objs.Length; i++) arr.GetArrayElementAtIndex(i).objectReferenceValue = objs[i];
             so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static Button UIButton(string name, Transform parent, Vector2 pos, Vector2 size, string label, Color color)
-        {
-            var c = new Vector2(0.5f, 0.5f);
-            var img = B.UIImage(name, parent, color);
-            img.raycastTarget = true;   // B.UIImage lo desactiva: sin esto el botón no recibe clics
-            B.Anchor(img.rectTransform, c, c, pos, size);
-            var btn = img.gameObject.AddComponent<Button>();
-            btn.targetGraphic = img;
-            btn.navigation = new Navigation { mode = Navigation.Mode.None };   // sin navegación: [Intro] no puede "pulsar" Salir por accidente
-            B.UIText("Texto", img.transform, c, Vector2.zero, size, 28f, TextAlignmentOptions.Center, Color.white).text = label;
-            return btn;
         }
 
         private static void CreateEventSystem()
