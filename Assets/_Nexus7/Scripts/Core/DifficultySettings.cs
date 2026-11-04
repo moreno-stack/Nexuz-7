@@ -34,6 +34,9 @@ namespace Nexus7.Core
         /// <summary>Texto del botón del menú: nombre y multiplicador de daño («Normal ×1,5»).</summary>
         public static string Label(Difficulty d) => $"{NameOf(d)} ×{Num(DamageMultiplierOf(d))}";
 
+        /// <summary>Detalle de la tarjeta del menú: «daño ×1,5».</summary>
+        public static string DamageText(Difficulty d) => $"daño ×{Num(DamageMultiplierOf(d))}";
+
         /// <summary>Línea de la pantalla de resultados: nombre y multiplicador de puntuación («Dificultad: Normal ×1,15»).</summary>
         public static string ResultLine(Difficulty d) => $"Dificultad: {NameOf(d)} ×{Num(ScoreMultiplierOf(d))}";
 

@@ -7,6 +7,7 @@ namespace Nexus7.UI
 {
     /// <summary>
     /// Menú principal: Nueva partida · Salir, con el récord guardado y un resumen de controles.
+    /// La dificultad se elige en 3 tarjetas: la elegida lleva marco dorado y un poco más de tamaño.
     /// Teclado: [Intro] nueva partida (Salir solo con el botón, para no cerrar el juego por accidente).
     ///
     /// Colocar en: el Canvas de la escena "MenuPrincipal" (necesita EventSystem).
@@ -20,6 +21,13 @@ namespace Nexus7.UI
         [SerializeField] private Button[] difficultyButtons = new Button[3];
         [SerializeField] private TextMeshProUGUI[] difficultyLabels = new TextMeshProUGUI[3];
         [SerializeField] private TextMeshProUGUI difficultyHint;
+        [Tooltip("Marco de cada tarjeta de dificultad (dorado en la elegida).")]
+        [SerializeField] private Image[] difficultyFrames = new Image[3];
+        [Tooltip("Tarjeta de cada dificultad (la elegida crece un 6 %).")]
+        [SerializeField] private RectTransform[] difficultyCards = new RectTransform[3];
+
+        public static readonly Color SelectedFrame = new Color(1f, 0.85f, 0.35f, 1f);
+        public static readonly Color IdleFrame = new Color(1f, 1f, 1f, 0.08f);
 
         private void Start()
         {
@@ -60,6 +68,13 @@ namespace Nexus7.UI
             return (Difficulty)(v < 0 ? 0 : v > 2 ? 2 : v);
         }
 
+        /// <summary>Título de la tarjeta: «« Normal »» en negrita si está elegida; si no, solo el nombre.</summary>
+        public static string CardTitle(Difficulty d, bool selected)
+        {
+            string name = DifficultySettings.NameOf(d);
+            return selected ? $"<b>« {name} »</b>" : name;
+        }
+
         /// <summary>Elige la dificultad (se guarda en PlayerPrefs y se aplica a toda la partida).</summary>
         public static void SelectDifficulty(Difficulty d) => DifficultySettings.Current = d;
 
@@ -70,10 +85,13 @@ namespace Nexus7.UI
             {
                 if (difficultyLabels[i] == null) continue;
                 bool sel = (int)cur == i;
-                string label = DifficultySettings.Label((Difficulty)i);
-                difficultyLabels[i].text = sel ? $"<b>« {label} »</b>" : label;
+                difficultyLabels[i].text = CardTitle((Difficulty)i, sel);
                 difficultyLabels[i].color = sel ? new Color(1f, 0.85f, 0.35f) : new Color(0.75f, 0.8f, 0.85f);
             }
+            for (int i = 0; i < difficultyFrames.Length; i++)
+                if (difficultyFrames[i] != null) difficultyFrames[i].color = (int)cur == i ? SelectedFrame : IdleFrame;
+            for (int i = 0; i < difficultyCards.Length; i++)
+                if (difficultyCards[i] != null) { float k = ScreenFx.CardScale((int)cur == i); difficultyCards[i].localScale = new Vector3(k, k, 1f); }
             if (difficultyHint != null)
                 difficultyHint.text = $"Dificultad [←][→] o LB/RB: daño de robots y peligros ×{DifficultySettings.DamageMultiplierOf(cur):0.0#} · puntuación ×{DifficultySettings.ScoreMultiplierOf(cur):0.0#}".Replace('.', ',');
         }
