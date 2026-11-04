@@ -41,7 +41,7 @@ namespace Nexus7.Core
         private static string Num(float v) =>
             v.ToString("0.0#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]   // antes de que ningún Start lea la dificultad
         public static void Load()
         {
             int v = PlayerPrefs.GetInt(PrefsKey, (int)Difficulty.Facil);

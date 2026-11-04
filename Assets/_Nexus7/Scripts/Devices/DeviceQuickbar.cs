@@ -152,8 +152,9 @@ namespace Nexus7.Devices
             switch (device.Type)
             {
                 case DeviceKind.RepairKit:
-                    if (health != null) health.Heal(RepairKitHeal);
-                    PickupNotificationUI.Notify($"Kit de reparación: +{RepairKitHeal:0} de integridad", device.DeviceColor);
+                    float heal = RepairKitHeal;   // +40 fijo (diseño §2.6); el EffectValue del asset es solo informativo
+                    if (health != null) health.Heal(heal);
+                    PickupNotificationUI.Notify($"Kit de reparación: +{heal:0} de integridad", device.DeviceColor);
                     break;
                 case DeviceKind.OpticalCamo:
                     if (stealth != null) stealth.ApplyCloak(device.Duration, device.EffectValue);

@@ -36,6 +36,9 @@ namespace Nexus7.Inventory
 
         public override bool CanInteract(PlayerInteractor interactor) => item != null && amount > 0 && base.CanInteract(interactor);
 
+        /// <summary>Ruido al recogerlo (radio en metros).</summary>
+        public void SetNoise(float radius) => pickupNoiseRadius = radius;
+
         /// <summary>Permite configurar el objeto por código (spawners, enemigos que sueltan loot...).</summary>
         public void Setup(ItemData newItem, int newAmount)
         {

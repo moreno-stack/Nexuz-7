@@ -56,7 +56,7 @@ namespace Nexus7.Inventory
             var visual = GameObject.CreatePrimitive(shape);
             visual.name = "Visual";
             var vc = visual.GetComponent<Collider>();
-            if (vc != null) Destroy(vc);
+            if (vc != null) { vc.enabled = false; Destroy(vc); }   // Destroy es diferido: que no choque ese frame
             visual.transform.SetParent(root.transform, false);
             visual.transform.localPosition = new Vector3(0f, 0.3f, 0f);
             visual.transform.localScale = shape == PrimitiveType.Cube ? new Vector3(0.3f, 0.12f, 0.24f) : new Vector3(0.18f, 0.14f, 0.18f);
@@ -81,8 +81,12 @@ namespace Nexus7.Inventory
             }
             var pickup = root.AddComponent<PickupItem>();
             pickup.Setup(p.item, p.amount);
+            pickup.SetNoise(PickupNoiseFor(p.item.Category));
             pickup.SetVisual(visual.transform);
         }
+
+        /// <summary>Ruido al recoger: la chatarra suena (3 m), lo demás no.</summary>
+        public static float PickupNoiseFor(ItemCategory category) => category == ItemCategory.Part ? 3f : 0f;
 
         private static int StableHash(string s)
         {
