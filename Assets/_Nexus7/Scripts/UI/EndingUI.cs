@@ -16,6 +16,9 @@ namespace Nexus7.UI
     ///   · Puntuación total animada, rango (S-D), récord
     ///   · Botones [R] Reiniciar partida · [M] Menú principal (también con ratón)
     ///
+    /// Parte gráfica: banda de color según el final, insignia del rango con anillo que gira y estrellas,
+    /// tarjetas con icono por categoría, barras que se llenan una tras otra y «¡NUEVO RÉCORD!» con pulso.
+    ///
     /// Colocar en: el Canvas "HUD" de la escena final. Necesita un EventSystem en la escena para los clics.
     /// </summary>
     public class EndingUI : MonoBehaviour
@@ -35,6 +38,30 @@ namespace Nexus7.UI
         [SerializeField] private Image[] categoryBars = new Image[4];
         [SerializeField] private Button restartButton;
         [SerializeField] private Button menuButton;
+        [Header("Parte gráfica")]
+        [SerializeField] private Image headerBand;
+        [SerializeField] private Image headerLine;
+        [SerializeField] private Image endingTagBackground;
+        [SerializeField] private TextMeshProUGUI endingTagText;
+        [SerializeField] private Image gradeRing;
+        [SerializeField] private Image[] stars = new Image[3];
+        [SerializeField] private GameObject recordBanner;
+
+        /// <summary>Letra del icono redondo de cada categoría (Sigilo, Recursos, Tiempo, Creatividad).</summary>
+        public static readonly string[] CategoryInitials = { "S", "R", "T", "C" };
+        public static readonly Color StarOn = new Color(1f, 0.85f, 0.3f, 1f);
+        public static readonly Color StarOff = new Color(1f, 1f, 1f, 0.15f);
+
+        /// <summary>Al mostrar los resultados se ocultan los restos del HUD de juego (mira, objetivo, barra rápida...):
+        /// el fundido es parcial y se verían. Se quedan el panel de resultados y el fundido.</summary>
+        public static bool HideOnResults(string name) => name != "PanelResultados" && name != "Fundido";
+
+        /// <summary>Línea de la puntuación final. Con récord nuevo, el aviso va solo en el cartel que late.</summary>
+        public static string ScoreLine(int total, bool newRecord, int best, string bestGrade) =>
+            newRecord ? $"PUNTUACIÓN  <b>{total}</b>" : $"PUNTUACIÓN  <b>{total}</b>\n<size=55%>Récord: {best} ({bestGrade})</size>";
+
+        /// <summary>¿Va encendida la estrella 'index' (0–2) con este rango?</summary>
+        public static bool StarLit(int index, string grade) => index < ScreenFx.GradeStars(grade);
 
         private bool shown;
 
@@ -42,6 +69,7 @@ namespace Nexus7.UI
         {
             Instance = this;
             if (panel != null) panel.SetActive(false);
+            if (recordBanner != null) recordBanner.SetActive(false);
             if (restartButton != null) restartButton.onClick.AddListener(GameFlow.Restart);
             if (menuButton != null) menuButton.onClick.AddListener(GameFlow.ReturnToMenu);
         }
@@ -58,9 +86,13 @@ namespace Nexus7.UI
         public void Show(ScoreResult r, ScoreInput i, string story, bool newRecord)
         {
             shown = true;
+            if (panel != null && panel.transform.parent != null)
+                foreach (Transform child in panel.transform.parent)
+                    if (child != panel.transform && HideOnResults(child.name)) child.gameObject.SetActive(false);
             panel.SetActive(true);
 
-            string color = r.ending == EndingType.Optimal ? "#66FFB0" : r.ending == EndingType.Tactical ? "#FFC23A" : "#FF5040";
+            Color band = ScreenFx.EndingColor(r.ending);
+            string color = "#" + ColorUtility.ToHtmlStringRGB(band);
             string name = r.ending == EndingType.Optimal ? "FINAL ÓPTIMO — EL FANTASMA DEL NEXUS-7"
                         : r.ending == EndingType.Tactical ? "FINAL TÁCTICO — ESCAPE A LA FUERZA"
                         : "FINAL CRÍTICO — LA NAVE TE ARRASTRA CONSIGO";
@@ -95,8 +127,14 @@ namespace Nexus7.UI
                 $"Señuelos efectivos: <b>{i.decoysTriggered}</b>{col}Recursos sobrantes: <b>{i.resourceValue:0}</b>";
 
             gradeText.text = r.grade;
-            gradeText.color = r.grade == "S" ? new Color(1f, 0.85f, 0.3f) : r.grade == "A" ? new Color(0.4f, 1f, 0.7f)
-                            : r.grade == "B" ? new Color(0.4f, 0.8f, 1f) : r.grade == "C" ? new Color(1f, 0.7f, 0.3f) : new Color(1f, 0.35f, 0.3f);
+            gradeText.color = ScreenFx.GradeColor(r.grade);
+            if (gradeRing != null) gradeRing.color = ScreenFx.GradeColor(r.grade);
+            for (int s = 0; s < stars.Length; s++)
+                if (stars[s] != null) stars[s].color = StarLit(s, r.grade) ? StarOn : StarOff;
+            if (headerBand != null) headerBand.color = new Color(band.r, band.g, band.b, 0.16f);
+            if (headerLine != null) headerLine.color = band;
+            if (endingTagBackground != null) endingTagBackground.color = band;
+            if (endingTagText != null) endingTagText.text = $"<b>FINAL {ScreenFx.EndingTag(r.ending)}</b>";
 
             StartCoroutine(Animate(r, newRecord));
         }
@@ -108,15 +146,19 @@ namespace Nexus7.UI
                 (float)r.stealth / ScoreCalculator.StealthMax, (float)r.resources / ScoreCalculator.ResourcesMax,
                 (float)r.time / ScoreCalculator.TimeMax, (float)r.creativity / ScoreCalculator.CreativityMax
             };
-            for (float t = 0f; t <= 1.5f; t += Time.unscaledDeltaTime)
+            // Las barras se llenan una tras otra y la puntuación sube mientras tanto
+            float end = ScreenFx.FillsEnd(targets.Length);
+            for (float t = 0f; !ScreenFx.FillsDone(t, targets.Length); t += Time.unscaledDeltaTime)
             {
-                float k = Mathf.SmoothStep(0f, 1f, t / 1.5f);
                 for (int b = 0; b < categoryBars.Length && b < targets.Length; b++)
-                    if (categoryBars[b] != null) categoryBars[b].rectTransform.localScale = new Vector3(targets[b] * k, 1f, 1f);
-                totalText.text = $"PUNTUACIÓN  <b>{Mathf.RoundToInt(r.total * k)}</b>";
+                    if (categoryBars[b] != null) categoryBars[b].rectTransform.localScale = new Vector3(ScreenFx.StaggeredFill(t, b, targets[b]), 1f, 1f);
+                totalText.text = $"PUNTUACIÓN  <b>{Mathf.RoundToInt(r.total * ScreenFx.Intro(t, 0f, end))}</b>";
                 yield return null;
             }
-            totalText.text = $"PUNTUACIÓN  <b>{r.total}</b>\n<size=55%>{(newRecord ? "<color=#FFE14A>¡NUEVO RÉCORD!</color>" : $"Récord: {GameFlow.BestScore} ({GameFlow.BestGrade})")}</size>";
+            for (int b = 0; b < categoryBars.Length && b < targets.Length; b++)
+                if (categoryBars[b] != null) categoryBars[b].rectTransform.localScale = new Vector3(Mathf.Clamp01(targets[b]), 1f, 1f);
+            if (recordBanner != null) recordBanner.SetActive(newRecord);
+            totalText.text = ScoreLine(r.total, newRecord, GameFlow.BestScore, GameFlow.BestGrade);
         }
     }
 }
