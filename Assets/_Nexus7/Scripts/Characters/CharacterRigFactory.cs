@@ -26,7 +26,24 @@ namespace Nexus7.Characters
                 case RigMaterial.Glow:   r = glow; break;
                 default:                 r = body; break;
             }
-            return r != null ? r : body;
+            if (r == null) r = body;
+            return r != null ? r : Fallback;
+        }
+
+        private static Material fallback;
+        /// <summary>Gris neutro si el modelo se construye sin materiales (en vez del rosa de "material nulo").</summary>
+        private static Material Fallback
+        {
+            get
+            {
+                if (fallback == null)
+                {
+                    var sh = Shader.Find("Universal Render Pipeline/Lit");
+                    if (sh == null) sh = Shader.Find("Standard");
+                    fallback = new Material(sh) { color = new Color(0.55f, 0.57f, 0.6f) };
+                }
+                return fallback;
+            }
         }
     }
 
@@ -61,6 +78,9 @@ namespace Nexus7.Characters
             return new Vector3(0f, (float)-Math.Sin(a), (float)Math.Cos(a));
         }
 
+        /// <summary>Material de una pieza; sin RigMaterials (o sin ese papel) usa el gris por defecto, nunca null (rosa).</summary>
+        public static Material MaterialFor(RigMaterials mats, RigMaterial m) => (mats ?? new RigMaterials()).Get(m);
+
         public static Transform Build(Transform parent, string rootName, List<RigPart> parts, RigMaterials mats, float scale)
         {
             var root = new GameObject(rootName).transform;
@@ -81,7 +101,7 @@ namespace Nexus7.Characters
                     var r = go.GetComponent<Renderer>();
                     if (r != null)
                     {
-                        r.sharedMaterial = mats != null ? mats.Get(p.material) : null;
+                        r.sharedMaterial = MaterialFor(mats, p.material);
                         r.shadowCastingMode = p.material == RigMaterial.Glow || p.material == RigMaterial.Eye ? ShadowCastingMode.Off : ShadowCastingMode.On;
                     }
                 }

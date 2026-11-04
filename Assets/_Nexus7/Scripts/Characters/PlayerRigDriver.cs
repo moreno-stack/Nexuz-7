@@ -11,12 +11,14 @@ namespace Nexus7.Characters
 
         private PlayerController controller;
         private PlayerHealth health;
+        private CameraModeSwitcher cameraSwitcher;
 
         private void Awake()
         {
             controller = GetComponent<PlayerController>();
             health = GetComponent<PlayerHealth>();
             if (animator == null) animator = GetComponent<ProceduralAnimator>();
+            cameraSwitcher = GetComponent<CameraModeSwitcher>();
         }
 
         private void Update()
@@ -24,6 +26,7 @@ namespace Nexus7.Characters
             if (animator == null) return;
             animator.SetPosture(controller.IsCrouching, !controller.IsGrounded);
             animator.SetStunned(health != null && health.IsStunned);
+            animator.SetFirstPersonArms(cameraSwitcher != null && !cameraSwitcher.EffectiveThirdPerson && !Nexus7.Cinematics.CinematicDirector.IsPlaying);
         }
     }
 }

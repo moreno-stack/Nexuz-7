@@ -50,6 +50,10 @@ namespace Nexus7.Characters
         /// <summary>Postura impuesta por el dueño (el jugador la actualiza cada frame).</summary>
         public void SetPosture(bool isCrouched, bool isAirborne) { crouched = isCrouched; airborne = isAirborne; }
         public void SetStunned(bool value) => stunned = value;
+        public bool Stunned => stunned;
+        private bool firstPersonArms;
+        /// <summary>En 1ª persona el brazo derecho va adelantado (se ven la mano y el objeto).</summary>
+        public void SetFirstPersonArms(bool value) => firstPersonArms = value;
         public void PlayAttack(float windup, float strike) { attackStart = Time.time; attackWindup = windup; attackStrike = strike; }
         public void CancelAttack() => attackStart = -999f;
 
@@ -85,8 +89,9 @@ namespace Nexus7.Characters
             float t = Time.time - attackStart;
             float attack = AttackPose.RightArmAngle(t, attackWindup, attackStrike);
             bool attacking = attack != 0f;
-            Rot(rUp, attacking ? attack : s * arm, 0f, 6f + 10f * air);
-            if (rFore != null) Rot(rFore, attacking ? -20f : -15f - 20f * crouch);
+            var fp = GaitModel.FirstPersonRightArm(crouch);
+            Rot(rUp, attacking ? attack : firstPersonArms ? fp.Key : s * arm, 0f, 6f + 10f * air);
+            if (rFore != null) Rot(rFore, attacking ? -20f : firstPersonArms ? fp.Value : -15f - 20f * crouch);
 
             if (head != null)
                 head.localRotation = stunned ? Quaternion.Euler(Mathf.Sin(Time.time * 9f) * 12f, Mathf.Sin(Time.time * 6f) * 20f, 0f)

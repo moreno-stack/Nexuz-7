@@ -119,10 +119,19 @@ namespace Nexus7.Enemies
         /// <summary>Velocidad base afectada por el nivel de alerta de la nave.</summary>
         private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed;
 
+        private Nexus7.Characters.ProceduralAnimator rig;
+
+        /// <summary>La velocidad de persecución sigue al nivel de alerta aunque cambie a mitad de la persecución.</summary>
+        private void ApplyChaseSpeed()
+        {
+            if (agent != null) agent.speed = Speed(chaseSpeed);
+        }
+
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
             vision = GetComponent<EnemyVision>();
+            rig = GetComponent<Nexus7.Characters.ProceduralAnimator>();
             startPosition = transform.position;
             startRotation = transform.rotation;
             if (scanLight != null) scanLight.enabled = false;
@@ -319,6 +328,7 @@ namespace Nexus7.Enemies
         private void UpdateChase()
         {
             if (player == null) { ResumePatrol(0); return; }
+            ApplyChaseSpeed();
 
             if (vision.CanSeePlayer) lostSightTimer = 0f;
             else lostSightTimer += Time.deltaTime;
@@ -437,6 +447,7 @@ namespace Nexus7.Enemies
             vision.SetBlinded(true);
             if (scanLight != null) scanLight.enabled = false;
             if (stunEffect != null) stunEffect.SetActive(true);
+            if (rig != null) rig.SetStunned(true);
         }
 
         private void UpdateStunned()
@@ -446,6 +457,7 @@ namespace Nexus7.Enemies
 
             // Reinicio: búsqueda larga y receloso.
             if (stunEffect != null) stunEffect.SetActive(false);
+            if (rig != null) rig.SetStunned(false);
             vision.SetBlinded(false);
             vision.BoostDetection(wariness, warinessDuration);
             agent.isStopped = false;
@@ -472,6 +484,7 @@ namespace Nexus7.Enemies
             currentDistraction = null;
             lastDistraction = null;
             if (stunEffect != null) stunEffect.SetActive(false);
+            if (rig != null) rig.SetStunned(false);
             vision.SetBlinded(false);
             vision.ResetAwareness();
             routeDirection = 1;
