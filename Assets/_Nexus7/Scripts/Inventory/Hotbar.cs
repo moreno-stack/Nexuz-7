@@ -39,7 +39,17 @@ namespace Nexus7.Inventory
 
         private void OnEnable() { if (inventory != null) inventory.Changed += Refresh; }
         private void OnDisable() { if (inventory != null) inventory.Changed -= Refresh; }
-        private void Start() => Refresh();
+        private void Start()
+        {
+            Refresh();
+            // Conservar la selección de la escena anterior
+            var before = Model.SelectedItem;
+            if (Model.SelectItemById(Nexus7.Core.GameSession.HotbarSelectedId) && Model.SelectedItem != before) SelectionChanged?.Invoke();
+            SelectionChanged += Remember;
+        }
+
+        private void OnDestroy() => SelectionChanged -= Remember;
+        private void Remember() { if (Model.SelectedItem != null) Nexus7.Core.GameSession.HotbarSelectedId = Model.SelectedItem.Id; }
 
         private void Update()
         {

@@ -29,17 +29,21 @@ namespace Nexus7.Core
         public static bool HasSuit { get; set; }
         /// <summary>Semilla de la partida: decide los objetos aleatorios de cada sala.</summary>
         public static int RunSeed { get; private set; } = System.Environment.TickCount;
+        /// <summary>Objeto seleccionado en la barra rápida (Id), para conservarlo al cambiar de escena.</summary>
+        public static string HotbarSelectedId { get; set; }
 
         /// <summary>Nueva partida: sin traje y con objetos aleatorios distintos.</summary>
         public static void NewRun()
         {
             HasSuit = false;
+            HotbarSelectedId = null;
             RunSeed = unchecked(System.Environment.TickCount * 7919 + RunSeed);
         }
 
         public static void Clear()
         {
             HasSuit = false;
+            HotbarSelectedId = null;
             savedInventory.Clear();
             HasSavedInventory = false;
         }

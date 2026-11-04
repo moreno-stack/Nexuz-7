@@ -48,8 +48,16 @@ namespace Nexus7.UI
         {
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.JoystickButton0)) GameFlow.StartNewRun();
             int d = (int)DifficultySettings.Current;
-            if (Input.GetKeyDown(KeyCode.LeftArrow) && d > 0) { SelectDifficulty((Difficulty)(d - 1)); RefreshDifficulty(); }
-            if (Input.GetKeyDown(KeyCode.RightArrow) && d < 2) { SelectDifficulty((Difficulty)(d + 1)); RefreshDifficulty(); }
+            int dir = Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.JoystickButton4) ? -1
+                    : Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.JoystickButton5) ? 1 : 0;   // ←/→ o LB/RB
+            if (dir != 0 && NextDifficulty((Difficulty)d, dir) != (Difficulty)d) { SelectDifficulty(NextDifficulty((Difficulty)d, dir)); RefreshDifficulty(); }
+        }
+
+        /// <summary>Dificultad anterior/siguiente sin salirse de Fácil–Difícil.</summary>
+        public static Difficulty NextDifficulty(Difficulty d, int dir)
+        {
+            int v = (int)d + (dir > 0 ? 1 : dir < 0 ? -1 : 0);
+            return (Difficulty)(v < 0 ? 0 : v > 2 ? 2 : v);
         }
 
         /// <summary>Elige la dificultad (se guarda en PlayerPrefs y se aplica a toda la partida).</summary>
@@ -67,7 +75,7 @@ namespace Nexus7.UI
                 difficultyLabels[i].color = sel ? new Color(1f, 0.85f, 0.35f) : new Color(0.75f, 0.8f, 0.85f);
             }
             if (difficultyHint != null)
-                difficultyHint.text = $"Dificultad [←][→]: daño de robots y peligros ×{DifficultySettings.DamageMultiplierOf(cur):0.0#} · puntuación ×{DifficultySettings.ScoreMultiplierOf(cur):0.0#}".Replace('.', ',');
+                difficultyHint.text = $"Dificultad [←][→] o LB/RB: daño de robots y peligros ×{DifficultySettings.DamageMultiplierOf(cur):0.0#} · puntuación ×{DifficultySettings.ScoreMultiplierOf(cur):0.0#}".Replace('.', ',');
         }
     }
 }

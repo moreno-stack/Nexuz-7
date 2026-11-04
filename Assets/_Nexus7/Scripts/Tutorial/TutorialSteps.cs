@@ -20,7 +20,7 @@ namespace Nexus7.Tutorial
             new TutorialStep("run",      "Mantén [Shift] (L3 en el mando) para correr. Cuidado: correr hace MUCHO ruido.", 0.8f),
             new TutorialStep("crouch",   "Pulsa [Ctrl] o [C] (B en el mando) para agacharte. Agachado avanzas lento, pero casi en silencio.", 1f),
             new TutorialStep("jump",     "Ponte de pie ([Ctrl]/[C] otra vez) y pulsa [Espacio] (A en el mando) para saltar. Al aterrizar haces ruido.", 0f),
-            new TutorialStep("camera",   "Pulsa [V] (View en el mando) para cambiar entre cámara en 1ª y 3ª persona.", 0f),
+            new TutorialStep("camera",   "Pulsa [V] (R3, clic del stick derecho, en el mando) para cambiar entre cámara en 1ª y 3ª persona.", 0f),
             new TutorialStep("interact", "Apunta a un objeto cercano y pulsa [E] (X en el mando) para interactuar. Prueba con la bitácora de la pared.", 0f),
             new TutorialStep("suit",     "Ponte el traje espacial de la taquilla junto a la cápsula: apunta y pulsa [E].", 0f),
         };

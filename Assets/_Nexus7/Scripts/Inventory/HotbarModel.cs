@@ -43,6 +43,15 @@ namespace Nexus7.Inventory
             Selected = index;
         }
 
+        /// <summary>Selecciona la casilla del objeto con ese Id. Si no está, no cambia nada y devuelve false.</summary>
+        public bool SelectItemById(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            for (int i = 0; i < items.Count; i++)
+                if (items[i] != null && items[i].Id == id) { Selected = i; return true; }
+            return false;
+        }
+
         public void Cycle(int dir)
         {
             if (items.Count == 0) { Selected = 0; return; }
