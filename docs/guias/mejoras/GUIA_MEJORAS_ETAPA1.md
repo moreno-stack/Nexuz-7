@@ -28,7 +28,7 @@ En esta etapa los sistemas de la Etapa 0 entran en el juego. Desde ahora **todas
    | Correr | Shift | L3 |
    | Agacharse | Ctrl / C | B |
    | **Saltar** | **Espacio** | A |
-   | **Cambiar de cámara** | **V** | View |
+   | **Cambiar de cámara** | **V** | R3 |
    | Interactuar (bitácora) | E | X |
    | **Ponerse el traje** | E en la taquilla | X |
 

@@ -9,7 +9,8 @@ Juego de **sigilo en primera o tercera persona** hecho en **Unity (C#)**. Despie
 ```
 Assets/_Nexus7/Scripts/   ← todo el código del juego (C#)
 docs/guias/fases/         ← guías de las 6 fases originales
-docs/guias/mejoras/       ← guías de las mejoras (etapas 0 a 6)
+Tests/                    ← pruebas automáticas (440 comprobaciones, sin Unity)
+docs/guias/mejoras/       ← guías de las mejoras (etapas 0 a 7)
 docs/superpowers/         ← diseño (specs) y planes de implementación
 docs/media/               ← vídeo de la maqueta
 ```
@@ -71,3 +72,11 @@ docs/media/               ← vídeo de la maqueta
 | Tab / I | Inventario |
 
 Dificultad (menú principal): **Fácil ×1,0 · Normal ×1,5 · Difícil ×2,0** de daño.
+
+## Pruebas
+
+```bash
+bash Tests/run_all.sh
+```
+
+Compila todo el código, incluidos los constructores de escena, y ejecuta las 440 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).

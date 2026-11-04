@@ -1,5 +1,7 @@
 # Escape Espacial: Nexus-7 — Fase 2 (Almacén de Carga)
 
+> **Nota:** desde las mejoras (etapas 0–7) los enemigos son **robots armados**, el **botín es aleatorio** (con los objetos imprescindibles garantizados) y cada sala tiene **banco de trabajo** y **cinemática**. Lo que esta guía diga de drones o de objetos en sitios fijos ya no aplica: consulta [`docs/guias/mejoras/`](../mejoras/).
+
 Requisitos: el proyecto de la Fase 1 funcionando (Active Input Handling = *Both*, TMP Essentials importado).
 No hace falta instalar ningún paquete nuevo: el NavMesh se genera con la API integrada de Unity.
 
