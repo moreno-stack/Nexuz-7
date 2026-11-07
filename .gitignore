@@ -21,3 +21,6 @@ _entrega/
 
 # Pruebas: ejecutables y registros generados
 Tests/bin/
+
+# Editores
+.vscode/

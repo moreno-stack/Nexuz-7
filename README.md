@@ -40,11 +40,14 @@ docs/media/               ← vídeo de la maqueta y capturas
 
 ## Cómo abrirlo en Unity
 
-1. Crea un proyecto 3D en **Unity 2022.3** (o Unity 6) e instala **TextMeshPro**.
-2. Copia la carpeta `Assets/_Nexus7` dentro de `Assets/` de ese proyecto.
-3. En **Edit → Project Settings → Player**, pon *Active Input Handling* en **Both**.
-4. Construye las escenas **en orden** desde el menú **Nexus-7**: Fase 1 → 2 → 3 → 4 → 5 → 6. La Fase 6 crea también el menú principal y ordena los Build Settings.
-5. Abre `MenuPrincipal` y pulsa **Play**.
+El repositorio es un proyecto de Unity completo (**Unity 6000.6.4f1**, URP), con `ProjectSettings/` y `Packages/` incluidos.
+
+1. En **Unity Hub → Proyectos → Añadir → Añadir proyecto desde repositorio**, elige GitHub, el repositorio `moreno-stack/Nexuz-7` y la rama `main`. También puedes clonarlo con git y usar **Añadir proyecto desde disco**.
+2. Ábrelo con Unity 6000.6.4f1. La primera vez tarda unos minutos porque Unity crea la carpeta `Library/`, que no se sube a git.
+3. Construye las escenas **en orden** desde el menú **Nexus-7**: Fase 1 → 2 → 3 → 4 → 5 → 6. La Fase 6 crea también el menú principal y ordena los Build Settings.
+4. Abre `Assets/_Nexus7/Scenes/MenuPrincipal.unity` y pulsa **Play**.
+
+El proyecto ya trae TextMeshPro, los ajustes de URP y *Active Input Handling* en **Both** (teclado, ratón y mando).
 
 ## Fases
 
