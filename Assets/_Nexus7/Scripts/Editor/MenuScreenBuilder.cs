@@ -226,7 +226,7 @@ namespace Nexus7.EditorTools
             float textW = size.x - (string.IsNullOrEmpty(key) ? 60f : 150f);
             var t = B.UIText("Texto", img.transform, new Vector2(0f, 0.5f), new Vector2(30f + textW / 2f, 0f), new Vector2(textW, size.y), 30f, TextAlignmentOptions.Left, Color.white);
             t.text = $"<b>{label}</b>";
-            t.enableWordWrapping = false; t.enableAutoSizing = true; t.fontSizeMax = 30f; t.fontSizeMin = 18f;   // una sola línea
+            NoWrap(t); t.enableAutoSizing = true; t.fontSizeMax = 30f; t.fontSizeMin = 18f;   // una sola línea
             t.fontSize = 30f;
             if (!string.IsNullOrEmpty(key))
             {
@@ -234,6 +234,16 @@ namespace Nexus7.EditorTools
                 B.UIText("TextoTecla", chip.transform, C, Vector2.zero, new Vector2(84f, 34f), 18f, TextAlignmentOptions.Center, new Color(0.8f, 0.88f, 0.95f)).text = key;
             }
             return btn;
+        }
+
+        /// <summary>Texto en una sola línea (Unity 6 cambió la propiedad de TextMeshPro).</summary>
+        internal static void NoWrap(TextMeshProUGUI t)
+        {
+#if UNITY_6000_0_OR_NEWER
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+#else
+            t.enableWordWrapping = false;
+#endif
         }
 
         /// <summary>Tinte de los botones: algo apagados en reposo, brillan al pasar el ratón y se oscurecen al pulsar.</summary>
@@ -334,7 +344,7 @@ namespace Nexus7.EditorTools
                 Rect("Franja", img.transform, col, new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(186f, 4f));
                 var lbl = B.UIText("Texto", img.transform, new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(176f, 36f), 26f, TextAlignmentOptions.Center, Color.white);
                 lbl.text = MainMenuUI.CardTitle(d, false);
-                lbl.enableWordWrapping = false; lbl.enableAutoSizing = true; lbl.fontSizeMax = 26f; lbl.fontSizeMin = 14f;
+                NoWrap(lbl); lbl.enableAutoSizing = true; lbl.fontSizeMax = 26f; lbl.fontSizeMin = 14f;
                 for (int k = 0; k < 3; k++)   // nivel de peligro: 1–3 marcas encendidas
                     Rect("Peligro_" + k, img.transform, k < ScreenFx.DangerPips(d) ? col : new Color(1f, 1f, 1f, 0.12f), C, new Vector2(-34f + k * 34f, -6f), new Vector2(28f, 8f));
                 B.UIText("Detalle", img.transform, new Vector2(0.5f, 0f), new Vector2(0f, 20f), new Vector2(176f, 26f), 18f, TextAlignmentOptions.Center, new Color(0.75f, 0.8f, 0.85f)).text =
