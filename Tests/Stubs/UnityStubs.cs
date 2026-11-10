@@ -234,7 +234,7 @@ namespace UnityEngine.AI {
     public class NavMeshAgent : Behaviour {
         public float speed, radius, height, angularSpeed, acceleration, stoppingDistance, remainingDistance;
         public bool isOnNavMesh, pathPending, isStopped;
-        public bool Warp(Vector3 p) { return true; } public bool SetDestination(Vector3 p) { return true; } public void ResetPath() {}
+        public Vector3 destination; public int destinationsSet; public bool Warp(Vector3 p) { return true; } public bool SetDestination(Vector3 p) { destination = p; destinationsSet++; return true; } public void ResetPath() {}
     }
     public struct NavMeshHit { public Vector3 position; }
     public struct NavMeshBuildSettings {}
@@ -245,7 +245,8 @@ namespace UnityEngine.AI {
     public enum NavMeshCollectGeometry { RenderMeshes, PhysicsColliders }
     public static class NavMesh {
         public const int AllAreas = -1;
-        public static bool SamplePosition(Vector3 p, out NavMeshHit h, float d, int m) { h = default(NavMeshHit); return true; }
+        public static bool SamplePosition(Vector3 p, out NavMeshHit h, float d, int m) { h = new NavMeshHit { position = p }; return true; }
+        public static bool Raycast(Vector3 a, Vector3 b, out NavMeshHit h, int m) { h = new NavMeshHit { position = b }; return false; }
         public static NavMeshBuildSettings GetSettingsByID(int id) { return default(NavMeshBuildSettings); }
         public static NavMeshDataInstance AddNavMeshData(NavMeshData d) { return default(NavMeshDataInstance); }
     }
