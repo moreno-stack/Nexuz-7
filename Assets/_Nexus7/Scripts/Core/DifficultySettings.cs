@@ -24,6 +24,8 @@ namespace Nexus7.Core
         public static float DamageMultiplier => current == Difficulty.Dificil ? 2f : current == Difficulty.Normal ? 1.5f : 1f;
         public static float ShieldRegenMultiplier => current == Difficulty.Dificil ? 0.6f : current == Difficulty.Normal ? 0.8f : 1f;
         public static float DetectionMultiplier => current == Difficulty.Dificil ? 1.3f : current == Difficulty.Normal ? 1.15f : 1f;
+        /// <summary>Gasto de estamina al correr: Fácil ×0,75 · Normal ×1 · Difícil ×1,25.</summary>
+        public static float StaminaDrainMultiplier => Nexus7.Player.StaminaModel.DrainMultiplierFor((int)current);
         public static float ScoreMultiplier => current == Difficulty.Dificil ? 1.3f : current == Difficulty.Normal ? 1.15f : 1f;
         public static string DisplayName => current == Difficulty.Dificil ? "Difícil" : current == Difficulty.Normal ? "Normal" : "Fácil";
 

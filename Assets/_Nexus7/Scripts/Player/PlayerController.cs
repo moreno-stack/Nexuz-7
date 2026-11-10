@@ -49,9 +49,10 @@ namespace Nexus7.Player
 
         [Header("Ruido y pasos")]
         [Tooltip("Radio (m) en el que se oyen los pasos al caminar.")]
-        [SerializeField] private float walkNoiseRadius = 6f;
-        [SerializeField] private float runNoiseRadius = 12f;
-        [SerializeField] private float crouchNoiseRadius = 1.5f;
+        [SerializeField] private float walkNoiseRadius = PlayerNoise.Walk;
+        [SerializeField] private float runNoiseRadius = PlayerNoise.Run;
+        [Tooltip("Agachado los pasos casi no se oyen.")]
+        [SerializeField] private float crouchNoiseRadius = PlayerNoise.Crouch;
         [SerializeField] private float walkStepInterval = 0.5f;
         [SerializeField] private float runStepInterval = 0.32f;
         [SerializeField] private float crouchStepInterval = 0.75f;
@@ -91,8 +92,10 @@ namespace Nexus7.Player
         private readonly HashSet<object> inputLocks = new HashSet<object>();
 
         public void AddInputLock(object owner) => inputLocks.Add(owner);
-        public void RemoveInputLock(object owner) => inputLocks.Remove(owner);
-        public void ClearInputLocks() => inputLocks.Clear();
+        public void RemoveInputLock(object owner) { if (inputLocks.Remove(owner)) lockReleasedFrame = Time.frameCount; }
+        public void ClearInputLocks() { if (inputLocks.Count > 0) lockReleasedFrame = Time.frameCount; inputLocks.Clear(); }
+        // El fotograma en que se libera un bloqueo no se lee la entrada (la tecla que cerró el hackeo no salta ni se agacha)
+        private int lockReleasedFrame = -1;
 
         /// <summary>Empujón externo (golpe de un robot). Se suma al movimiento y se amortigua.</summary>
         public void AddImpulse(Vector3 velocity) => impulse += velocity;
@@ -111,6 +114,9 @@ namespace Nexus7.Player
         private float verticalVelocity;
         private bool wantsCrouch;
         private float stepTimer;
+        private PlayerStamina stamina;
+        /// <summary>Estamina para correr (se añade sola si falta).</summary>
+        public PlayerStamina Stamina => stamina;
 
         private void Awake()
         {
@@ -118,6 +124,8 @@ namespace Nexus7.Player
             jump = new JumpModel(jumpHeight, gravity, coyoteTime);
             controller.height = standingHeight;
             controller.center = new Vector3(0f, standingHeight * 0.5f, 0f);
+            stamina = GetComponent<PlayerStamina>();
+            if (stamina == null) stamina = gameObject.AddComponent<PlayerStamina>();
         }
 
         private void Update()
@@ -126,7 +134,7 @@ namespace Nexus7.Player
             Vector2 input = Vector2.zero;
             bool runHeld = false;
             bool jumpPressed = false;
-            if (InputEnabled)
+            if (InputEnabled && Time.frameCount != lockReleasedFrame)
             {
                 jumpPressed = Input.GetKeyDown(jumpKey) || Input.GetKeyDown(jumpPadButton);
                 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
@@ -135,14 +143,15 @@ namespace Nexus7.Player
             }
             input = Vector2.ClampMagnitude(input, 1f); // evita que la diagonal sea más rápida
 
-            // Correr estando agachado = intentar ponerse de pie.
-            if (runHeld && wantsCrouch && toggleCrouch) wantsCrouch = false;
+            // Correr estando agachado = intentar ponerse de pie (solo si de verdad va a correr: hacia delante y con estamina)
+            if (runHeld && wantsCrouch && toggleCrouch && input.y > 0.1f && (stamina == null || stamina.CanRun)) wantsCrouch = false;
 
             // 2) Altura de la cápsula y de la cámara.
             UpdateCrouch();
 
             // 3) Velocidad horizontal suavizada.
-            bool running = runHeld && !IsCrouching && input.y > 0.1f; // solo se corre hacia delante
+            // Solo se corre hacia delante y con estamina (agotado: camina hasta recuperar el aliento)
+            bool running = runHeld && !IsCrouching && input.y > 0.1f && (stamina == null || stamina.CanRun);
             float targetSpeed = IsCrouching ? crouchSpeed : (running ? runSpeed : walkSpeed);
             Vector3 desired = (transform.right * input.x + transform.forward * input.y) * targetSpeed;
             horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, desired, acceleration * Time.deltaTime);
@@ -153,7 +162,10 @@ namespace Nexus7.Player
             if (controller.isGrounded && verticalVelocity < 0f) verticalVelocity = -2f; // mantiene pegado al suelo
             float jumpVelocity;
             if (jumpPressed && jump.TryJump(controller.isGrounded, IsCrouching, !InputEnabled, Time.time, out jumpVelocity))
+            {
                 verticalVelocity = jumpVelocity;
+                if (stamina != null) stamina.OnJump();
+            }
             verticalVelocity += gravity * Time.deltaTime;
 
             impulse = Vector3.MoveTowards(impulse, Vector3.zero, impulseDamping * Time.deltaTime);
@@ -164,6 +176,7 @@ namespace Nexus7.Player
             Vector3 planar = controller.velocity;
             planar.y = 0f;
             UpdateStateAndNoise(planar.magnitude, running);
+            if (stamina != null) stamina.Tick(Time.deltaTime, State == MovementState.Running, State != MovementState.Idle);
         }
 
         private void OnLanded(float fallHeight)
@@ -227,10 +240,9 @@ namespace Nexus7.Player
 
             State = running ? MovementState.Running : MovementState.Walking;
 
-            float interval;
-            if (IsCrouching)                          { CurrentNoiseRadius = crouchNoiseRadius; interval = crouchStepInterval; }
-            else if (State == MovementState.Running)  { CurrentNoiseRadius = runNoiseRadius;    interval = runStepInterval; }
-            else                                      { CurrentNoiseRadius = walkNoiseRadius;   interval = walkStepInterval; }
+            CurrentNoiseRadius = PlayerNoise.StepRadius(IsCrouching, State == MovementState.Running, false,
+                                                        walkNoiseRadius, runNoiseRadius, crouchNoiseRadius);
+            float interval = IsCrouching ? crouchStepInterval : State == MovementState.Running ? runStepInterval : walkStepInterval;
 
             stepTimer -= Time.deltaTime;
             if (stepTimer <= 0f && controller.isGrounded)
