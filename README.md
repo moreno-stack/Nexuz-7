@@ -44,8 +44,8 @@ El repositorio es un proyecto de Unity completo (**Unity 6000.6.4f1**, URP), con
 
 1. En **Unity Hub → Proyectos → Añadir → Añadir proyecto desde repositorio**, elige GitHub, el repositorio `moreno-stack/Nexuz-7` y la rama `main`. También puedes clonarlo con git y usar **Añadir proyecto desde disco**.
 2. Ábrelo con Unity 6000.6.4f1. La primera vez tarda unos minutos porque Unity crea la carpeta `Library/`, que no se sube a git.
-3. Construye las escenas **en orden** desde el menú **Nexus-7**: Fase 1 → 2 → 3 → 4 → 5 → 6. La Fase 6 crea también el menú principal y ordena los Build Settings.
-4. Abre `Assets/_Nexus7/Scenes/MenuPrincipal.unity` y pulsa **Play**.
+3. Construye las escenas: al abrir el proyecto por primera vez, Unity pregunta si quieres construirlas (pulsa **Construir**). También puedes usar el menú **Nexus-7 → Construir todo el juego (Fases 1–6 y menú)**. Tarda uno o dos minutos y deja abierta la escena `MenuPrincipal`.
+4. Pulsa **Play**.
 
 El proyecto ya trae TextMeshPro, los ajustes de URP y *Active Input Handling* en **Both** (teclado, ratón y mando).
 
