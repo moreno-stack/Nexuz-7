@@ -790,6 +790,9 @@ namespace Nexus7.EditorTools
             A.SetFloat(smoke, "radius", radius);
             A.SetFloat(smoke, "size", size * 0.5f);
             A.SetFloat(smoke, "rate", 5f + size * 0.4f);
+            // Humo denso que tapa la vista de los robots (rayos que lo cruzan y alcance de 6 m dentro)
+            var vision = go.AddComponent<VisionSmoke>();
+            A.SetFloat(vision, "radius", radius + 0.8f);
             return smoke;
         }
 
