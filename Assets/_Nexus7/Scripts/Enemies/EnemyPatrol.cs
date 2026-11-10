@@ -12,7 +12,9 @@ namespace Nexus7.Enemies
     ///
     ///   PATROL ──(ve algo / oye ruido / alarma)──► INVESTIGATE ──(llega)──► SEARCH ──(tiempo)──► PATROL
     ///     │  └─ en waypoints con "Inspect Target": escanea el banco; si se usó hace poco → ALARMA
-    ///     └──────────────(alerta = 1)──────────────► CHASE ── lo pierde → INVESTIGATE · lo alcanza → captura
+    ///     └──────────(alerta = 1 y lo ve)──────────► CHASE ── lo alcanza → captura
+    ///                                                  └─ lo pierde → va SOLO a la última posición vista ──► SEARCH
+    ///   En SEARCH avanza unos metros hacia donde huía el jugador mirando alrededor y, si no lo encuentra, vuelve a patrullar.
     ///   Cualquier estado ──(Pulso PEM)──► STUNNED ──(fin)──► SEARCH con detección reforzada
     ///
     /// Inteligencia ante distractores (Fase 4):
@@ -57,9 +59,15 @@ namespace Nexus7.Enemies
         [SerializeField] private float suspicionThreshold = 0.35f;
         [Tooltip("Multiplica el radio de los ruidos que oye (1 = normal).")]
         [SerializeField] private float hearingMultiplier = 1f;
-        [SerializeField] private float searchDuration = 4f;
+        [Tooltip("Segundos que busca en la última posición vista antes de volver a patrullar.")]
+        [SerializeField] private float searchDuration = 6f;
         [SerializeField] private float searchTurnSpeed = 90f;
-        [SerializeField] private float loseSightTime = 2.5f;
+        [Tooltip("Metros que avanza más allá de la última posición, hacia donde huía el jugador.")]
+        [SerializeField] private float searchProbeDistance = 3f;
+        [Tooltip("Tiempo máximo yendo a la última posición vista (si no llega, empieza a buscar donde esté).")]
+        [SerializeField] private float maxPursuitTime = 8f;
+        [Tooltip("Margen antes de darlo por perdido (evita cortar la persecución por un parpadeo de 1–2 fotogramas).")]
+        [SerializeField] private float lostSightGrace = 0.25f;
         [SerializeField] private float catchDistance = 1.3f;
 
         [Header("Inteligencia (Fase 4)")]
@@ -115,6 +123,9 @@ namespace Nexus7.Enemies
         private float stunTimer;
         private float currentSearchDuration;
         private float huntTimer;
+        private bool probing;          // en SEARCH: aún va hacia el punto donde huía el jugador
+        private bool pursuitPathSet;   // en CHASE sin verlo: ya va hacia la última posición vista
+        private float spinDuration;    // en SEARCH: segundos de giro que quedaban al terminar de avanzar
 
         /// <summary>Velocidad base afectada por el nivel de alerta de la nave.</summary>
         private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed;
@@ -204,7 +215,8 @@ namespace Nexus7.Enemies
             }
 
             // ---------- Transiciones por percepción ----------
-            if (CurrentState != EnemyState.Chase && vision.Awareness >= 1f)
+            // Solo persigue si lo VE ahora mismo (la alerta alta tras perderlo no basta: no hay persecución "mágica")
+            if (CurrentState != EnemyState.Chase && vision.Awareness >= 1f && vision.CanSeePlayer)
             {
                 EnterChase();
             }
@@ -289,6 +301,7 @@ namespace Nexus7.Enemies
             CurrentState = EnemyState.Search;
             currentSearchDuration = searchDuration;
             agent.ResetPath();
+            probing = false;
 
             // Llegó a un señuelo: lo neutraliza y queda receloso.
             if (currentDistraction != null)
@@ -299,12 +312,43 @@ namespace Nexus7.Enemies
                 currentSearchDuration = searchDuration * 1.5f;
             }
             stateTimer = currentSearchDuration;
+            spinDuration = currentSearchDuration;
+        }
+
+        /// <summary>
+        /// Búsqueda tras perder al jugador: primero avanza 'searchProbeDistance' metros más allá de la última posición vista,
+        /// hacia donde huía (PerceptionModel.SearchProbe), y después mira alrededor. Si no lo encuentra, vuelve a patrullar.
+        /// </summary>
+        private void StartPursuitSearch()
+        {
+            StartSearch();
+            huntTimer = huntInterval;   // en Alerta Roja no sale a "cazar" a su propio avistamiento a mitad de la búsqueda
+            Vector3 seen = vision.LastSeenPosition;
+            // Si lo vio en el aire o en un borde, parte del punto de NavMesh más cercano
+            if (NavMesh.SamplePosition(seen, out NavMeshHit onMesh, 2f, NavMesh.AllAreas)) seen = onMesh.position;
+            Vector3 probe = PerceptionModel.SearchProbe(seen, vision.LastSeenVelocity, searchProbeDistance);
+            // Si hay una pared entre la última posición y ese punto, se queda en la pared (no lo busca "a través" de ella)
+            if (NavMesh.Raycast(seen, probe, out NavMeshHit edge, NavMesh.AllAreas)) probe = edge.position;
+            if (NavMesh.SamplePosition(probe, out NavMeshHit hit, 1.5f, NavMesh.AllAreas)
+                && (hit.position - transform.position).sqrMagnitude > 0.5f * 0.5f)
+            {
+                agent.speed = Speed(investigateSpeed);
+                agent.SetDestination(hit.position);
+                probing = true;
+            }
         }
 
         private void UpdateSearch()
         {
-            // Gira sobre sí mismo "mirando alrededor" (cambia de sentido a mitad).
-            float dir = stateTimer > currentSearchDuration * 0.5f ? 1f : -1f;
+            // Primero llega al punto hacia donde huía (el tiempo de búsqueda ya corre); después mira alrededor
+            if (probing)
+            {
+                stateTimer -= Time.deltaTime;
+                if (HasArrived() || stateTimer <= currentSearchDuration * 0.5f) { probing = false; agent.ResetPath(); spinDuration = stateTimer; }
+                else return;
+            }
+            // Gira sobre sí mismo "mirando alrededor" (cambia de sentido a mitad del giro).
+            float dir = stateTimer > spinDuration * 0.5f ? 1f : -1f;
             transform.Rotate(Vector3.up, dir * searchTurnSpeed * Time.deltaTime);
 
             stateTimer -= Time.deltaTime;
@@ -320,6 +364,7 @@ namespace Nexus7.Enemies
             agent.speed = Speed(chaseSpeed);
             lostSightTimer = 0f;
             repathTimer = 0f;
+            pursuitPathSet = false;
             if (scanLight != null) scanLight.enabled = false;
             Play(alertClip);
             PlayerSpotted?.Invoke(this);
@@ -330,30 +375,44 @@ namespace Nexus7.Enemies
             if (player == null) { ResumePatrol(0); return; }
             ApplyChaseSpeed();
 
-            if (vision.CanSeePlayer) lostSightTimer = 0f;
-            else lostSightTimer += Time.deltaTime;
-
-            repathTimer -= Time.deltaTime;
-            if (repathTimer <= 0f)
+            if (vision.CanSeePlayer)
             {
-                repathTimer = 0.2f;
-                agent.SetDestination(vision.CanSeePlayer ? player.position : vision.LastSeenPosition);
+                // Lo ve: lo sigue (5 veces por segundo)
+                lostSightTimer = 0f;
+                pursuitPathSet = false;
+                repathTimer -= Time.deltaTime;
+                if (repathTimer <= 0f) { repathTimer = 0.2f; agent.SetDestination(player.position); }
+            }
+            else
+            {
+                // Lo ha perdido: va SOLO a la última posición donde lo vio (no a donde está ahora)
+                lostSightTimer += Time.deltaTime;
+                if (lostSightTimer < lostSightGrace) return;   // parpadeo breve: sigue hacia donde iba, sin atacar
+                if (!pursuitPathSet)
+                {
+                    pursuitPathSet = true;
+                    Vector3 target = vision.LastSeenPosition;
+                    if (NavMesh.SamplePosition(target, out NavMeshHit hit, 3f, NavMesh.AllAreas)) target = hit.position;
+                    agent.SetDestination(target);
+                }
+                if (PerceptionModel.ShouldEndPursuit(false, HasArrived(), lostSightTimer, maxPursuitTime))
+                {
+                    StartPursuitSearch();
+                    return;
+                }
             }
 
             if (melee != null)
             {
                 // Robot armado: golpea al llegar al alcance del arma (se puede esquivar apartándose).
+                // Solo ataca si lo VE (fuera del cono está ciego, también para golpear)
                 if (melee.IsAttacking) return;
-                if (Vector3.Distance(transform.position, player.position) <= melee.Range * 0.9f && melee.HasClearLine()) { melee.TryAttack(); return; }
+                if (vision.CanSeePlayer && Vector3.Distance(transform.position, player.position) <= melee.Range * 0.9f && melee.HasClearLine()) { melee.TryAttack(); return; }
             }
-            else if (Vector3.Distance(transform.position, player.position) <= catchDistance)
+            else if (vision.CanSeePlayer && Vector3.Distance(transform.position, player.position) <= catchDistance)
             {
                 if (playerRespawn != null) playerRespawn.Caught();
-                return;
             }
-
-            if (lostSightTimer >= loseSightTime)
-                Investigate(vision.LastSeenPosition);
         }
 
         // =============== OÍDO Y SEÑUELOS ===============
@@ -418,6 +477,9 @@ namespace Nexus7.Enemies
             huntTimer = huntInterval;
             if (frozen || !agent.isOnNavMesh || CurrentState == EnemyState.Chase || CurrentState == EnemyState.Stunned) return;
             if (!AlertSystem.HasRecentSighting(huntMemory)) return;
+            // Buscando donde él mismo lo vio: no vuelve atrás a ese mismo punto
+            if (CurrentState == EnemyState.Search
+                && (AlertSystem.LastKnownPlayerPosition - vision.LastSeenPosition).sqrMagnitude < 2f * 2f) return;
             currentDistraction = null;
             Investigate(AlertSystem.LastKnownPlayerPosition);
             agent.speed = Speed(alarmSpeed);
@@ -462,8 +524,10 @@ namespace Nexus7.Enemies
             vision.BoostDetection(wariness, warinessDuration);
             agent.isStopped = false;
             CurrentState = EnemyState.Search;
+            probing = false;
             currentSearchDuration = searchDuration * 2f;
             stateTimer = currentSearchDuration;
+            spinDuration = currentSearchDuration;
         }
 
         // =============== CAPTURA / REINICIO ===============
