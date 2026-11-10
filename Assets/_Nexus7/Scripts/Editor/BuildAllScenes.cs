@@ -1,0 +1,56 @@
+using System.IO;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+namespace Nexus7.EditorTools
+{
+    /// <summary>
+    /// Construye todo el juego de una vez (Fases 1 a 6 y el menú principal) y abre el menú listo para pulsar Play.
+    /// Al abrir el proyecto por primera vez, si las escenas aún no existen, ofrece construirlas.
+    /// </summary>
+    [InitializeOnLoad]
+    public static class BuildAllScenes
+    {
+        internal const string MenuScenePath = "Assets/_Nexus7/Scenes/MenuPrincipal.unity";
+        private const string AskedKey = "Nexus7.BuildAllAsked";
+
+        static BuildAllScenes()
+        {
+            EditorApplication.delayCall += OfferOnFirstOpen;
+        }
+
+        private static void OfferOnFirstOpen()
+        {
+            if (Application.isBatchMode || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (File.Exists(MenuScenePath) || SessionState.GetBool(AskedKey, false)) return;
+            SessionState.SetBool(AskedKey, true);
+            if (EditorUtility.DisplayDialog("Escape Espacial: Nexus-7",
+                    "Las escenas del juego todavía no están construidas.\n\n¿Construir ahora las 6 fases y el menú principal? Tarda uno o dos minutos.",
+                    "Construir", "Más tarde"))
+                Build();
+        }
+
+        [MenuItem("Nexus-7/Construir todo el juego (Fases 1–6 y menú)", false, 0)]
+        public static void Build()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            string[] names = { "Fase 1: Sala inicial", "Fase 2: Almacén de carga", "Fase 3: Sala de energía",
+                               "Fase 4: Laboratorio", "Fase 5: Centro de control", "Fase 6: Evacuación y menú principal" };
+            System.Action[] builds = { SalaInicialBuilder.Build, AlmacenCargaBuilder.Build, SalaEnergiaBuilder.Build,
+                                       LaboratorioBuilder.Build, CentroControlBuilder.Build, EvacuacionBuilder.Build };
+            try
+            {
+                for (int i = 0; i < builds.Length; i++)
+                {
+                    EditorUtility.DisplayProgressBar("Nexus-7", "Construyendo " + names[i] + "...", (float)i / builds.Length);
+                    builds[i]();
+                }
+            }
+            finally { EditorUtility.ClearProgressBar(); }
+
+            if (File.Exists(MenuScenePath)) EditorSceneManager.OpenScene(MenuScenePath, OpenSceneMode.Single);
+            Debug.Log("<color=cyan>[Nexus-7]</color> Juego construido. Escena abierta: MenuPrincipal. Pulsa Play.");
+        }
+    }
+}

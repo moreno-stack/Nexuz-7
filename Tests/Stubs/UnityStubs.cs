@@ -165,7 +165,7 @@ namespace UnityEngine
         public static void DrawCube(Vector3 c, Vector3 s) {} public static void DrawWireCube(Vector3 c, Vector3 s) {}
         public static void DrawRay(Vector3 o, Vector3 d) {} public static void DrawLine(Vector3 a, Vector3 b) {}
     }
-    public static class Application { public static bool isPlaying; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
+    public static class Application { public static bool isPlaying, isBatchMode; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
     public enum FogMode { Linear, Exponential, ExponentialSquared }
     public static class RenderSettings {
         public static Material skybox; public static Rendering.AmbientMode ambientMode; public static Color ambientLight, fogColor;
@@ -259,13 +259,16 @@ namespace TMPro {
 }
 namespace UnityEditor {
     using UnityEngine;
-    public class MenuItem : Attribute { public MenuItem(string p) {} }
+    public class MenuItem : Attribute { public MenuItem(string p) {} public MenuItem(string p, bool v, int prio) {} }
+    public class InitializeOnLoadAttribute : Attribute {}
+    public static class EditorApplication { public static Action delayCall; public static bool isPlayingOrWillChangePlaymode; }
+    public static class SessionState { public static bool GetBool(string k, bool d) { return d; } public static void SetBool(string k, bool v) {} }
     public static class AssetDatabase {
         public static bool IsValidFolder(string p) { return true; } public static string CreateFolder(string a, string b) { return ""; }
         public static T LoadAssetAtPath<T>(string p) where T : Object { return null; } public static void CreateAsset(Object o, string p) {}
         public static void SaveAssets() {}
     }
-    public static class EditorUtility { public static void SetDirty(Object o) {} }
+    public static class EditorUtility { public static void SetDirty(Object o) {} public static bool DisplayDialog(string t, string m, string ok, string cancel) { return false; } public static void DisplayProgressBar(string t, string i, float p) {} public static void ClearProgressBar() {} }
     public enum InteractionMode { AutomatedAction, UserAction }
     public static class PrefabUtility { public static GameObject SaveAsPrefabAssetAndConnect(GameObject g, string p, InteractionMode m) { return null; } }
     public class EditorBuildSettingsScene { public string path; public EditorBuildSettingsScene(string p, bool e) {} }
