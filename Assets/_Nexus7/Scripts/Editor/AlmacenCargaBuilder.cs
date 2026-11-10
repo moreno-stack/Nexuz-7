@@ -227,6 +227,7 @@ namespace Nexus7.EditorTools
             B.SavePrefab(gate.gameObject, "PuertaMontacargas");
 
             // ---------- 11. Guardar y conectar con la Fase 1 ----------
+            VisualUpgrade.ApplyToActiveScene();   // posprocesado, partículas, materiales y luces
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings();
             ConnectPhase1Exit();

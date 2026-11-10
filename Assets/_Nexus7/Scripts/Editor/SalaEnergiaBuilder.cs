@@ -282,6 +282,7 @@ namespace Nexus7.EditorTools
             B.SavePrefab(player.gameObject, "Player_Fase3");
             B.SavePrefab(hud.gameObject, "HUD_Fase3");
 
+            VisualUpgrade.ApplyToActiveScene();   // posprocesado, partículas, materiales y luces
             EditorSceneManager.SaveScene(scene, ScenePath);
             var scenes = EditorBuildSettings.scenes.ToList();
             if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));

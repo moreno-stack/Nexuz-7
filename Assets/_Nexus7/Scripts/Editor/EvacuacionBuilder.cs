@@ -351,6 +351,7 @@ namespace Nexus7.EditorTools
             // ---------- 10. Guardado, menú, Build Settings y enlace ----------
             B.SavePrefab(player.gameObject, "Player_Fase6");
             B.SavePrefab(hud.gameObject, "HUD_Fase6");
+            VisualUpgrade.ApplyToActiveScene();   // posprocesado, partículas, materiales y luces
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             BuildMainMenuScene();   // siempre: así el menú recibe el selector de dificultad
@@ -436,6 +437,7 @@ namespace Nexus7.EditorTools
             MenuScreenBuilder.BuildMenuUI(canvasGo.transform);
             CreateEventSystem();
 
+            VisualUpgrade.ApplyToActiveScene();   // posprocesado, partículas, materiales y luces
             EditorSceneManager.SaveScene(scene, MenuScenePath);
             Debug.Log("<color=cyan>[Nexus-7]</color> Menú principal construido en " + MenuScenePath + ".");
         }

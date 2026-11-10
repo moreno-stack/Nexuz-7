@@ -155,6 +155,7 @@ namespace Nexus7.EditorTools
             SavePrefab(hud.gameObject, "HUD");
 
             // ---------- Guardar escena y añadirla a Build Settings ----------
+            VisualUpgrade.ApplyToActiveScene();   // posprocesado, partículas, materiales y luces
             EditorSceneManager.SaveScene(scene, ScenePath);
             var scenes = EditorBuildSettings.scenes.ToList();
             if (!scenes.Any(s => s.path == ScenePath)) scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
