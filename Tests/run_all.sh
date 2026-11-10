@@ -3,7 +3,7 @@
 cd "$(dirname "$0")/.."
 mkdir -p Tests/bin
 echo -n "Compilación completa (incluye Editor): "
-if mcs -target:library -nowarn:414,169,649,219,618,67 -out:Tests/bin/check.dll Tests/Stubs/UnityStubs.cs Tests/Stubs/Phase6Stubs.cs $(find Assets -name '*.cs') > Tests/bin/check.log 2>&1
+if mcs -target:library -nowarn:414,169,649,219,618,67 -out:Tests/bin/check.dll Tests/Stubs/*.cs $(find Assets -name '*.cs') > Tests/bin/check.log 2>&1
 then echo "OK"; else echo "ERROR"; grep -E "error" Tests/bin/check.log | head -20; exit 1; fi
 # Roslyn es el compilador de Unity y detecta errores que mcs deja pasar (p. ej. variables sin asignar)
 bash Tests/roslyn_check.sh || exit 1
