@@ -477,6 +477,17 @@ namespace Nexus7.EditorTools
             SetRef(shieldUi, "label", shieldLabel);
             SetRef(shieldUi, "shieldFlash", shieldFlash);
 
+            // --- Estamina y ruido (encima del escudo) ---
+            var stamUi = canvas.gameObject.AddComponent<Nexus7.UI.StaminaUI>();
+            var stamRoot = SmallBar("Estamina", canvas, 162f, new Color(0.45f, 1f, 0.55f), out var stamFill, out var stamLabel);
+            var noiseRoot = SmallBar("Ruido", canvas, 210f, new Color(0.5f, 0.8f, 1f), out var noiseFill, out var noiseLabel);
+            SetRef(stamUi, "staminaRoot", stamRoot);
+            SetRef(stamUi, "staminaFill", stamFill);
+            SetRef(stamUi, "staminaLabel", stamLabel);
+            SetRef(stamUi, "noiseRoot", noiseRoot);
+            SetRef(stamUi, "noiseFill", noiseFill);
+            SetRef(stamUi, "noiseLabel", noiseLabel);
+
             // --- Indicador de banco de trabajo cercano (encima de la barra rápida) ---
             var benchIcon = UIImage("IconoBanco", canvas, new Color(1f, 0.65f, 0.15f, 0.9f));
             Anchor(benchIcon.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-300f, 100f), new Vector2(22f, 22f));
@@ -528,6 +539,28 @@ namespace Nexus7.EditorTools
                 var st = playerGo.GetComponent<Nexus7.Stealth.PlayerStealth>();
                 if (st != null) SetRef(hotbarUi, "stealth", st);
             }
+        }
+
+        /// <summary>Barra pequeña del HUD abajo a la izquierda (texto encima, barra de 220×8 con relleno de pivote X = 0).</summary>
+        private static GameObject SmallBar(string name, Transform canvas, float y, Color color, out Image fill, out TextMeshProUGUI label)
+        {
+            var root = new GameObject(name, typeof(RectTransform));
+            root.transform.SetParent(canvas, false);
+            var rt = (RectTransform)root.transform;
+            rt.anchorMin = rt.anchorMax = Vector2.zero; rt.pivot = Vector2.zero;
+            rt.anchoredPosition = new Vector2(40f, y); rt.sizeDelta = new Vector2(300f, 40f);
+            label = UIText("Texto" + name, root.transform, Vector2.zero, new Vector2(0f, 12f), new Vector2(300f, 28f), 20f, TextAlignmentOptions.Left, color);
+            label.rectTransform.pivot = Vector2.zero;
+            var bg = UIImage("Barra" + name, root.transform, new Color(0f, 0f, 0f, 0.6f));
+            bg.rectTransform.pivot = Vector2.zero;
+            Anchor(bg.rectTransform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(220f, 8f));
+            fill = UIImage("Relleno", bg.transform, color);
+            fill.rectTransform.pivot = new Vector2(0f, 0.5f);
+            fill.rectTransform.anchorMin = Vector2.zero;
+            fill.rectTransform.anchorMax = Vector2.one;
+            fill.rectTransform.offsetMin = fill.rectTransform.offsetMax = Vector2.zero;
+            root.SetActive(false);
+            return root;
         }
 
         internal static void EmergencyLamp(Transform parent, Vector3 pos, Material lampMat, EmergencyLight.Mode mode)
