@@ -75,6 +75,16 @@ namespace Nexus7.Security
             return StepResult.Wrong;
         }
 
+        /// <summary>Un error sin pulsar ningún código (p. ej. una interferencia no atendida): −tiempo y +1 error.</summary>
+        public StepResult Penalize()
+        {
+            if (Finished) return StepResult.Ignored;
+            Errors++;
+            TimeLeft -= ErrorPenalty;
+            if (Errors > MaxErrors || TimeLeft <= 0f) { Failed = true; return StepResult.Failed; }
+            return StepResult.Wrong;
+        }
+
         /// <summary>Avanza el reloj. Devuelve true si el tiempo acaba de agotarse.</summary>
         public bool Tick(float deltaTime)
         {

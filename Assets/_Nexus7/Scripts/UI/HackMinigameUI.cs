@@ -15,6 +15,9 @@ namespace Nexus7.UI
     ///   · Error   → −segundos, pitido (ruido 6 m) y +5 de tensión en la nave.
     ///   · Fallo   → la consola se bloquea, alarma sonora (ruido 10 m) y +18 de tensión.
     ///   · [Q]     → abortar (cuenta como fallo, pero sin tensión extra).
+    ///   · INTERFERENCIA (HackInterference): la pantalla se distorsiona y los códigos no responden hasta pulsar
+    ///     [Espacio] (mando: RB) a tiempo; si no, cuenta como un error. Más frecuentes y rápidas en Alerta Amarilla y Roja.
+    ///   · Mientras hackeas, el tecleo hace ruido (3 m cada segundo).
     /// En Alerta Roja la secuencia es más larga y hay menos tiempo.
     ///
     /// Colocar en: el Canvas "HUD" (lo usa ConsoleUI).
@@ -30,7 +33,14 @@ namespace Nexus7.UI
         [SerializeField] private Image timerFill;
         [SerializeField] private Image panelBackground;
 
+        [Tooltip("Ruido del tecleo mientras se hackea (m) y cada cuántos segundos.")]
+        [SerializeField] private float typingNoiseRadius = 3f;
+        [SerializeField] private float typingNoiseInterval = 1f;
+
         private HackSequence sequence;
+        private HackInterference interference;
+        private float typingTimer;
+        private float spaceCooldown;   // pulsar [Espacio] sin interferencia lo bloquea un momento (no vale machacarlo)
         private Action<bool> onDone;
         private Vector3 sourcePosition;
         private float flashTimer;
@@ -59,7 +69,11 @@ namespace Nexus7.UI
         public void Begin(HackDifficulty difficulty, string label, Vector3 position, Action<bool> callback)
         {
             bool red = AlertSystem.Level == AlertLevel.Red;
-            sequence = new HackSequence(difficulty, UnityEngine.Random.Range(0, int.MaxValue), red ? 0.8f : 1f, red ? 1 : 0);
+            int seed = UnityEngine.Random.Range(0, int.MaxValue);
+            sequence = new HackSequence(difficulty, seed, red ? 0.8f : 1f, red ? 1 : 0);
+            interference = new HackInterference(AlertSystem.Level, difficulty, seed ^ 0x5f3759df);
+            typingTimer = 0f;
+            spaceCooldown = 0f;
             onDone = callback;
             sourcePosition = position;
             startFrame = Time.frameCount;
@@ -75,9 +89,36 @@ namespace Nexus7.UI
 
             if (sequence.Tick(Time.deltaTime)) { Finish(false, true); return; }
 
+            // Tecleo: ruido suave y continuo mientras dura el hackeo
+            if ((typingTimer -= Time.deltaTime) <= 0f)
+            {
+                typingTimer = typingNoiseInterval;
+                NoiseSystem.Emit(sourcePosition, typingNoiseRadius, null);
+            }
+
+            // Interferencias: si se acaba el margen sin pulsar [Espacio], cuenta como un error
+            if (interference.Tick(Time.deltaTime) == HackInterference.Event.Missed)
+            {
+                if (sequence.Penalize() == HackSequence.StepResult.Failed) { Finish(false, true); return; }
+                OnError();
+            }
+
+            spaceCooldown -= Time.deltaTime;
             if (Time.frameCount != startFrame)
             {
                 if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.JoystickButton6)) { Finish(false, false); return; }
+
+                bool spacePressed = Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton5);
+                if (spacePressed && !interference.Active) spaceCooldown = 0.6f;   // pulsado sin motivo: no responde en 0,6 s
+
+                if (interference.Active)
+                {
+                    // Con la pantalla distorsionada los códigos no responden: solo sirve [Espacio] / RB
+                    if (spacePressed && spaceCooldown <= 0f) interference.Respond();
+                    flashTimer -= Time.deltaTime;
+                    Render();
+                    return;
+                }
 
                 HackSymbol? pressed = null;
                 if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.JoystickButton3)) pressed = HackSymbol.Up;
@@ -89,11 +130,7 @@ namespace Nexus7.UI
                 {
                     switch (sequence.Input(pressed.Value))
                     {
-                        case HackSequence.StepResult.Wrong:
-                            flashTimer = 0.25f;
-                            AlertSystem.Report(AlertEvent.HackError, sourcePosition);
-                            NoiseSystem.Emit(sourcePosition, 6f, null);
-                            break;
+                        case HackSequence.StepResult.Wrong: OnError(); break;
                         case HackSequence.StepResult.Failed: Finish(false, true); return;
                         case HackSequence.StepResult.Completed: Finish(true, false); return;
                     }
@@ -104,9 +141,38 @@ namespace Nexus7.UI
             Render();
         }
 
+        /// <summary>Un error (código equivocado o interferencia no atendida): destello, aviso a la seguridad y pitido de 6 m.</summary>
+        private void OnError()
+        {
+            flashTimer = 0.25f;
+            AlertSystem.Report(AlertEvent.HackError, sourcePosition);
+            NoiseSystem.Emit(sourcePosition, 6f, null);
+        }
+
+        private static readonly string[] GlitchGlyphs = { "#", "%", "&", "?", "¤", "§", "@", "/" };
+
         private void Render()
         {
             sb.Clear();
+            if (interference != null && interference.Active)
+            {
+                // Pantalla distorsionada: símbolos basura y el aviso con el margen que queda
+                for (int i = 0; i < sequence.Symbols.Length; i++)
+                    sb.Append("<color=#B455FF>").Append(GlitchGlyphs[UnityEngine.Random.Range(0, GlitchGlyphs.Length)]).Append("</color>  ");
+                sequenceText.text = sb.ToString();
+                statusText.text = $"<color=#FF4AD2><b>¡INTERFERENCIA!</b></color>  pulsa <b>[ESPACIO]</b> (mando: RB)   " +
+                                  $"<color=#FFE14A>{interference.WindowLeft:0.0} s</color>     " +
+                                  $"<size=80%>Tiempo: {sequence.TimeLeft:0.0} s   Errores: {sequence.Errors}/{sequence.MaxErrors}</size>";
+                if (timerFill != null)
+                {
+                    timerFill.rectTransform.localScale = new Vector3(Mathf.Clamp01(interference.WindowLeft / interference.Window), 1f, 1f);
+                    timerFill.color = new Color(0.85f, 0.3f, 1f);
+                }
+                if (panelBackground != null)
+                    // Parpadeo lento (1,5 ciclos/s, por debajo del límite de fotosensibilidad de 3 destellos/s)
+                    panelBackground.color = (Time.unscaledTime * 1.5f) % 1f < 0.5f ? new Color(0.18f, 0.02f, 0.25f, 0.95f) : new Color(0.08f, 0.01f, 0.13f, 0.95f);
+                return;
+            }
             for (int i = 0; i < sequence.Symbols.Length; i++)
             {
                 string k = HackSequence.Key(sequence.Symbols[i]);
@@ -138,6 +204,7 @@ namespace Nexus7.UI
             }
             var callback = onDone;
             sequence = null;
+            interference = null;
             onDone = null;
             panel.SetActive(false);
             callback?.Invoke(success);
@@ -148,6 +215,7 @@ namespace Nexus7.UI
         {
             if (sequence == null) return;
             sequence = null;
+            interference = null;
             onDone = null;
             panel.SetActive(false);
         }

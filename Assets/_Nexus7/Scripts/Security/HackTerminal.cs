@@ -34,7 +34,9 @@ namespace Nexus7.Security
         [SerializeField] private float disableDuration = 25f;
         [Tooltip("Energía mínima de la red para usar la terminal (0 = tiene batería propia).")]
         [SerializeField, Min(0)] private int requiredGridPower = 0;
-        [SerializeField] private float hackNoiseRadius = 2f;
+        [Tooltip("Ruido del tecleo mientras se hackea (m), cada 'Typing Noise Interval' segundos.")]
+        [SerializeField] private float hackNoiseRadius = 3f;
+        [SerializeField] private float typingNoiseInterval = 1f;
         [SerializeField] private string actionLabel = "Hackear";
 
         [Header("Pantalla (opcional)")]
@@ -99,10 +101,15 @@ namespace Nexus7.Security
             var respawn = interactor.GetComponentInParent<PlayerRespawn>();
             var hud = HUDManager.Instance;
             if (controller != null) controller.AddInputLock(this);
-            NoiseSystem.Emit(transform.position, hackNoiseRadius, gameObject);
+            float typingTimer = 0f;
 
             for (float t = 0f; t < hackTime; t += Time.deltaTime)
             {
+                if ((typingTimer -= Time.deltaTime) <= 0f)
+                {
+                    typingTimer = typingNoiseInterval;
+                    NoiseSystem.Emit(transform.position, hackNoiseRadius, gameObject);   // tecleo
+                }
                 if ((respawn != null && respawn.IsRespawning) || interrupted) // capturado o golpeado durante el hackeo → se cancela
                 {
                     Finish(controller, hud);
