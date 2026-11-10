@@ -33,6 +33,17 @@ namespace Nexus7.Enemies
 
         /// <summary>Todos los enemigos activos (lo usa el indicador de sigilo del HUD).</summary>
         public static readonly List<EnemyPatrol> All = new List<EnemyPatrol>();
+        /// <summary>¿Algún robot está persiguiendo al jugador ahora mismo? (los checkpoints esperan a que no).</summary>
+        public static bool AnyChasing
+        {
+            get
+            {
+                // Solo robots que de verdad pueden perseguir (no congelados ni fuera del NavMesh)
+                foreach (var e in All)
+                    if (e != null && e.CurrentState == EnemyState.Chase && !e.frozen && e.agent != null && e.agent.isOnNavMesh) return true;
+                return false;
+            }
+        }
         /// <summary>true durante las cinemáticas: los drones se quedan quietos y no detectan.</summary>
         public static bool Paused;
         private bool pausedHere;
@@ -59,6 +70,8 @@ namespace Nexus7.Enemies
         [SerializeField] private float suspicionThreshold = 0.35f;
         [Tooltip("Multiplica el radio de los ruidos que oye (1 = normal).")]
         [SerializeField] private float hearingMultiplier = 1f;
+        [Tooltip("Capas que amortiguan el sonido (cada obstáculo en medio reduce el radio a la mitad).")]
+        [SerializeField] private LayerMask soundObstacleMask = ~(1 << 2);
         [Tooltip("Segundos que busca en la última posición vista antes de volver a patrullar.")]
         [SerializeField] private float searchDuration = 6f;
         [SerializeField] private float searchTurnSpeed = 90f;
@@ -293,6 +306,7 @@ namespace Nexus7.Enemies
             agent.speed = Speed(investigateSpeed);
             if (scanLight != null) scanLight.enabled = false;
             if (NavMesh.SamplePosition(point, out NavMeshHit hit, 3f, NavMesh.AllAreas)) point = hit.position;
+            investigateTarget = point;
             agent.SetDestination(point);
         }
 
@@ -416,17 +430,69 @@ namespace Nexus7.Enemies
         }
 
         // =============== OÍDO Y SEÑUELOS ===============
+        /// <summary>
+        /// Oído (SoundPropagation): cada pared o caja entre el sonido y el robot reduce el radio a la mitad,
+        /// y el robot va a un punto ESTIMADO (error de hasta el 25 % de la distancia), no al sitio exacto.
+        /// Los señuelos se oyen bien: son balizas pensadas para atraerlo.
+        /// </summary>
         private void OnNoiseHeard(Vector3 position, float radius, GameObject source)
         {
-            if (frozen || source == gameObject || CurrentState == EnemyState.Chase
+            if (frozen || Paused || source == gameObject || CurrentState == EnemyState.Chase
                 || CurrentState == EnemyState.Stunned || !agent.isOnNavMesh) return;
-            if (Vector3.Distance(transform.position, position) > radius * hearingMultiplier * AlertSystem.Profile.hearing) return;
+            float hearing = hearingMultiplier * AlertSystem.Profile.hearing;
+            float distance = Vector3.Distance(transform.position, position);
+            if (distance > radius * hearing) return;   // ni sin obstáculos llegaría: no hace falta lanzar rayos
 
             var distraction = source != null ? source.GetComponent<IDistraction>() : null;
             if (distraction != null) { OnDistraction(distraction); return; }
 
+            if (!SoundPropagation.CanHear(distance, radius, CountSoundBlockers(position, source), hearing)) return;
+
+            // El error de la estimación se mantiene unos segundos para la misma fuente (si no, se promediaría paso a paso)
+            if (source != lastNoiseSource || Time.time - lastNoiseTime > NoiseMemory)
+            {
+                noiseU = Random.value;
+                noiseV = Random.value;
+            }
+            lastNoiseSource = source;
+            lastNoiseTime = Time.time;
+            Vector3 estimate = SoundPropagation.EstimatePosition(position, transform.position, noiseU, noiseV);
+            // Ya va (o busca) cerca de ahí: no cambia de ruta por cada paso o tecla
+            if ((CurrentState == EnemyState.Investigate || CurrentState == EnemyState.Search)
+                && (estimate - investigateTarget).sqrMagnitude < 1.5f * 1.5f) return;
             currentDistraction = null;
-            Investigate(position);
+            Investigate(estimate);
+        }
+
+        private const float NoiseMemory = 3f;
+        private GameObject lastNoiseSource;
+        private float lastNoiseTime = -999f, noiseU, noiseV;
+        private Vector3 investigateTarget;
+
+        private static readonly RaycastHit[] soundHits = new RaycastHit[8];
+        private static readonly float[] hitDistances = new float[8];
+
+        /// <summary>Paredes y cajas entre el sonido y el «oído» del robot (sin contar robots, al jugador ni a quien hizo el ruido).</summary>
+        private int CountSoundBlockers(Vector3 noisePos, GameObject source)
+        {
+            Vector3 from = noisePos + Vector3.up * 0.5f;
+            Vector3 ear = transform.position + Vector3.up * 1.4f;
+            Vector3 dir = ear - from;
+            float len = dir.magnitude;
+            if (len < 0.01f) return 0;
+            int n = Physics.RaycastNonAlloc(from, dir / len, soundHits, len, soundObstacleMask, QueryTriggerInteraction.Ignore);
+            int valid = 0;
+            for (int i = 0; i < n; i++)
+            {
+                var t = soundHits[i].transform;
+                if (t == null || t.IsChildOf(transform)) continue;
+                if (source != null && t.IsChildOf(source.transform)) continue;
+                if (player != null && t.IsChildOf(player)) continue;
+                if (t.GetComponentInParent<EnemyPatrol>() != null) continue;
+                hitDistances[valid++] = soundHits[i].distance;
+            }
+            // Varias cajas de colisión pegadas (una pared hecha de piezas, una barandilla sobre la pasarela) = un obstáculo
+            return SoundPropagation.CountObstacles(hitDistances, valid, 0.5f);
         }
 
         private void OnDistraction(IDistraction distraction)
