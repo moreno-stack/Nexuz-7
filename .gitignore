@@ -24,3 +24,8 @@ Tests/bin/
 
 # Editores
 .vscode/
+
+# Unity 6 (soluciones) y proyectos de prueba creados dentro de esta carpeta
+*.slnx
+My project*/
+Tutorial en el Editor*/
