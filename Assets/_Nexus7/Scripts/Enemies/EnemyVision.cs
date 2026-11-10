@@ -85,7 +85,9 @@ namespace Nexus7.Enemies
             if (blinded || EnemyPatrol.Paused) { CanSeePlayer = false; return; }
 
             // Margen tras reaparecer: evita capturas en cadena justo al recuperar el control.
-            CanSeePlayer = player != null && !Nexus7.Gameplay.PlayerRespawn.InGrace && CheckLineOfSight(out float distance);
+            // (distance se inicializa aquí: el compilador de Unity no deduce que solo se usa cuando CheckLineOfSight se ejecutó)
+            float distance = 0f;
+            CanSeePlayer = player != null && !Nexus7.Gameplay.PlayerRespawn.InGrace && CheckLineOfSight(out distance);
 
             if (CanSeePlayer)
             {
