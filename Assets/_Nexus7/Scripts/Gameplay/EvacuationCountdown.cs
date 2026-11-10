@@ -53,6 +53,15 @@ namespace Nexus7.Gameplay
 
         public void Stop() => Running = false;
 
+        /// <summary>Resta segundos a la cuenta atrás (penalización al reaparecer). Devuelve los segundos restados.</summary>
+        public float Penalize(float seconds)
+        {
+            if (!Running || seconds <= 0f) return 0f;
+            float before = Remaining;
+            Remaining = Mathf.Max(0f, Remaining - seconds);
+            return before - Remaining;
+        }
+
         /// <summary>¿Avanza la cuenta este frame?</summary>
         public static bool ShouldTick(bool running, bool pauseDuringCinematics, bool cinematicPlaying) =>
             running && !(pauseDuringCinematics && cinematicPlaying);

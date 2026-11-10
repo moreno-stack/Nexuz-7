@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using System.Text;
 using UnityEngine;
+using Nexus7.Inventory;
 using Nexus7.Player;
 using Nexus7.UI;
 
@@ -8,8 +10,10 @@ namespace Nexus7.Gameplay
 {
     /// <summary>
     /// Gestiona la captura del jugador: fundido a negro, mensaje, teletransporte al último
-    /// punto de control y reinicio de los enemigos. El inventario SE CONSERVA (decisión de diseño:
-    /// castigar con tiempo, no con frustración).
+    /// punto de control y reinicio de los enemigos.
+    /// Castigo justo (RespawnPenalty): se conservan los dispositivos fabricados, las herramientas y los objetos clave;
+    /// se pierde el 25 % de los recursos menores (piezas, baterías, componentes) y, en la Fase 6, 15 s de la cuenta atrás
+    /// (sin bajar nunca de 60 s). La estamina se rellena.
     ///
     /// Eventos estáticos:
     ///   PlayerCaught    → los enemigos se congelan
@@ -49,6 +53,35 @@ namespace Nexus7.Gameplay
             characterController = GetComponent<CharacterController>();
             respawnPosition = transform.position;
             respawnRotation = transform.rotation;
+        }
+
+        /// <summary>
+        /// Aplica la penalización de RespawnPenalty y devuelve el mensaje con lo perdido ("" si no se perdió nada).
+        /// </summary>
+        public string ApplyPenalty()
+        {
+            var sb = new StringBuilder();
+            var inventory = GetComponent<InventorySystem>();
+            if (inventory != null)
+            {
+                foreach (var stack in inventory.GetSummary())
+                {
+                    int lost = RespawnPenalty.LostAmount(stack.amount, stack.item.Category, stack.item.IsKeyItem);
+                    if (lost <= 0) continue;
+                    lost = inventory.Remove(stack.item, lost);
+                    if (lost <= 0) continue;
+                    sb.Append(sb.Length == 0 ? "" : ", ").Append(lost).Append(' ').Append(stack.item.DisplayName);
+                }
+            }
+            string text = sb.Length > 0 ? "Recursos perdidos al caer: " + sb : "";
+            var countdown = FindAnyObjectByType<EvacuationCountdown>();
+            if (countdown != null && countdown.Running)
+            {
+                float secs = countdown.Penalize(RespawnPenalty.CountdownPenalty(countdown.Remaining));
+                if (secs > 0.5f) text += (text.Length > 0 ? " · " : "") + $"−{secs:0} s de cuenta atrás";
+            }
+            if (text.Length > 0) text += ". Dispositivos y objetos clave conservados.";
+            return text;
         }
 
         /// <summary>Lo llaman los Checkpoint al cruzarlos.</summary>
@@ -94,7 +127,10 @@ namespace Nexus7.Gameplay
             if (controller != null) controller.OnTeleported();
 
             GraceUntil = Time.time + fadeInTime + graceAfterRespawn;
+            string penalty = ApplyPenalty();
             PlayerRespawned?.Invoke();
+            // Va por las notificaciones (no por los mensajes): así no lo tapa un aviso de la cuenta atrás
+            if (!string.IsNullOrEmpty(penalty)) PickupNotificationUI.Notify(penalty, new Color(1f, 0.7f, 0.35f));
 
             if (hud != null) yield return hud.Fade(1f, 0f, fadeInTime);
             controller.ClearInputLocks();
