@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace UnityEngine
 {
     public class Object {
-        public string name; public HideFlags hideFlags;
+        public string name; public HideFlags hideFlags; public int GetInstanceID() { return 0; } public static T FindAnyObjectByType<T>() where T : Object { return null; }
         public static void Destroy(Object o) {} public static void Destroy(Object o, float t) {} public static void DontDestroyOnLoad(Object o) {}
         public static void DestroyImmediate(Object o) {}
         public static T[] FindObjectsByType<T>(FindObjectsSortMode m) where T : Object { return new T[0]; }
@@ -24,9 +24,9 @@ namespace UnityEngine
     public class ScriptableObject : Object { public static T CreateInstance<T>() where T : ScriptableObject { return null; } }
     public class GameObject : Object {
         public GameObject(string n) {} public GameObject(string n, params Type[] c) {}
-        public Transform transform; public int layer; public string tag; public bool isStatic; public bool activeSelf;
+        public Transform transform; public int layer; public string tag; public bool isStatic; public bool activeSelf, activeInHierarchy;
         public T AddComponent<T>() where T : Component { return null; }
-        public T GetComponent<T>() { return default(T); } public T GetComponentInChildren<T>() { return default(T); } public UnityEngine.SceneManagement.Scene scene; public Component GetComponent(Type t) { return null; } public Component AddComponent(Type t) { return null; }
+        public T GetComponent<T>() { return default(T); } public T GetComponentInChildren<T>() { return default(T); } public T[] GetComponentsInChildren<T>(bool inactive) { return new T[0]; } public UnityEngine.SceneManagement.Scene scene; public Component GetComponent(Type t) { return null; } public Component AddComponent(Type t) { return null; }
         public void SetActive(bool b) { activeSelf = b; }
         public static GameObject Find(string n) { return null; }
         public static GameObject FindGameObjectWithTag(string t) { return null; }
@@ -36,7 +36,7 @@ namespace UnityEngine
     public enum Space { World, Self }
     public enum FindObjectsSortMode { None, InstanceID }
     public class Transform : Component, IEnumerable {
-        public Vector3 position, localPosition, localScale, eulerAngles, localEulerAngles, forward, right, up;
+        public Vector3 lossyScale; public Vector3 position, localPosition, localScale, eulerAngles, localEulerAngles, forward, right, up;
         public Quaternion rotation, localRotation; public Transform parent; public int childCount; public Matrix4x4 localToWorldMatrix;
         public void SetParent(Transform p) { parent = p; } public void SetParent(Transform p, bool w) { parent = p; }
         public void Rotate(Vector3 e) {} public void Rotate(float x, float y, float z) {} public void Rotate(Vector3 e, Space s) {} public void Rotate(Vector3 a, float ang) {} public void Rotate(Vector3 a, float ang, Space s) {}
@@ -46,7 +46,7 @@ namespace UnityEngine
     }
     public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, anchoredPosition, sizeDelta, pivot, offsetMin, offsetMax; public Rect rect; }
     public class ExecuteAlways : Attribute {}
-    [Flags] public enum HideFlags { None = 0, HideInHierarchy = 1, DontSave = 52 }
+    [Flags] public enum HideFlags { None = 0, HideInHierarchy = 1, HideInInspector = 2, DontSave = 52 }
     public class CanvasGroup : Behaviour { public float alpha = 1f; public bool interactable = true, blocksRaycasts = true; }
     public struct Matrix4x4 {}
     public class Vector2 { public Vector2() {}
@@ -83,7 +83,7 @@ namespace UnityEngine
         public static Color operator *(Color a, float f) { return a; }
     }
     public static class ColorUtility { public static string ToHtmlStringRGB(Color c) { return ""; } public static bool TryParseHtmlString(string s, out Color c) { c = Color.white; return true; } }
-    public struct Bounds { public Bounds(Vector3 c, Vector3 s) {} public bool Intersects(Bounds b) { return false; } }
+    public struct Bounds { public Vector3 center, extents, min, max, size; public Bounds(Vector3 c, Vector3 s) { center = c; extents = s; min = c; max = c; size = s; } public bool Intersects(Bounds b) { return false; } }
     public struct Rect { public float xMin, xMax, yMin, yMax; public float width { get { return xMax - xMin; } } public float height { get { return yMax - yMin; } } public Rect(float x, float y, float w, float h) { xMin=x; yMin=y; xMax=x+w; yMax=y+h; } public bool Contains(Vector2 p) { return false; } }
     public struct Vector2Int { public int x, y; public Vector2Int(int x, int y) { this.x=x; this.y=y; } }
     public enum RuntimeInitializeLoadType { SubsystemRegistration, AfterSceneLoad, BeforeSceneLoad }
@@ -140,18 +140,21 @@ namespace UnityEngine
     public class Material : Object {
         public Material(Shader s) {} public Material(Material m) {} public Color color; public Shader shader; public MaterialGlobalIlluminationFlags globalIlluminationFlags;
         public void SetColor(string n, Color c) {} public void SetFloat(string n, float f) {} public bool HasProperty(string n) { return true; }
-        public void EnableKeyword(string k) {} public Texture mainTexture;
+        public void EnableKeyword(string k) {} public void DisableKeyword(string k) {} public Texture mainTexture; public int renderQueue;
+        public bool HasProperty(int id) { return true; } public Color GetColor(int id) { return new Color(); } public Color GetColor(string n) { return new Color(); }
+        public void SetTexture(string n, Texture t) {} public Texture GetTexture(string n) { return null; } public void SetTextureScale(string n, Vector2 s) {} public float GetFloat(string n) { return 0f; } public void SetInt(string n, int v) {}
+        public bool IsKeywordEnabled(string k) { return false; }
     }
-    public class MaterialPropertyBlock { public void SetColor(int id, Color c) {} public void SetColor(string n, Color c) {} }
-    public class Renderer : Component { public bool enabled; public Rendering.ShadowCastingMode shadowCastingMode;
+    public class MaterialPropertyBlock { public void SetColor(int id, Color c) {} public void SetColor(string n, Color c) {} public void SetVector(int id, Vector4 v) {} public void SetTexture(int id, Texture t) {} }
+    public class Renderer : Component { public bool enabled, receiveShadows; public Bounds bounds; public Rendering.ShadowCastingMode shadowCastingMode;
         public Material material, sharedMaterial;
         public void GetPropertyBlock(MaterialPropertyBlock b) {} public void SetPropertyBlock(MaterialPropertyBlock b) {}
     }
     public enum LightType { Spot, Directional, Point }
     public enum LightShadows { None, Hard, Soft }
-    public class Light : Behaviour { public LightType type; public Color color; public float range, intensity, spotAngle; public LightShadows shadows; }
+    public class Light : Behaviour { public LightType type; public Color color; public float range, intensity, spotAngle, shadowStrength, shadowBias, shadowNormalBias; public LightShadows shadows; }
     public enum CameraClearFlags { Skybox, SolidColor }
-    public class Camera : Behaviour { public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; }
+    public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; }
     public class AudioListener : Behaviour {}
     public class AudioClip : Object {}
     public class AudioSource : Behaviour {
@@ -189,23 +192,37 @@ namespace UnityEngine
     public class DefaultExecutionOrder : Attribute { public DefaultExecutionOrder(int o) {} }
 }
 namespace UnityEngine {
-    public struct MinMaxCurve { public static implicit operator MinMaxCurve(float f) { return new MinMaxCurve(); } }
-    public struct MinMaxGradient { public static implicit operator MinMaxGradient(Color c) { return new MinMaxGradient(); } }
+    public struct MinMaxCurve { public MinMaxCurve(float a, float b) {} public MinMaxCurve(float m, AnimationCurve c) {} public static implicit operator MinMaxCurve(float f) { return new MinMaxCurve(); } }
+    public struct MinMaxGradient { public MinMaxGradient(Gradient g) {} public static implicit operator MinMaxGradient(Color c) { return new MinMaxGradient(); } }
+    public struct Keyframe { public Keyframe(float t, float v) {} }
+    public class AnimationCurve { public AnimationCurve(params Keyframe[] k) {} public static AnimationCurve Linear(float t0, float v0, float t1, float v1) { return new AnimationCurve(); } }
+    public struct GradientColorKey { public GradientColorKey(Color c, float t) {} }
+    public struct GradientAlphaKey { public GradientAlphaKey(float a, float t) {} }
+    public class Gradient { public void SetKeys(GradientColorKey[] c, GradientAlphaKey[] a) {} }
     public enum ParticleSystemSimulationSpace { Local, World }
-    public enum ParticleSystemShapeType { Sphere, Cone }
+    public enum ParticleSystemShapeType { Sphere, Cone, Box }
+    public enum ParticleSystemStopBehavior { StopEmittingAndClear, StopEmitting }
+    public enum ParticleSystemRenderMode { Billboard, Stretch, HorizontalBillboard, VerticalBillboard, Mesh }
     public class ParticleSystem : Component {
-        public struct MainModule { public bool loop { get; set; } public bool playOnAwake { get; set; } public MinMaxCurve startLifetime { get; set; } public MinMaxCurve startSpeed { get; set; } public MinMaxCurve startSize { get; set; } public MinMaxCurve gravityModifier { get; set; } public MinMaxGradient startColor { get; set; } public int maxParticles { get; set; } public ParticleSystemSimulationSpace simulationSpace { get; set; } }
-        public struct EmissionModule { public MinMaxCurve rateOverTime { get; set; } }
-        public struct ShapeModule { public ParticleSystemShapeType shapeType { get; set; } public float radius { get; set; } }
-        public MainModule main; public EmissionModule emission; public ShapeModule shape;
-        public void Emit(int n) {} public bool isPlaying; public void Play() {}
+        public struct MinMaxCurve { public MinMaxCurve(float a, float b) {} public MinMaxCurve(float m, AnimationCurve c) {} public static implicit operator MinMaxCurve(float f) { return new MinMaxCurve(); } public static implicit operator UnityEngine.MinMaxCurve(MinMaxCurve c) { return new UnityEngine.MinMaxCurve(); } }
+        public struct MinMaxGradient { public MinMaxGradient(Gradient g) {} public static implicit operator MinMaxGradient(Color c) { return new MinMaxGradient(); } public static implicit operator UnityEngine.MinMaxGradient(MinMaxGradient c) { return new UnityEngine.MinMaxGradient(); } }
+        public struct MainModule { public bool loop { get; set; } public bool playOnAwake { get; set; } public bool prewarm { get; set; } public UnityEngine.MinMaxCurve startLifetime { get; set; } public UnityEngine.MinMaxCurve startSpeed { get; set; } public UnityEngine.MinMaxCurve startSize { get; set; } public UnityEngine.MinMaxCurve gravityModifier { get; set; } public UnityEngine.MinMaxGradient startColor { get; set; } public int maxParticles { get; set; } public ParticleSystemSimulationSpace simulationSpace { get; set; } }
+        public struct EmissionModule { public bool enabled { get; set; } public UnityEngine.MinMaxCurve rateOverTime { get; set; } }
+        public struct ShapeModule { public ParticleSystemShapeType shapeType { get; set; } public float radius { get; set; } public float angle { get; set; } public Vector3 scale { get; set; } }
+        public struct SizeOverLifetimeModule { public bool enabled { get; set; } public UnityEngine.MinMaxCurve size { get; set; } }
+        public struct ColorOverLifetimeModule { public bool enabled { get; set; } public UnityEngine.MinMaxGradient color { get; set; } }
+        public struct NoiseModule { public bool enabled { get; set; } public UnityEngine.MinMaxCurve strength { get; set; } public float frequency { get; set; } }
+        public MainModule main; public EmissionModule emission; public ShapeModule shape; public SizeOverLifetimeModule sizeOverLifetime; public ColorOverLifetimeModule colorOverLifetime; public NoiseModule noise;
+        public void Emit(int n) {} public bool isPlaying; public void Play() {} public void Stop(bool children, ParticleSystemStopBehavior b) {}
     }
-    public class ParticleSystemRenderer : Renderer {}
+    public class MeshRenderer : Renderer {}
+    public class MeshFilter : Component {}
+    public class ParticleSystemRenderer : Renderer { public ParticleSystemRenderMode renderMode; public float velocityScale, lengthScale; }
     public class LineRenderer : Renderer { public bool useWorldSpace, loop; public Color startColor, endColor; public float widthMultiplier; public int positionCount; public void SetPosition(int i, Vector3 p) {} }
 }
 namespace UnityEngine.Events { public class UnityEvent { public void Invoke() {} } }
 namespace UnityEngine.SceneManagement {
-    public struct Scene { public string path; public string name; }
+    public struct Scene { public string path; public string name; public GameObject[] GetRootGameObjects() { return new GameObject[0]; } }
     public enum LoadSceneMode { Single, Additive }
     public static class SceneManager { public static void LoadScene(string n) {} public static event System.Action<Scene, LoadSceneMode> sceneLoaded; public static Scene GetActiveScene() { return default(Scene); } }
 }
@@ -267,7 +284,14 @@ namespace UnityEditor {
         public static bool IsValidFolder(string p) { return true; } public static string CreateFolder(string a, string b) { return ""; }
         public static T LoadAssetAtPath<T>(string p) where T : Object { return null; } public static void CreateAsset(Object o, string p) {}
         public static void SaveAssets() {}
+        public static string[] FindAssets(string f, string[] folders) { return new string[0]; } public static string GUIDToAssetPath(string g) { return g; }
+        public static void ImportAsset(string p, ImportAssetOptions o) {} public static void AddObjectToAsset(Object o, Object a) {}
     }
+    public enum ImportAssetOptions { Default, ForceUpdate }
+    public class AssetImporter : Object { public static AssetImporter GetAtPath(string p) { return null; } public void SaveAndReimport() {} }
+    public enum TextureImporterType { Default, NormalMap }
+    public class TextureImporter : AssetImporter { public TextureImporterType textureType; public bool sRGBTexture; public TextureWrapMode wrapMode; public int anisoLevel; }
+    public enum SerializedPropertyType { Generic, Integer, ObjectReference }
     public static class EditorUtility { public static void SetDirty(Object o) {} public static bool DisplayDialog(string t, string m, string ok, string cancel) { return false; } public static void DisplayProgressBar(string t, string i, float p) {} public static void ClearProgressBar() {} }
     public enum InteractionMode { AutomatedAction, UserAction }
     public static class PrefabUtility { public static GameObject SaveAsPrefabAssetAndConnect(GameObject g, string p, InteractionMode m) { return null; } }
@@ -275,11 +299,12 @@ namespace UnityEditor {
     public static class EditorBuildSettings { public static EditorBuildSettingsScene[] scenes; }
     public static class Selection { public static GameObject activeGameObject; }
     public class SerializedProperty {
+        public SerializedPropertyType propertyType; public bool Next(bool enter) { return false; }
         public Object objectReferenceValue; public string stringValue; public int intValue, enumValueIndex, arraySize; public float floatValue;
         public bool boolValue; public Color colorValue; public Vector3 vector3Value; public Vector2 vector2Value;
         public SerializedProperty GetArrayElementAtIndex(int i) { return null; } public SerializedProperty FindPropertyRelative(string n) { return null; }
     }
-    public class SerializedObject { public SerializedObject(Object o) {} public SerializedProperty FindProperty(string n) { return null; } public bool ApplyModifiedPropertiesWithoutUndo() { return true; } }
+    public class SerializedObject : IDisposable { public void Dispose() {} public SerializedObject(Object o) {} public SerializedProperty FindProperty(string n) { return null; } public SerializedProperty GetIterator() { return new SerializedProperty(); } public bool ApplyModifiedPropertiesWithoutUndo() { return true; } }
 }
 namespace UnityEditor.SceneManagement {
     using UnityEngine.SceneManagement;
@@ -292,6 +317,7 @@ namespace UnityEditor.SceneManagement {
         public static bool SaveScene(Scene s, string p) { return true; } public static bool SaveScene(Scene s) { return true; }
         public static Scene OpenScene(string p, OpenSceneMode m) { return default(Scene); }
         public static Scene GetActiveScene() { return default(Scene); }
+        public static bool MarkSceneDirty(Scene s) { return true; }
     }
 }
 
@@ -302,7 +328,7 @@ namespace UnityEngine {
     public enum TextureWrapMode { Repeat, Clamp }
     public class Texture2D : Texture {
         public Texture2D(int w, int h, TextureFormat f, bool mip) { width = w; height = h; }
-        public void SetPixel(int x, int y, Color c) {} public void SetPixels(Color[] c) {} public void Apply() {}
+        public void SetPixel(int x, int y, Color c) {} public void SetPixels(Color[] c) {} public void Apply() {} public byte[] EncodeToPNG() { return new byte[0]; }
     }
     public static class PlayerPrefs {
         static System.Collections.Generic.Dictionary<string,object> d = new System.Collections.Generic.Dictionary<string,object>();
