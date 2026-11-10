@@ -748,7 +748,6 @@ namespace Nexus7.EditorTools
             A.SetFloat(vision, "viewDistance", 13f);
             A.SetFloat(vision, "viewAngle", 50f);
             A.SetFloat(vision, "detectionSpeed", 1.3f);
-            A.SetFloat(vision, "proximityRadius", 0.5f);
 
             var audio = root.AddComponent<AudioSource>();
             audio.playOnAwake = false;

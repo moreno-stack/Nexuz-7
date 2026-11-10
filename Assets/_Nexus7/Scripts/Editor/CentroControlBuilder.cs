@@ -598,10 +598,9 @@ namespace Nexus7.EditorTools
             B.SetRef(robot, "stunEffect", stun);
 
             var vision = robot.GetComponent<EnemyVision>();
-            A.SetFloat(vision, "viewDistance", 18f);
-            A.SetFloat(vision, "viewAngle", 100f);
+            A.SetFloat(vision, "viewDistance", 14f);   // élite: ve más lejos, pero nunca más del tope de 15 m
+            A.SetFloat(vision, "viewAngle", 90f);      // el máximo de los robots
             A.SetFloat(vision, "detectionSpeed", 1.5f);
-            A.SetFloat(vision, "proximityRadius", 2.2f);
             A.SetColor(vision, "calmColor", new Color(1f, 0.55f, 0.45f));
 
             A.SetFloat(robot, "patrolSpeed", 2.2f);
