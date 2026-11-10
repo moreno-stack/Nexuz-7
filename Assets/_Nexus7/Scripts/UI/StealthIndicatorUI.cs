@@ -22,6 +22,8 @@ namespace Nexus7.UI
         [SerializeField] private GameObject barRoot;
 
         [SerializeField] private Color hiddenColor = new Color(0.55f, 0.65f, 0.8f);
+        [Tooltip("Bajo luz directa: los robots te ven un 30 % más lejos.")]
+        [SerializeField] private Color litColor = new Color(1f, 0.92f, 0.6f);
         [SerializeField] private Color suspiciousColor = new Color(1f, 0.8f, 0.1f);
         [SerializeField] private Color detectedColor = new Color(1f, 0.15f, 0.1f);
 
@@ -48,6 +50,7 @@ namespace Nexus7.UI
             if (chased)                                  { text = "! DETECTADO";  color = detectedColor;  maxAwareness = 1f; }
             else if (maxAwareness > 0.02f)               { text = "? SOSPECHA";   color = suspiciousColor; }
             else if (stealth != null && stealth.IsHidden) { text = "OCULTO";      color = hiddenColor; }
+            else if (stealth != null && stealth.IsLit)    { text = "ILUMINADO";   color = litColor; }
 
             if (label != null)
             {
