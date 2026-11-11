@@ -126,7 +126,7 @@ namespace UnityEngine
     public static class Cursor { public static CursorLockMode lockState; public static bool visible; }
     public static class Debug {
         public static void Log(object o) {} public static void LogWarning(object o) {} public static void LogWarning(object o, Object c) {}
-        public static void LogError(object o, Object c) {}
+        public static void LogError(object o, Object c) {} public static void LogError(object o) {} public static void LogException(Exception e) {}
     }
     public class Collider : Component { public bool isTrigger; public bool enabled; public Bounds bounds; }
     public class BoxCollider : Collider { public Vector3 center, size; }
@@ -278,7 +278,10 @@ namespace TMPro {
 }
 namespace UnityEditor {
     using UnityEngine;
-    public class MenuItem : Attribute { public MenuItem(string p) {} public MenuItem(string p, bool v, int prio) {} }
+    public class MenuItem : Attribute { public MenuItem(string p) {} public MenuItem(string p, bool v) {} public MenuItem(string p, bool v, int prio) {} }
+    public static class Menu { public static void SetChecked(string p, bool c) {} }
+    public static class EditorPrefs { public static bool GetBool(string k, bool d) { return d; } public static void SetBool(string k, bool v) {} }
+    public class SceneAsset : Object {}
     public class InitializeOnLoadAttribute : Attribute {}
     public static class EditorApplication { public static Action delayCall; public static bool isPlayingOrWillChangePlaymode; }
     public static class SessionState { public static bool GetBool(string k, bool d) { return d; } public static void SetBool(string k, bool v) {} }
@@ -294,7 +297,7 @@ namespace UnityEditor {
     public enum TextureImporterType { Default, NormalMap }
     public class TextureImporter : AssetImporter { public TextureImporterType textureType; public bool sRGBTexture; public TextureWrapMode wrapMode; public int anisoLevel; }
     public enum SerializedPropertyType { Generic, Integer, ObjectReference }
-    public static class EditorUtility { public static void SetDirty(Object o) {} public static bool DisplayDialog(string t, string m, string ok, string cancel) { return false; } public static void DisplayProgressBar(string t, string i, float p) {} public static void ClearProgressBar() {} }
+    public static class EditorUtility { public static void SetDirty(Object o) {} public static bool DisplayDialog(string t, string m, string ok, string cancel) { return false; } public static bool DisplayDialog(string t, string m, string ok) { return true; } public static void DisplayProgressBar(string t, string i, float p) {} public static void ClearProgressBar() {} }
     public enum InteractionMode { AutomatedAction, UserAction }
     public static class PrefabUtility { public static GameObject SaveAsPrefabAssetAndConnect(GameObject g, string p, InteractionMode m) { return null; } }
     public class EditorBuildSettingsScene { public string path; public EditorBuildSettingsScene(string p, bool e) {} }
@@ -320,6 +323,7 @@ namespace UnityEditor.SceneManagement {
         public static Scene OpenScene(string p, OpenSceneMode m) { return default(Scene); }
         public static Scene GetActiveScene() { return default(Scene); }
         public static bool MarkSceneDirty(Scene s) { return true; }
+        public static SceneAsset playModeStartScene;
     }
 }
 

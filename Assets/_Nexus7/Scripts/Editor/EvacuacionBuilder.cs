@@ -443,7 +443,7 @@ namespace Nexus7.EditorTools
         }
 
         /// <summary>Menú principal primero (índice 0), luego las fases en orden y la evacuación al final.</summary>
-        [MenuItem("Nexus-7/Fase 6/Ordenar Build Settings")]
+        [MenuItem("Nexus-7/Ordenar Build Settings (menú primero)", false, 2)]
         public static void ConfigureBuildSettings()
         {
             string[] order =

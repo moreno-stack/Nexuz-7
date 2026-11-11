@@ -39,18 +39,31 @@ namespace Nexus7.EditorTools
                                "Fase 4: Laboratorio", "Fase 5: Centro de control", "Fase 6: Evacuación y menú principal" };
             System.Action[] builds = { SalaInicialBuilder.Build, AlmacenCargaBuilder.Build, SalaEnergiaBuilder.Build,
                                        LaboratorioBuilder.Build, CentroControlBuilder.Build, EvacuacionBuilder.Build };
+            // Cada fase por separado: si una falla, se registra y se siguen construyendo las demás
+            var failed = new System.Collections.Generic.List<string>();
             try
             {
                 for (int i = 0; i < builds.Length; i++)
                 {
                     EditorUtility.DisplayProgressBar("Nexus-7", "Construyendo " + names[i] + "...", (float)i / builds.Length);
-                    builds[i]();
+                    try { builds[i](); }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogException(e);
+                        failed.Add(names[i]);
+                    }
                 }
+                EditorUtility.DisplayProgressBar("Nexus-7", "Ordenando Build Settings...", 1f);
+                EvacuacionBuilder.ConfigureBuildSettings();   // menú principal en el índice 0
             }
             finally { EditorUtility.ClearProgressBar(); }
 
             if (File.Exists(MenuScenePath)) EditorSceneManager.OpenScene(MenuScenePath, OpenSceneMode.Single);
-            Debug.Log("<color=cyan>[Nexus-7]</color> Juego construido. Escena abierta: MenuPrincipal. Pulsa Play.");
+            PlayFromMenu.Apply();
+            string report = Nexus7.Core.BuildReport.Describe(failed.ToArray());
+            if (failed.Count == 0) Debug.Log("<color=cyan>[Nexus-7]</color> " + report + " Escena abierta: MenuPrincipal. Pulsa Play.");
+            else Debug.LogError("[Nexus-7] " + report);
+            if (!Application.isBatchMode) EditorUtility.DisplayDialog("Escape Espacial: Nexus-7", report, "Aceptar");
         }
     }
 }
