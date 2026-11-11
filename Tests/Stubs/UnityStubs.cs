@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace UnityEngine
 {
     public class Object {
-        public string name; public HideFlags hideFlags; public int GetInstanceID() { return 0; } public static T FindAnyObjectByType<T>() where T : Object { return null; }
+        public string name; public HideFlags hideFlags; [System.Obsolete("Use GetEntityId instead", true)] public int GetInstanceID() { return 0; } public static T FindAnyObjectByType<T>() where T : Object { return null; }
         public static void Destroy(Object o) {} public static void Destroy(Object o, float t) {} public static void DontDestroyOnLoad(Object o) {}
         public static void DestroyImmediate(Object o) {}
         public static T[] FindObjectsByType<T>(FindObjectsSortMode m) where T : Object { return new T[0]; }
