@@ -6,9 +6,13 @@ using Nexus7.Core;
 namespace Nexus7.UI
 {
     /// <summary>
-    /// Menú principal: Nueva partida · Salir, con el récord guardado y un resumen de controles.
+    /// Menú principal: Nueva partida · Continuar · Configuración · Salir, con el récord guardado y un resumen de controles.
+    ///   · Continuar: gris si no hay partida guardada; debajo, la fase y cuándo se guardó (SaveSystem).
+    ///   · Nueva partida con una partida guardada: pide confirmación antes de sobrescribirla.
+    ///   · Configuración: abre SettingsMenuUI.
     /// La dificultad se elige en 3 tarjetas: la elegida lleva marco dorado y un poco más de tamaño.
-    /// Teclado: [Intro] nueva partida (Salir solo con el botón, para no cerrar el juego por accidente).
+    /// Teclado: [Intro] nueva partida · [C] continuar · [O] configuración (Salir solo con el botón, para no cerrar el juego
+    /// por accidente). Mando: A nueva partida · Y continuar · Start configuración.
     ///
     /// Colocar en: el Canvas de la escena "MenuPrincipal" (necesita EventSystem).
     /// </summary>
@@ -16,6 +20,14 @@ namespace Nexus7.UI
     {
         [SerializeField] private Button newGameButton;
         [SerializeField] private Button quitButton;
+        [SerializeField] private Button continueButton;
+        [SerializeField] private TextMeshProUGUI continueDetail;
+        [SerializeField] private Button settingsButton;
+        [SerializeField] private SettingsMenuUI settings;
+        [Header("Confirmación al sobrescribir la partida")]
+        [SerializeField] private GameObject confirmPanel;
+        [SerializeField] private Button confirmYes;
+        [SerializeField] private Button confirmNo;
         [SerializeField] private TextMeshProUGUI bestScoreText;
         [Header("Dificultad")]
         [SerializeField] private Button[] difficultyButtons = new Button[3];
@@ -34,8 +46,15 @@ namespace Nexus7.UI
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             Time.timeScale = 1f;
-            if (newGameButton != null) newGameButton.onClick.AddListener(GameFlow.StartNewRun);
+            if (newGameButton != null) newGameButton.onClick.AddListener(OnNewGame);
             if (quitButton != null) quitButton.onClick.AddListener(GameFlow.Quit);
+            if (continueButton != null) continueButton.onClick.AddListener(OnContinue);
+            if (settingsButton != null) settingsButton.onClick.AddListener(OpenSettings);
+            if (confirmYes != null) confirmYes.onClick.AddListener(() => { CloseConfirm(); GameFlow.StartNewRun(); });
+            if (confirmNo != null) confirmNo.onClick.AddListener(CloseConfirm);
+            if (confirmPanel != null) confirmPanel.SetActive(false);
+            if (settings != null) settings.Closed += () => Select(null);
+            RefreshContinue();
             for (int i = 0; i < difficultyButtons.Length; i++)
             {
                 int k = i;   // copia para el cierre
@@ -52,9 +71,59 @@ namespace Nexus7.UI
                 bestScoreText.text = GameFlow.BestScore > 0 ? $"Récord: {GameFlow.BestScore} puntos (rango {GameFlow.BestGrade})" : "Sin récord todavía";
         }
 
+        private bool SettingsOpen => settings != null && settings.IsOpen;
+        private bool ConfirmOpen => confirmPanel != null && confirmPanel.activeSelf;
+
+        private void OnNewGame()
+        {
+            if (MenuState.NeedsConfirm(SaveSystem.HasSave) && confirmPanel != null)
+            {
+                confirmPanel.SetActive(true);
+                Select(confirmNo);   // por defecto, no sobrescribir
+            }
+            else GameFlow.StartNewRun();
+        }
+
+        private void OnContinue()
+        {
+            if (MenuState.ContinueEnabled(SaveSystem.HasSave)) GameFlow.ContinueRun();
+        }
+
+        private void OpenSettings()
+        {
+            if (settings != null) settings.Open();
+        }
+
+        private void CloseConfirm()
+        {
+            if (confirmPanel != null) confirmPanel.SetActive(false);
+            Select(null);
+        }
+
+        private void RefreshContinue()
+        {
+            bool has = SaveSystem.HasSave;
+            if (continueButton != null) continueButton.interactable = MenuState.ContinueEnabled(has);
+            if (continueDetail != null) continueDetail.text = SaveSystem.Describe();
+        }
+
+        /// <summary>
+        /// Selección para teclado/mando. Los botones principales no se seleccionan nunca: así [Intro] no los «pulsa»
+        /// además del atajo (y no puede pulsar Salir por accidente).
+        /// </summary>
+        private static void Select(Selectable s)
+        {
+            if (UnityEngine.EventSystems.EventSystem.current != null)
+                UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(s != null ? s.gameObject : null);
+        }
+
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.JoystickButton0)) GameFlow.StartNewRun();
+            if (ConfirmOpen && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1))) { CloseConfirm(); return; }
+            if (!MenuState.AcceptsMainInput(SettingsOpen, ConfirmOpen)) return;
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.JoystickButton0)) { OnNewGame(); return; }
+            if (Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.JoystickButton3)) { OnContinue(); return; }
+            if (Input.GetKeyDown(KeyCode.O) || Input.GetKeyDown(KeyCode.JoystickButton7)) { OpenSettings(); return; }
             int d = (int)DifficultySettings.Current;
             int dir = Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.JoystickButton4) ? -1
                     : Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.JoystickButton5) ? 1 : 0;   // ←/→ o LB/RB

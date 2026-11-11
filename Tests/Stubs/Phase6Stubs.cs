@@ -6,6 +6,12 @@ namespace UnityEngine.UI {
         public class ButtonClickedEvent { public void AddListener(UnityEngine.Events.UnityAction a) {} public void RemoveAllListeners() {} }
         public ButtonClickedEvent onClick = new ButtonClickedEvent();
     }
+    public class Slider : Selectable {
+        public enum Direction { LeftToRight, RightToLeft, BottomToTop, TopToBottom }
+        public class SliderEvent { public void AddListener(System.Action<float> a) {} }
+        public float minValue, maxValue, value; public bool wholeNumbers; public Direction direction;
+        public UnityEngine.RectTransform fillRect, handleRect; public SliderEvent onValueChanged = new SliderEvent();
+    }
 }
 namespace UnityEngine.EventSystems {
     public class EventSystem : UnityEngine.Behaviour { public static EventSystem current; public void SetSelectedGameObject(UnityEngine.GameObject g) {} }

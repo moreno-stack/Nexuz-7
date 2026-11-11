@@ -116,7 +116,7 @@ namespace UnityEngine
     }
     public static class Random { public static Vector3 insideUnitSphere; public static float value; public static float Range(float a, float b) { return a; } public static int Range(int a, int b) { return a; } }
     public static class Time { public static float unscaledTime, deltaTime, time, timeScale, unscaledDeltaTime, realtimeSinceStartup; public static int frameCount; }
-    public enum KeyCode { None, R, M, Space, V, F, H, Mouse0, Mouse1, Alpha4, Alpha5, Alpha6, Alpha7, Alpha8, Alpha9, JoystickButton7, JoystickButton9, E, C, I, G, Q, W, S, A, D, LeftArrow, RightArrow, JoystickButton2, JoystickButton3, Tab, Escape, Return, Backspace, UpArrow, DownArrow, Alpha1, Alpha2, Alpha3, JoystickButton4, JoystickButton5, LeftShift, LeftControl, JoystickButton0, JoystickButton1, JoystickButton6, JoystickButton8 }
+    public enum KeyCode { None, KeypadEnter, O, R, M, Space, V, F, H, Mouse0, Mouse1, Alpha4, Alpha5, Alpha6, Alpha7, Alpha8, Alpha9, JoystickButton7, JoystickButton9, E, C, I, G, Q, W, S, A, D, LeftArrow, RightArrow, JoystickButton2, JoystickButton3, Tab, Escape, Return, Backspace, UpArrow, DownArrow, Alpha1, Alpha2, Alpha3, JoystickButton4, JoystickButton5, LeftShift, LeftControl, JoystickButton0, JoystickButton1, JoystickButton6, JoystickButton8 }
     public static class Input {
         public static float GetAxis(string a) { return 0; } public static float GetAxisRaw(string a) { return 0; }
         public static bool GetKey(KeyCode k) { return false; } public static bool GetKeyDown(KeyCode k) { return false; }
