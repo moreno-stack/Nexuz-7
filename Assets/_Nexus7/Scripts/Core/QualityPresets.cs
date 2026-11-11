@@ -28,13 +28,13 @@ namespace Nexus7.Core
     /// </summary>
     public static class QualityPresets
     {
-        public static QualityPreset For(QualityLevel level)
+        public static QualityPreset For(GraphicsQuality level)
         {
             switch (level)
             {
-                case QualityLevel.Baja:
+                case GraphicsQuality.Baja:
                     return new QualityPreset { unityLevel = "Mobile", postProcessing = false, shadows = false, antialiasing = AaMode.None, filmGrain = false };
-                case QualityLevel.Media:
+                case GraphicsQuality.Media:
                     return new QualityPreset { unityLevel = "PC", postProcessing = true, shadows = true, antialiasing = AaMode.Fxaa, filmGrain = false };
                 default:
                     return new QualityPreset { unityLevel = "PC", postProcessing = true, shadows = true, antialiasing = AaMode.Smaa, filmGrain = true };
@@ -50,7 +50,7 @@ namespace Nexus7.Core
             return fallback;
         }
 
-        public static void Apply(QualityLevel level)
+        public static void Apply(GraphicsQuality level)
         {
             var p = For(level);
             int index = FindLevel(QualitySettings.names, p.unityLevel, QualitySettings.GetQualityLevel());

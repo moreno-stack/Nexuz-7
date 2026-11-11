@@ -159,6 +159,8 @@ namespace UnityEngine
     public class AudioListener : Behaviour { public static float volume = 1f; }
     public enum FullScreenMode { ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed }
     public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; }
+    // Existe en Unity (obsoleto): cualquier enum propio con este nombre choca con él
+    public enum QualityLevel { Fastest, Fast, Simple, Good, Beautiful, Fantastic }
     public static class QualitySettings { public static string[] names = { "Mobile", "PC" }; static int level = 1; public static int GetQualityLevel() { return level; } public static void SetQualityLevel(int i, bool e) { level = i; } }
     public class AudioClip : Object { public static AudioClip Create(string n, int len, int ch, int freq, bool stream) { return new AudioClip(); } public bool SetData(float[] d, int off) { return true; } }
     public class AudioSource : Behaviour {

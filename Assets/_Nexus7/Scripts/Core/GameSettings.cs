@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Nexus7.Core
 {
-    public enum QualityLevel { Baja, Media, Alta }
+    public enum GraphicsQuality { Baja, Media, Alta }
 
     /// <summary>
     /// Configuración del jugador (menú Configuración), guardada en PlayerPrefs y aplicada en todas las escenas:
@@ -16,7 +16,7 @@ namespace Nexus7.Core
         public const string MasterKey = "Nexus7_VolGeneral", MusicKey = "Nexus7_VolMusica", SfxKey = "Nexus7_VolEfectos";
         public const string QualityKey = "Nexus7_Calidad", FullscreenKey = "Nexus7_PantallaCompleta";
         public const float DefaultMaster = 0.8f, DefaultMusic = 0.7f, DefaultSfx = 0.8f;
-        public const QualityLevel DefaultQuality = QualityLevel.Alta;
+        public const GraphicsQuality DefaultQuality = GraphicsQuality.Alta;
         public const bool DefaultFullscreen = true;
 
         /// <summary>Cualquier ajuste ha cambiado (los componentes vuelven a aplicar sus volúmenes).</summary>
@@ -24,17 +24,17 @@ namespace Nexus7.Core
 
         private static bool loaded;
         private static float master, music, sfx;
-        private static QualityLevel quality;
+        private static GraphicsQuality quality;
         private static bool fullscreen;
 
         public static float Master { get { Load(); return master; } set { Load(); master = Clamp01(value); PlayerPrefs.SetFloat(MasterKey, master); Save(); } }
         public static float Music  { get { Load(); return music; }  set { Load(); music = Clamp01(value);  PlayerPrefs.SetFloat(MusicKey, music);   Save(); } }
         public static float Sfx    { get { Load(); return sfx; }    set { Load(); sfx = Clamp01(value);    PlayerPrefs.SetFloat(SfxKey, sfx);       Save(); } }
 
-        public static QualityLevel Quality
+        public static GraphicsQuality Quality
         {
             get { Load(); return quality; }
-            set { Load(); quality = (QualityLevel)Math.Max(0, Math.Min(2, (int)value)); PlayerPrefs.SetInt(QualityKey, (int)quality); Save(); }
+            set { Load(); quality = (GraphicsQuality)Math.Max(0, Math.Min(2, (int)value)); PlayerPrefs.SetInt(QualityKey, (int)quality); Save(); }
         }
 
         public static bool Fullscreen
@@ -46,7 +46,7 @@ namespace Nexus7.Core
         /// <summary>Volumen real a partir del valor del slider (0–1): valor², recortado.</summary>
         public static float Curve(float v) { float c = Clamp01(v); return c * c; }
 
-        public static string NameOf(QualityLevel q) => q == QualityLevel.Baja ? "Baja" : q == QualityLevel.Media ? "Media" : "Alta";
+        public static string NameOf(GraphicsQuality q) => q == GraphicsQuality.Baja ? "Baja" : q == GraphicsQuality.Media ? "Media" : "Alta";
 
         public static void ResetToDefaults()
         {
@@ -85,7 +85,7 @@ namespace Nexus7.Core
             master = Clamp01(PlayerPrefs.GetFloat(MasterKey, DefaultMaster));
             music = Clamp01(PlayerPrefs.GetFloat(MusicKey, DefaultMusic));
             sfx = Clamp01(PlayerPrefs.GetFloat(SfxKey, DefaultSfx));
-            quality = (QualityLevel)Math.Max(0, Math.Min(2, PlayerPrefs.GetInt(QualityKey, (int)DefaultQuality)));
+            quality = (GraphicsQuality)Math.Max(0, Math.Min(2, PlayerPrefs.GetInt(QualityKey, (int)DefaultQuality)));
             fullscreen = PlayerPrefs.GetInt(FullscreenKey, DefaultFullscreen ? 1 : 0) == 1;
         }
 

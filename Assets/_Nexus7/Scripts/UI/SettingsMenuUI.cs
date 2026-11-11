@@ -47,7 +47,7 @@ namespace Nexus7.UI
             for (int i = 0; i < qualityButtons.Length; i++)
             {
                 int k = i;
-                if (qualityButtons[i] != null) qualityButtons[i].onClick.AddListener(() => { GameSettings.Quality = (QualityLevel)k; QualityPresets.Apply(GameSettings.Quality); Refresh(); });
+                if (qualityButtons[i] != null) qualityButtons[i].onClick.AddListener(() => { GameSettings.Quality = (GraphicsQuality)k; QualityPresets.Apply(GameSettings.Quality); Refresh(); });
             }
             if (fullscreenButton != null) fullscreenButton.onClick.AddListener(() => { GameSettings.Fullscreen = !GameSettings.Fullscreen; GameSettings.ApplyDisplay(); Refresh(); });
             if (backButton != null) backButton.onClick.AddListener(Close);
