@@ -10,6 +10,13 @@ namespace UnityEngine.UI {
 namespace UnityEngine.EventSystems {
     public class EventSystem : UnityEngine.Behaviour { public static EventSystem current; public void SetSelectedGameObject(UnityEngine.GameObject g) {} }
     public class StandaloneInputModule : UnityEngine.Behaviour {}
+    public class BaseEventData {}
+    public enum EventTriggerType { PointerEnter, PointerExit, Select, Submit }
+    public class EventTrigger : UnityEngine.Behaviour {
+        public class TriggerEvent { public void AddListener(System.Action<BaseEventData> a) {} }
+        public class Entry { public EventTriggerType eventID; public TriggerEvent callback = new TriggerEvent(); }
+        public System.Collections.Generic.List<Entry> triggers = new System.Collections.Generic.List<Entry>();
+    }
 }
 namespace UnityEngine.AI {
     public enum NavMeshObstacleShape { Capsule, Box }

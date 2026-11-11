@@ -160,9 +160,9 @@ namespace UnityEngine
     public enum FullScreenMode { ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed }
     public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; }
     public static class QualitySettings { public static string[] names = { "Mobile", "PC" }; static int level = 1; public static int GetQualityLevel() { return level; } public static void SetQualityLevel(int i, bool e) { level = i; } }
-    public class AudioClip : Object {}
+    public class AudioClip : Object { public static AudioClip Create(string n, int len, int ch, int freq, bool stream) { return new AudioClip(); } public bool SetData(float[] d, int off) { return true; } }
     public class AudioSource : Behaviour {
-        public bool playOnAwake, loop, isPlaying; public float spatialBlend, pitch, volume; public void Play() {} public void Stop() {}
+        public AudioClip clip; public bool playOnAwake, loop, isPlaying; public float spatialBlend, pitch, volume; public void Play() {} public void Stop() {}
         public void PlayOneShot(AudioClip c) {} public void PlayOneShot(AudioClip c, float v) {}
         public static void PlayClipAtPoint(AudioClip c, Vector3 p) {}
     }
