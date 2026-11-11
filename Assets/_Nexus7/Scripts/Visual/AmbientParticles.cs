@@ -111,7 +111,7 @@ namespace Nexus7.Visual
             var shape = ps.shape; shape.shapeType = ParticleSystemShapeType.Cone; shape.angle = 35f; shape.radius = 0.02f;
             var r = GetComponent<ParticleSystemRenderer>();
             if (r != null) { r.renderMode = ParticleSystemRenderMode.Stretch; r.velocityScale = 0.06f; r.lengthScale = 1f; }
-            timer = new IntermittentTimer(interval.x, interval.y, System.Math.Abs(GetInstanceID() % 9973));
+            timer = new IntermittentTimer(interval.x, interval.y, Random.Range(0, 9973));
             if (flash != null) flash.intensity = 0f;
         }
 
@@ -166,7 +166,7 @@ namespace Nexus7.Visual
                       new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.15f), new GradientAlphaKey(0f, 1f) });
             col.color = new ParticleSystem.MinMaxGradient(g);
             var noise = ps.noise; noise.enabled = true; noise.strength = 0.25f; noise.frequency = 0.6f;
-            pauseTimer = new IntermittentTimer(pause.x, pause.y, System.Math.Abs(GetInstanceID() % 7919));
+            pauseTimer = new IntermittentTimer(pause.x, pause.y, Random.Range(0, 7919));
         }
 
         protected override void Tick(float dt)
