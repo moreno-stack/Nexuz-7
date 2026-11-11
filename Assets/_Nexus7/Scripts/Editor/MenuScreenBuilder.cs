@@ -320,12 +320,17 @@ namespace Nexus7.EditorTools
 
             // ---------- Botones ----------
             var buttons = Group("BloqueBotones", canvas, 0.35f, new Vector2(-70f, 0f));
-            var newGame = MenuButton("BotonNuevaPartida", buttons, new Vector2(-670f, -50f), new Vector2(420f, 74f), "NUEVA PARTIDA", "Intro", new Color(0.06f, 0.32f, 0.45f, 0.95f), Cyan);
-            var quit = MenuButton("BotonSalir", buttons, new Vector2(-670f, -138f), new Vector2(420f, 64f), "SALIR", null, new Color(0.3f, 0.09f, 0.09f, 0.95f), new Color(1f, 0.35f, 0.3f));
+            var newGame = MenuButton("BotonNuevaPartida", buttons, new Vector2(-670f, -20f), new Vector2(420f, 56f), "NUEVA PARTIDA", "Intro", new Color(0.06f, 0.32f, 0.45f, 0.95f), Cyan);
+            var cont = MenuButton("BotonContinuar", buttons, new Vector2(-670f, -80f), new Vector2(420f, 52f), "CONTINUAR", "C", new Color(0.05f, 0.2f, 0.3f, 0.95f), Cyan);
+            var contDetail = B.UIText("DetalleContinuar", buttons, C, new Vector2(-230f, -80f), new Vector2(440f, 40f), 20f, TextAlignmentOptions.Left, new Color(0.7f, 0.76f, 0.82f));
+            NoWrap(contDetail);
+            contDetail.text = "Sin partida guardada";
+            var settingsBtn = MenuButton("BotonConfiguracion", buttons, new Vector2(-670f, -140f), new Vector2(420f, 52f), "CONFIGURACIÓN", "O", new Color(0.1f, 0.14f, 0.22f, 0.95f), new Color(0.7f, 0.78f, 0.9f));
+            var quit = MenuButton("BotonSalir", buttons, new Vector2(-670f, -200f), new Vector2(420f, 52f), "SALIR", null, new Color(0.3f, 0.09f, 0.09f, 0.95f), new Color(1f, 0.35f, 0.3f));
 
             // ---------- Dificultad: 3 tarjetas ----------
             var diff = Group("BloqueDificultad", canvas, 0.55f, new Vector2(-70f, 0f));
-            B.UIText("TituloDificultad", diff, C, new Vector2(-380f, -205f), new Vector2(1000f, 36f), 24f, TextAlignmentOptions.Left, Cyan).text = "<b>DIFICULTAD</b>";
+            B.UIText("TituloDificultad", diff, C, new Vector2(-380f, -250f), new Vector2(1000f, 36f), 24f, TextAlignmentOptions.Left, Cyan).text = "<b>DIFICULTAD</b>";
             var diffButtons = new Object[3]; var diffLabels = new Object[3]; var frames = new Object[3]; var cards = new Object[3];
             for (int i = 0; i < 3; i++)
             {
@@ -333,9 +338,9 @@ namespace Nexus7.EditorTools
                 var card = new GameObject("TarjetaDificultad_" + i, typeof(RectTransform));
                 card.transform.SetParent(diff, false);
                 var crt = (RectTransform)card.transform;
-                B.Anchor(crt, C, C, new Vector2(-770f + i * 200f, -285f), new Vector2(186f, 104f));
-                var frame = Rect("Marco", card.transform, MainMenuUI.IdleFrame, C, Vector2.zero, new Vector2(194f, 112f));
-                var img = Rect("BotonDificultad_" + i, card.transform, new Color(col.r * 0.22f, col.g * 0.22f, col.b * 0.22f, 0.95f), C, Vector2.zero, new Vector2(186f, 104f));
+                B.Anchor(crt, C, C, new Vector2(-770f + i * 200f, -320f), new Vector2(186f, 96f));
+                var frame = Rect("Marco", card.transform, MainMenuUI.IdleFrame, C, Vector2.zero, new Vector2(194f, 104f));
+                var img = Rect("BotonDificultad_" + i, card.transform, new Color(col.r * 0.22f, col.g * 0.22f, col.b * 0.22f, 0.95f), C, Vector2.zero, new Vector2(186f, 96f));
                 img.raycastTarget = true;
                 var btn = img.gameObject.AddComponent<Button>();
                 btn.targetGraphic = img;
@@ -351,12 +356,12 @@ namespace Nexus7.EditorTools
                     DifficultySettings.DamageText(d);
                 diffButtons[i] = btn; diffLabels[i] = lbl; frames[i] = frame; cards[i] = crt;
             }
-            var hint = B.UIText("PistaDificultad", diff, C, new Vector2(-380f, -362f), new Vector2(1000f, 30f), 19f, TextAlignmentOptions.Left, new Color(0.7f, 0.76f, 0.82f));
+            var hint = B.UIText("PistaDificultad", diff, C, new Vector2(-380f, -392f), new Vector2(1000f, 30f), 19f, TextAlignmentOptions.Left, new Color(0.7f, 0.76f, 0.82f));
 
             // ---------- Récord ----------
             var rec = Group("BloqueRecord", canvas, 0.75f, new Vector2(-70f, 0f));
-            var recCard = Rect("TarjetaRecord", rec, new Color(0.04f, 0.07f, 0.11f, 0.85f), C, new Vector2(-580f, -420f), new Vector2(600f, 54f));
-            Rect("Acento", recCard.transform, new Color(1f, 0.85f, 0.35f, 0.95f), new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(6f, 54f));
+            var recCard = Rect("TarjetaRecord", rec, new Color(0.04f, 0.07f, 0.11f, 0.85f), C, new Vector2(-580f, -436f), new Vector2(600f, 48f));
+            Rect("Acento", recCard.transform, new Color(1f, 0.85f, 0.35f, 0.95f), new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(6f, 48f));
             Shape("IconoRecord", recCard.transform, UIShapeKind.Star, new Color(1f, 0.85f, 0.35f, 1f), new Vector2(0f, 0.5f), new Vector2(34f, 0f), new Vector2(32f, 32f));
             var best = B.UIText("Record", recCard.transform, new Vector2(0f, 0.5f), new Vector2(330f, 0f), new Vector2(540f, 40f), 24f, TextAlignmentOptions.Left, new Color(1f, 0.85f, 0.35f));
 
@@ -367,9 +372,21 @@ namespace Nexus7.EditorTools
             B.UIText("Controles", bar.transform, C, Vector2.zero, new Vector2(1800f, 60f), 20f, TextAlignmentOptions.Center, new Color(0.65f, 0.7f, 0.76f)).text =
                 "[WASD] moverse · [Shift] correr · [Ctrl/C] agacharse · [Espacio] saltar · [V] cámara · [E] interactuar · [Tab/I] inventario · [1-9] elegir objeto · [G] usar/lanzar";
 
+            // ---------- Paneles encima de todo: Configuración y confirmación ----------
+            var settings = BuildSettingsPanel(canvas);
+            var confirm = BuildConfirmPanel(canvas, out var yes, out var no);
+            canvas.gameObject.AddComponent<Nexus7.Audio.UISounds>();   // sonidos al pasar por encima y al pulsar
+
             var menu = canvas.gameObject.AddComponent<MainMenuUI>();
             B.SetRef(menu, "newGameButton", newGame);
             B.SetRef(menu, "quitButton", quit);
+            B.SetRef(menu, "continueButton", cont);
+            B.SetRef(menu, "continueDetail", contDetail);
+            B.SetRef(menu, "settingsButton", settingsBtn);
+            B.SetRef(menu, "settings", settings);
+            B.SetRef(menu, "confirmPanel", confirm);
+            B.SetRef(menu, "confirmYes", yes);
+            B.SetRef(menu, "confirmNo", no);
             B.SetRef(menu, "bestScoreText", best);
             A.SetObjectArray(menu, "difficultyButtons", diffButtons);
             A.SetObjectArray(menu, "difficultyLabels", diffLabels);
@@ -377,6 +394,137 @@ namespace Nexus7.EditorTools
             A.SetObjectArray(menu, "difficultyCards", cards);
             B.SetRef(menu, "difficultyHint", hint);
             return menu;
+        }
+
+        // =====================================================================
+        //  CONFIGURACIÓN Y CONFIRMACIÓN
+        // =====================================================================
+
+        /// <summary>Fondo oscuro a pantalla completa que bloquea los clics al menú de detrás, con un panel centrado.</summary>
+        private static Image Modal(string name, Transform canvas, Vector2 size, out GameObject root)
+        {
+            root = new GameObject(name, typeof(RectTransform));
+            root.transform.SetParent(canvas, false);
+            B.Anchor((RectTransform)root.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var dim = FullScreen("Oscurecer", root.transform, new Color(0f, 0.01f, 0.03f, 0.78f));
+            dim.raycastTarget = true;
+            var panel = Rect("Panel", root.transform, new Color(0.03f, 0.06f, 0.1f, 0.97f), C, Vector2.zero, size);
+            panel.raycastTarget = true;
+            Rect("FranjaSuperior", panel.transform, Cyan, new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(size.x, 4f));
+            HudCorners(panel.transform, new Color(Cyan.r, Cyan.g, Cyan.b, 0.6f), 10f, 40f, 2f);
+            return panel;
+        }
+
+        private static void Automatic(Selectable s) => s.navigation = new Navigation { mode = Navigation.Mode.Automatic };
+
+        /// <summary>Fila de volumen: nombre, slider (0–100) y valor en %.</summary>
+        private static Slider SliderRow(Transform parent, string name, string label, float y, out TextMeshProUGUI value)
+        {
+            B.UIText("Etiqueta" + name, parent, C, new Vector2(-250f, y), new Vector2(300f, 40f), 26f, TextAlignmentOptions.Left, Color.white).text = label;
+
+            var root = new GameObject("Slider" + name, typeof(RectTransform));
+            root.transform.SetParent(parent, false);
+            B.Anchor((RectTransform)root.transform, C, C, new Vector2(90f, y), new Vector2(380f, 22f));
+            var bg = B.UIImage("Fondo", root.transform, new Color(1f, 1f, 1f, 0.12f));
+            B.Anchor(bg.rectTransform, new Vector2(0f, 0.3f), new Vector2(1f, 0.7f), Vector2.zero, Vector2.zero);
+            bg.raycastTarget = true;
+            var fillArea = new GameObject("ZonaRelleno", typeof(RectTransform));
+            fillArea.transform.SetParent(root.transform, false);
+            var fa = (RectTransform)fillArea.transform;
+            fa.anchorMin = new Vector2(0f, 0.3f); fa.anchorMax = new Vector2(1f, 0.7f);
+            fa.offsetMin = new Vector2(0f, 0f); fa.offsetMax = new Vector2(-11f, 0f);
+            var fill = B.UIImage("Relleno", fillArea.transform, Cyan);
+            fill.rectTransform.sizeDelta = new Vector2(11f, 0f);
+            var handleArea = new GameObject("ZonaTirador", typeof(RectTransform));
+            handleArea.transform.SetParent(root.transform, false);
+            var ha = (RectTransform)handleArea.transform;
+            ha.anchorMin = Vector2.zero; ha.anchorMax = Vector2.one;
+            ha.offsetMin = new Vector2(11f, 0f); ha.offsetMax = new Vector2(-11f, 0f);
+            var handle = B.UIImage("Tirador", handleArea.transform, Color.white);
+            handle.rectTransform.sizeDelta = new Vector2(22f, 0f);
+            handle.raycastTarget = true;
+            var hs = handle.gameObject.AddComponent<UIShape>();
+            B.SetEnum(hs, "kind", (int)UIShapeKind.Circle);
+            hs.Apply();
+
+            var slider = root.AddComponent<Slider>();
+            slider.fillRect = fill.rectTransform;
+            slider.handleRect = handle.rectTransform;
+            slider.targetGraphic = handle;
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.minValue = 0f; slider.maxValue = 100f; slider.wholeNumbers = true; slider.value = 80f;
+            slider.colors = HoverColors();
+            Automatic(slider);
+
+            value = B.UIText("Valor" + name, parent, C, new Vector2(345f, y), new Vector2(110f, 40f), 24f, TextAlignmentOptions.Right, Cyan);
+            value.text = "80 %";
+            return slider;
+        }
+
+        /// <summary>Panel de Configuración (empieza oculto) conectado con SettingsMenuUI.</summary>
+        internal static SettingsMenuUI BuildSettingsPanel(Transform canvas)
+        {
+            var panel = Modal("PanelConfiguracion", canvas, new Vector2(900f, 640f), out var root);
+            var p = panel.transform;
+            B.UIText("Titulo", p, C, new Vector2(0f, 262f), new Vector2(800f, 60f), 40f, TextAlignmentOptions.Center, Cyan).text = "<b>CONFIGURACIÓN</b>";
+
+            var master = SliderRow(p, "General", "Volumen general", 170f, out var masterValue);
+            var music = SliderRow(p, "Musica", "Música", 100f, out var musicValue);
+            var sfx = SliderRow(p, "Efectos", "Efectos", 30f, out var sfxValue);
+
+            B.UIText("EtiquetaCalidad", p, C, new Vector2(-250f, -50f), new Vector2(300f, 40f), 26f, TextAlignmentOptions.Left, Color.white).text = "Calidad gráfica";
+            var qButtons = new Object[3]; var qFrames = new Object[3];
+            string[] qNames = { "BAJA", "MEDIA", "ALTA" };
+            for (int i = 0; i < 3; i++)
+            {
+                var frame = Rect("MarcoCalidad_" + i, p, MainMenuUI.IdleFrame, C, new Vector2(-40f + i * 150f, -50f), new Vector2(142f, 54f));
+                var b = MenuButton("BotonCalidad_" + i, p, new Vector2(-40f + i * 150f, -50f), new Vector2(134f, 46f), qNames[i], null,
+                                   new Color(0.08f, 0.12f, 0.18f, 0.95f), Cyan);
+                Automatic(b);
+                qButtons[i] = b; qFrames[i] = frame;
+            }
+
+            var fs = MenuButton("BotonPantallaCompleta", p, new Vector2(0f, -135f), new Vector2(520f, 52f), "PANTALLA COMPLETA: SÍ", null,
+                                new Color(0.08f, 0.12f, 0.18f, 0.95f), Cyan);
+            Automatic(fs);
+            var fsLabel = fs.transform.Find("Texto").GetComponent<TextMeshProUGUI>();
+
+            var back = MenuButton("BotonVolver", p, new Vector2(0f, -240f), new Vector2(320f, 56f), "VOLVER", "Esc",
+                                  new Color(0.3f, 0.09f, 0.09f, 0.95f), new Color(1f, 0.35f, 0.3f));
+            Automatic(back);
+            B.UIText("Nota", p, C, new Vector2(0f, -298f), new Vector2(840f, 30f), 18f, TextAlignmentOptions.Center, new Color(0.6f, 0.66f, 0.72f)).text =
+                "Los cambios se aplican al momento y se guardan. Teclado/mando: ↑ ↓ elegir · ← → ajustar";
+
+            var ui = canvas.gameObject.AddComponent<SettingsMenuUI>();
+            B.SetRef(ui, "panel", root);
+            B.SetRef(ui, "masterSlider", master);
+            B.SetRef(ui, "musicSlider", music);
+            B.SetRef(ui, "sfxSlider", sfx);
+            B.SetRef(ui, "masterValue", masterValue);
+            B.SetRef(ui, "musicValue", musicValue);
+            B.SetRef(ui, "sfxValue", sfxValue);
+            A.SetObjectArray(ui, "qualityButtons", qButtons);
+            A.SetObjectArray(ui, "qualityFrames", qFrames);
+            B.SetRef(ui, "fullscreenButton", fs);
+            B.SetRef(ui, "fullscreenLabel", fsLabel);
+            B.SetRef(ui, "backButton", back);
+            B.SetRef(ui, "firstSelected", master);
+            root.SetActive(false);
+            return ui;
+        }
+
+        /// <summary>«Se sobrescribirá la partida guardada. ¿Empezar de nuevo?» con SÍ / NO (empieza oculto).</summary>
+        internal static GameObject BuildConfirmPanel(Transform canvas, out Button yes, out Button no)
+        {
+            var panel = Modal("PanelConfirmacion", canvas, new Vector2(760f, 280f), out var root);
+            var p = panel.transform;
+            B.UIText("Pregunta", p, C, new Vector2(0f, 60f), new Vector2(700f, 110f), 28f, TextAlignmentOptions.Center, Color.white).text =
+                "Se sobrescribirá la partida guardada.\n<b>¿Empezar de nuevo?</b>";
+            yes = MenuButton("BotonSi", p, new Vector2(-150f, -70f), new Vector2(240f, 56f), "SÍ", null, new Color(0.06f, 0.32f, 0.45f, 0.95f), Cyan);
+            no = MenuButton("BotonNo", p, new Vector2(150f, -70f), new Vector2(240f, 56f), "NO", "Esc", new Color(0.3f, 0.09f, 0.09f, 0.95f), new Color(1f, 0.35f, 0.3f));
+            Automatic(yes); Automatic(no);
+            root.SetActive(false);
+            return root;
         }
     }
 }

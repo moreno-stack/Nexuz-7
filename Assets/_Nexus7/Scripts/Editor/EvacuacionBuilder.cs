@@ -379,6 +379,7 @@ namespace Nexus7.EditorTools
             B.CreateFolders();
             S3.CreateMaterials();
             CreateMaterials();
+            ItemCatalogBuilder.Build();   // «Continuar» necesita el catálogo para restaurar el inventario
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.skybox = null;
             RenderSettings.fog = false;
