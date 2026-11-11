@@ -289,7 +289,9 @@ namespace Nexus7.EditorTools
             EditorBuildSettings.scenes = scenes.ToArray();
             ConnectPhase2();
 
-            Selection.activeGameObject = player.gameObject;
+            // ConnectPhase2() abre otra escena y la cierra: 'player' ya está destruido, así que se busca de nuevo
+            var selectedPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (selectedPlayer != null) Selection.activeGameObject = selectedPlayer;
             Debug.Log("<color=cyan>[Nexus-7]</color> Sala de Energía construida en " + ScenePath + ". Pulsa Play.");
         }
 

@@ -283,7 +283,9 @@ namespace Nexus7.EditorTools
             EditorBuildSettings.scenes = scenes.ToArray();
             ConnectPhase4();
 
-            Selection.activeGameObject = player.gameObject;
+            // ConnectPhase4() abre otra escena y la cierra: 'player' ya está destruido, así que se busca de nuevo
+            var selectedPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (selectedPlayer != null) Selection.activeGameObject = selectedPlayer;
             Debug.Log("<color=cyan>[Nexus-7]</color> Centro de Control construido en " + ScenePath + ". Pulsa Play.");
         }
 

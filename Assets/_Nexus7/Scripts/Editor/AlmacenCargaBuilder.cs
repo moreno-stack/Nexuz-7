@@ -232,7 +232,9 @@ namespace Nexus7.EditorTools
             AddToBuildSettings();
             ConnectPhase1Exit();
 
-            Selection.activeGameObject = player.gameObject;
+            // ConnectPhase1Exit() abre otra escena y la cierra: 'player' ya está destruido, así que se busca de nuevo
+            var selectedPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (selectedPlayer != null) Selection.activeGameObject = selectedPlayer;
             Debug.Log("<color=cyan>[Nexus-7]</color> Almacén de Carga construido en " + ScenePath + ". Pulsa Play.");
         }
 

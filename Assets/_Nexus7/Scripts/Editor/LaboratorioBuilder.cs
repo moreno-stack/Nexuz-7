@@ -263,7 +263,9 @@ namespace Nexus7.EditorTools
             EditorBuildSettings.scenes = scenes.ToArray();
             ConnectPhase3();
 
-            Selection.activeGameObject = player.gameObject;
+            // ConnectPhase3() abre otra escena y la cierra: 'player' ya está destruido, así que se busca de nuevo
+            var selectedPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (selectedPlayer != null) Selection.activeGameObject = selectedPlayer;
             Debug.Log("<color=cyan>[Nexus-7]</color> Laboratorio construido en " + ScenePath + ". Pulsa Play.");
         }
 
