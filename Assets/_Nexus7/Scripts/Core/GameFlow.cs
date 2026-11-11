@@ -14,6 +14,30 @@ namespace Nexus7.Core
         public const string BestScoreKey = "Nexus7_MejorPuntuacion";
         public const string BestGradeKey = "Nexus7_MejorRango";
 
+        /// <summary>Escenas jugables en orden, con su título (para Continuar y el autoguardado).</summary>
+        public static readonly string[,] Phases =
+        {
+            { "SalaInicial", "Fase 1 · Sala inicial" },
+            { "AlmacenCarga", "Fase 2 · Almacén de carga" },
+            { "SalaEnergia", "Fase 3 · Sala de energía" },
+            { "Laboratorio", "Fase 4 · Laboratorio" },
+            { "CentroControl", "Fase 5 · Centro de control" },
+            { "Evacuacion", "Fase 6 · Evacuación" },
+        };
+
+        public static bool IsPhaseScene(string scene)
+        {
+            for (int i = 0; i < Phases.GetLength(0); i++) if (Phases[i, 0] == scene) return true;
+            return false;
+        }
+
+        /// <summary>"Fase 3 · Sala de energía" (si no es una fase, el propio nombre).</summary>
+        public static string PhaseTitle(string scene)
+        {
+            for (int i = 0; i < Phases.GetLength(0); i++) if (Phases[i, 0] == scene) return Phases[i, 1];
+            return scene;
+        }
+
         public static void StartNewRun()
         {
             ResetRunState();

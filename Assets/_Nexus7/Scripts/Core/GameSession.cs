@@ -40,6 +40,17 @@ namespace Nexus7.Core
             RunSeed = unchecked(System.Environment.TickCount * 7919 + RunSeed);
         }
 
+        /// <summary>Restaura la sesión de una partida guardada (Continuar).</summary>
+        public static void Restore(IEnumerable<ItemStack> inventory, bool hasSuit, int runSeed, string hotbarId)
+        {
+            savedInventory.Clear();
+            if (inventory != null) savedInventory.AddRange(inventory);
+            HasSavedInventory = true;
+            HasSuit = hasSuit;
+            RunSeed = runSeed;
+            HotbarSelectedId = hotbarId;
+        }
+
         public static void Clear()
         {
             HasSuit = false;

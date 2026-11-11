@@ -173,7 +173,7 @@ namespace UnityEngine
         public static void DrawRay(Vector3 o, Vector3 d) {} public static void DrawLine(Vector3 a, Vector3 b) {}
     }
     public static class Resources { public static T Load<T>(string path) where T : Object { return null; } }
-    public static class Application { public static bool isPlaying, isBatchMode; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
+    public static class Application { public static string persistentDataPath = System.IO.Path.GetTempPath(); public static bool isPlaying, isBatchMode; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
     public enum FogMode { Linear, Exponential, ExponentialSquared }
     public static class RenderSettings {
         public static Material skybox; public static Rendering.AmbientMode ambientMode; public static Color ambientLight, fogColor;

@@ -44,6 +44,32 @@ namespace Nexus7.Core
             sectorsUsed.Clear();
         }
 
+        /// <summary>Copia de las estadísticas para la partida guardada.</summary>
+        public static RunStatsSnapshot Snapshot()
+        {
+            var kinds = new int[deviceKindsUsed.Count]; deviceKindsUsed.CopyTo(kinds);
+            var sectors = new string[sectorsUsed.Count]; sectorsUsed.CopyTo(sectors);
+            return new RunStatsSnapshot
+            {
+                elapsed = Elapsed, itemsCollected = ItemsCollected, itemsCrafted = ItemsCrafted, devicesUsed = DevicesUsed,
+                hacksSucceeded = HacksSucceeded, empTargetsHit = EmpTargetsHit, decoysTriggered = DecoysTriggered,
+                deaths = Deaths, damageTaken = DamageTaken, deviceKinds = kinds, sectors = sectors,
+            };
+        }
+
+        /// <summary>Restaura las estadísticas guardadas (el reloj sigue desde el tiempo que llevaba).</summary>
+        public static void Restore(RunStatsSnapshot s)
+        {
+            Reset();
+            if (s == null) { EnsureStarted(); return; }
+            StartTime = Time.realtimeSinceStartup - Mathf.Max(0f, s.elapsed);
+            ItemsCollected = s.itemsCollected; ItemsCrafted = s.itemsCrafted; DevicesUsed = s.devicesUsed;
+            HacksSucceeded = s.hacksSucceeded; EmpTargetsHit = s.empTargetsHit; DecoysTriggered = s.decoysTriggered;
+            Deaths = s.deaths; DamageTaken = s.damageTaken;
+            if (s.deviceKinds != null) foreach (var k in s.deviceKinds) deviceKindsUsed.Add(k);
+            if (s.sectors != null) foreach (var k in s.sectors) if (!string.IsNullOrEmpty(k)) sectorsUsed.Add(k);
+        }
+
         public static void RecordCollected(int amount) { if (amount > 0) ItemsCollected += amount; }
         public static void RecordCrafted(int amount) { if (amount > 0) ItemsCrafted += amount; }
         public static void RecordDeviceUse(int kind, bool countsAsKind = true) { DevicesUsed++; if (countsAsKind) deviceKindsUsed.Add(kind); }
