@@ -1,7 +1,8 @@
-# Diseño: combate básico (armas, proyectiles, enemigos con vida y HUD de combate)
+# Diseño: combate básico y economía de combate (armas, proyectiles, enemigos con vida, HUD, crafteo rápido y botín)
 
 **Fecha:** 2026-11-11
 **Estado:** pendiente de revisión por Samuel
+**Partes:** 1) combate básico · 2) economía de combate (crafteo rápido en campo y botín de enemigos), añadida a petición de Samuel. Se construyen en ese orden.
 **Contexto:** subproyecto 2 del giro de sigilo a **acción, supervivencia y disparos**. Los subproyectos son:
 1. Historia nueva.
 2. **Combate básico** (este documento).
@@ -133,9 +134,101 @@ HUD: AmmoHUD lee PlayerArsenal/WeaponModel · CrosshairUI lee la dispersión y l
 - `RespawnPenalty`: la munición (Ammo) pierde el 25 %; las armas no.
 - Compilación mcs + Roslyn (como Unity 6.6) y todas las suites existentes.
 
+# Parte 2: economía de combate (crafteo rápido y botín)
+
+## Lo que pidió Samuel
+
+- Inventario con materiales de asalto: Chatarra balística, Núcleos de energía, Pólvora espacial y Componente médico / Nanobots médicos.
+- Panel de **crafteo rápido en campo** con una tecla, para fabricar al momento con lo recogido de enemigos y cofres. Recetas clave:
+  - Cargador de Munición de Plasma = Chatarra balística + Núcleo de energía.
+  - Nanobot de Curación = Componente médico + Chatarra.
+  - Mina de Proximidad Defensiva = Núcleo + Pólvora.
+- Los enemigos abatidos sueltan recursos aleatorios que se recogen pasando por encima o interactuando.
+
+Decisiones de Samuel:
+
+| Pregunta | Respuesta |
+|---|---|
+| Orden | Se añade a este diseño y se construye **después** del combate básico |
+| Materiales actuales | **Renombrar y añadir**: Chatarra metálica → Chatarra balística, Batería de iones → Núcleo de energía; nuevos Pólvora espacial y Componente médico |
+| Tecla | **[F]** (mando: mantener View 0,5 s, porque pulsarlo abre el inventario) |
+| Velocidad | **Casi instantáneo y sin pausar**: el juego sigue, fabricar tarda 0,5–1 s y hace un poco de ruido |
+
+## Materiales
+
+| Material | Antes | Id (no cambia: las partidas guardadas siguen valiendo) | Categoría |
+|---|---|---|---|
+| Chatarra balística | Chatarra metálica | `scrap_metal` | Part |
+| Núcleo de energía | Batería de iones | `battery_ion` | Battery |
+| Circuito de control | (igual) | `component_circuit` | Component |
+| Pólvora espacial | nuevo | `space_powder` | Part |
+| Componente médico | nuevo | `medical_component` | Component |
+
+Al renombrar, se actualizan también los textos de los objetivos, pistas y diálogos que nombran «batería(s) de iones» o «chatarra metálica» (por ejemplo, «Consigue 2 núcleos de energía»). Las puertas, zócalos y recetas que ya los usan siguen funcionando, porque solo cambia el nombre visible.
+
+## Recetas de campo
+
+| Receta | Ingredientes | Resultado | Tiempo |
+|---|---|---|---|
+| Cargador de Munición de Plasma | 1 Chatarra balística + 1 Núcleo de energía | 12 Células de plasma | 0,8 s |
+| Cargador Táctico | 2 Chatarra balística + 1 Pólvora espacial | 30 Munición táctica | 0,8 s |
+| Nanobot de Curación | 1 Componente médico + 1 Chatarra balística | 1 Nanobot de curación | 0,6 s |
+| Mina de Proximidad Defensiva | 1 Núcleo de energía + 1 Pólvora espacial | 1 Mina de proximidad | 1,0 s |
+
+Las recetas del banco de trabajo (señuelo, PEM, camuflaje, kit de reparación) siguen igual y solo se fabrican en el banco. Las recetas de campo también aparecen en el banco.
+
+## Objetos nuevos
+
+- **Nanobot de curación** (dispositivo, se usa sobre uno mismo): recupera 35 de integridad en 1,5 s. Se usa desde la barra rápida con [G] o directamente con **[H]** (usa el primero que haya). Montón máximo 5.
+- **Mina de proximidad** (dispositivo, se lanza): con [G] se lanza 2 m por delante y se queda en el suelo. Se arma en 1,5 s (luz parpadeando en amarillo y luego roja fija). Estalla si un robot entra en 2,5 m: radio 4 m y 80 de daño, decreciente con la distancia y sin atravesar paredes (rayo al centro). Hace un ruido de 20 m. No daña al jugador. Montón máximo 3.
+
+## Panel de crafteo rápido (`FieldCraftingUI`)
+
+- [F] lo abre y lo cierra, igual que [Esc]. **El juego no se pausa**: puedes seguir moviéndote con WASD, pero no mirar con el ratón (el cursor queda libre para hacer clic), disparar ni interactuar.
+- Es un panel flotante a la derecha con las 4 recetas de campo. Cada una muestra su icono, nombre, ingredientes con lo que tienes («Núcleo de energía 1/1») y el resultado. Las que no puedes fabricar salen en gris con lo que falta en rojo.
+- Para fabricar: clic en la receta o su tecla [1]–[4] mientras el panel está abierto. Aparece una barra de progreso (0,5–1 s). Los ingredientes se consumen al **terminar**. Si recibes un golpe o cierras el panel, se cancela sin perder nada. Fabricar hace un ruido de 4 m.
+- Mando: mantener View 0,5 s abre el panel, la cruceta elige la receta y A fabrica.
+- Reutiliza `CraftingSystem` (comprobar y consumir ingredientes y dar el resultado). La diferencia con el banco es solo la interfaz y que no pausa.
+
+## Botín de enemigos (`EnemyLoot`)
+
+Al destruir un robot caen de 1 a 3 objetos, elegidos con la semilla de la partida, que saltan un poco y brillan:
+
+| Robot | Chatarra balística | Núcleo de energía | Pólvora espacial | Componente médico | Células de plasma |
+|---|---|---|---|---|---|
+| Normal | 70 % (1–2) | 35 % (1) | 30 % (1) | 20 % (1) | 50 % (4–8) |
+| Élite | 90 % (2–3) | 60 % (1–2) | 50 % (1–2) | 35 % (1) | 70 % (8–12) |
+
+- Si la tirada no da nada, cae al menos 1 Chatarra balística.
+- **Recogida:** se recogen solos al pasar a menos de 1,2 m, atraídos hacia el jugador en los últimos 0,3 s, o con [E]. Muestran la notificación de siempre. Si el inventario está lleno, se quedan en el suelo con el aviso «Inventario lleno».
+- Lo que no se recoge se queda en el suelo mientras estés en la fase.
+- Los **contenedores** de todas las fases añaden a sus tablas de botín Pólvora espacial, Componente médico y munición.
+
+## Componentes de la parte 2
+
+| Archivo | Responsabilidad |
+|---|---|
+| `Crafting/FieldRecipes.cs` | Qué recetas son de campo (lista en un asset `FieldRecipeBook`) |
+| `Crafting/FieldCraftModel.cs` | Fabricación con tiempo, cancelación y consumo al terminar (puro) |
+| `UI/FieldCraftingUI.cs` | Panel flotante, teclas [F]/[1]–[4], mando |
+| `Combat/EnemyLoot.cs` + `Combat/LootDropModel.cs` | Tabla por tipo de robot y tirada con semilla (puro) |
+| `Inventory/AutoPickup.cs` | Recogida al pasar por encima con atracción |
+| `Devices/NanoHealDevice.cs`, `Devices/ProximityMine.cs` | Nanobot y mina (dos valores nuevos de `DeviceKind` al final del enum) |
+| Cambios | `DeviceFactory` (mina y nanobot), `PlayerController` (entrada con el panel abierto), constructores (materiales renombrados, objetos y recetas nuevos, botín de contenedores, textos), `PlayerWeapon` (no dispara con el panel abierto) |
+
+## Pruebas de la parte 2
+
+- `FieldCraftModel`: no empieza sin ingredientes; tarda lo indicado; consume al terminar; cancelar no consume; no se puede fabricar dos a la vez.
+- `LootDropModel`: probabilidades por tipo (con semilla fija y muchas tiradas, cada porcentaje ±3 %), cantidades en rango, de 1 a 3 objetos y al menos uno.
+- Mina: daño según la distancia (80 en el centro, 0 a 4 m) y armado a los 1,5 s.
+- Nanobot: cura 35 en 1,5 s sin pasar del máximo.
+- Autorrecogida: distancia de 1,2 m y no recoge con el inventario lleno.
+- Renombrado: los Id no cambian (una partida guardada con `battery_ion` se carga como Núcleo de energía).
+
 ## Fuera de alcance
 
 - Enemigos que disparan, comandos y drones de asalto (subproyecto 4).
 - Mejoras y modificaciones de armas (subproyecto 5).
 - La nueva celda de armería, el despertar y la historia nueva (subproyectos 1 y 3).
 - Daño por zonas más allá de la cabeza, munición especial y granadas.
+- Que los enemigos recojan objetos, el comercio y la moneda.
