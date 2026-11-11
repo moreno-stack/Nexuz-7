@@ -156,7 +156,10 @@ namespace UnityEngine
     public class Light : Behaviour { public LightType type; public Color color; public float range, intensity, spotAngle, shadowStrength, shadowBias, shadowNormalBias; public LightShadows shadows; }
     public enum CameraClearFlags { Skybox, SolidColor }
     public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; }
-    public class AudioListener : Behaviour {}
+    public class AudioListener : Behaviour { public static float volume = 1f; }
+    public enum FullScreenMode { ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed }
+    public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; }
+    public static class QualitySettings { public static string[] names = { "Mobile", "PC" }; static int level = 1; public static int GetQualityLevel() { return level; } public static void SetQualityLevel(int i, bool e) { level = i; } }
     public class AudioClip : Object {}
     public class AudioSource : Behaviour {
         public bool playOnAwake, loop, isPlaying; public float spatialBlend, pitch, volume; public void Play() {} public void Stop() {}
@@ -340,6 +343,8 @@ namespace UnityEngine {
         static System.Collections.Generic.Dictionary<string,object> d = new System.Collections.Generic.Dictionary<string,object>();
         public static int GetInt(string k, int def) { object v; return d.TryGetValue(k, out v) ? (int)v : def; }
         public static string GetString(string k, string def) { object v; return d.TryGetValue(k, out v) ? (string)v : def; }
+        public static float GetFloat(string k, float def) { object v; return d.TryGetValue(k, out v) ? (float)v : def; } public static void SetFloat(string k, float v) { d[k] = v; }
+        public static bool HasKey(string k) { return d.ContainsKey(k); } public static void DeleteKey(string k) { d.Remove(k); }
         public static void SetInt(string k, int v) { d[k] = v; } public static void SetString(string k, string v) { d[k] = v; } public static void Save() {}
     }
 }

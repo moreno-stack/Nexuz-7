@@ -32,6 +32,8 @@ namespace UnityEngine.Rendering.Universal {
     public class ColorAdjustments : VolumeComponent { public FloatParameter postExposure = new FloatParameter(); public ClampedFloatParameter contrast = new ClampedFloatParameter(), saturation = new ClampedFloatParameter(), hueShift = new ClampedFloatParameter(); public ColorParameter colorFilter = new ColorParameter(); }
     public class ShadowsMidtonesHighlights : VolumeComponent { public Vector4Parameter shadows = new Vector4Parameter(), midtones = new Vector4Parameter(), highlights = new Vector4Parameter(); }
     public class FilmGrain : VolumeComponent { public FilmGrainLookupParameter type = new FilmGrainLookupParameter(); public ClampedFloatParameter intensity = new ClampedFloatParameter(), response = new ClampedFloatParameter(); }
-    public class UniversalAdditionalCameraData : MonoBehaviour { public bool renderPostProcessing; public bool stopNaN; public bool dithering; }
+    public enum AntialiasingMode { None, FastApproximateAntialiasing, SubpixelMorphologicalAntiAliasing, TemporalAntiAliasing }
+    public enum AntialiasingQuality { Low, Medium, High }
+    public class UniversalAdditionalCameraData : MonoBehaviour { public bool renderPostProcessing; public bool stopNaN; public bool dithering; public bool renderShadows = true; public AntialiasingMode antialiasing; public AntialiasingQuality antialiasingQuality; }
     public static class CameraExtensions { public static UniversalAdditionalCameraData GetUniversalAdditionalCameraData(this Camera c) { return c.gameObject.AddComponent<UniversalAdditionalCameraData>(); } }
 }
