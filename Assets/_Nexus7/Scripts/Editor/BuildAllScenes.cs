@@ -53,7 +53,8 @@ namespace Nexus7.EditorTools
                         failed.Add(names[i]);
                     }
                 }
-                EditorUtility.DisplayProgressBar("Nexus-7", "Ordenando Build Settings...", 1f);
+                EditorUtility.DisplayProgressBar("Nexus-7", "Catálogo de objetos y Build Settings...", 1f);
+                ItemCatalogBuilder.Build();                   // objetos por Id para la partida guardada
                 EvacuacionBuilder.ConfigureBuildSettings();   // menú principal en el índice 0
             }
             finally { EditorUtility.ClearProgressBar(); }
