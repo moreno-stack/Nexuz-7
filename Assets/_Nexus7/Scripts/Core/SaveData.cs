@@ -59,12 +59,14 @@ namespace Nexus7.Core
         public static string Describe(SaveData d, DateTime nowUtc, bool sceneAvailable)
         {
             if (d == null) return "Sin partida guardada";
-            if (!sceneAvailable) return "Partida no disponible";
+            if (!sceneAvailable || !IsCompatible(d)) return "Partida no disponible";
             var ago = nowUtc - new DateTime(d.savedAtUtcTicks, DateTimeKind.Utc);
             return GameFlow.PhaseTitle(d.scene) + " — " + RelativeTime(ago);
         }
 
-        public static bool IsCompatible(SaveData d) => d != null && d.version == Version && !string.IsNullOrEmpty(d.scene);
+        public static bool IsCompatible(SaveData d) =>
+            d != null && d.version == Version && !string.IsNullOrEmpty(d.scene)
+            && d.savedAtUtcTicks >= 0 && d.savedAtUtcTicks <= DateTime.MaxValue.Ticks;   // una fecha imposible haría fallar el menú
 
         /// <summary>Lee el JSON. Vacío, corrupto o de otra versión → null (nunca lanza).</summary>
         public static SaveData Parse(string json)

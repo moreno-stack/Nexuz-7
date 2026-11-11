@@ -53,7 +53,7 @@ namespace Nexus7.UI
             if (confirmYes != null) confirmYes.onClick.AddListener(() => { CloseConfirm(); GameFlow.StartNewRun(); });
             if (confirmNo != null) confirmNo.onClick.AddListener(CloseConfirm);
             if (confirmPanel != null) confirmPanel.SetActive(false);
-            if (settings != null) settings.Closed += () => Select(null);
+            if (settings != null) settings.Closed += () => { lastPanelChangeFrame = Time.frameCount; Select(null); };
             RefreshContinue();
             for (int i = 0; i < difficultyButtons.Length; i++)
             {
@@ -72,6 +72,7 @@ namespace Nexus7.UI
         }
 
         private bool SettingsOpen => settings != null && settings.IsOpen;
+        private int lastPanelChangeFrame = -1;   // fotograma en que se abrió o cerró un panel
         private bool ConfirmOpen => confirmPanel != null && confirmPanel.activeSelf;
 
         private void OnNewGame()
@@ -79,7 +80,8 @@ namespace Nexus7.UI
             if (MenuState.NeedsConfirm(SaveSystem.HasSave) && confirmPanel != null)
             {
                 confirmPanel.SetActive(true);
-                Select(confirmNo);   // por defecto, no sobrescribir
+                lastPanelChangeFrame = Time.frameCount;
+                StartCoroutine(SelectNextFrame(confirmNo));   // por defecto, no sobrescribir (un fotograma después: si no, el mismo [Intro] pulsaría NO)
             }
             else GameFlow.StartNewRun();
         }
@@ -91,13 +93,22 @@ namespace Nexus7.UI
 
         private void OpenSettings()
         {
-            if (settings != null) settings.Open();
+            if (settings == null) return;
+            settings.Open();
+            lastPanelChangeFrame = Time.frameCount;
         }
 
         private void CloseConfirm()
         {
             if (confirmPanel != null) confirmPanel.SetActive(false);
+            lastPanelChangeFrame = Time.frameCount;
             Select(null);
+        }
+
+        private System.Collections.IEnumerator SelectNextFrame(Selectable s)
+        {
+            yield return null;
+            if (ConfirmOpen) Select(s);
         }
 
         private void RefreshContinue()
@@ -120,7 +131,7 @@ namespace Nexus7.UI
         private void Update()
         {
             if (ConfirmOpen && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1))) { CloseConfirm(); return; }
-            if (!MenuState.AcceptsMainInput(SettingsOpen, ConfirmOpen)) return;
+            if (!MenuState.AcceptsMainInput(SettingsOpen, ConfirmOpen, Time.frameCount, lastPanelChangeFrame)) return;
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.JoystickButton0)) { OnNewGame(); return; }
             if (Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.JoystickButton3)) { OnContinue(); return; }
             if (Input.GetKeyDown(KeyCode.O) || Input.GetKeyDown(KeyCode.JoystickButton7)) { OpenSettings(); return; }

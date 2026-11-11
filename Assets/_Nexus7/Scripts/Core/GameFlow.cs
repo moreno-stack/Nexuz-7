@@ -61,6 +61,7 @@ namespace Nexus7.Core
 
         public static void ReturnToMenu()
         {
+            if (SceneLoader.IsLoading) return;   // p. ej. [R] y luego [M] en los resultados: no reiniciar la partida que ya carga
             ResetRunState();
             if (!Load(MenuScene)) Load(FirstScene); // si aún no se ha creado el menú
         }

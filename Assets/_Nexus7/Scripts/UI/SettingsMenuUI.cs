@@ -47,9 +47,9 @@ namespace Nexus7.UI
             for (int i = 0; i < qualityButtons.Length; i++)
             {
                 int k = i;
-                if (qualityButtons[i] != null) qualityButtons[i].onClick.AddListener(() => { GameSettings.Quality = (QualityLevel)k; Refresh(); });
+                if (qualityButtons[i] != null) qualityButtons[i].onClick.AddListener(() => { GameSettings.Quality = (QualityLevel)k; QualityPresets.Apply(GameSettings.Quality); Refresh(); });
             }
-            if (fullscreenButton != null) fullscreenButton.onClick.AddListener(() => { GameSettings.Fullscreen = !GameSettings.Fullscreen; GameSettings.ApplyAll(); Refresh(); });
+            if (fullscreenButton != null) fullscreenButton.onClick.AddListener(() => { GameSettings.Fullscreen = !GameSettings.Fullscreen; GameSettings.ApplyDisplay(); Refresh(); });
             if (backButton != null) backButton.onClick.AddListener(Close);
             if (panel != null) panel.SetActive(false);
         }
@@ -64,7 +64,7 @@ namespace Nexus7.UI
             {
                 if (refreshing) return;
                 onChange(v);
-                GameSettings.ApplyAll();
+                GameSettings.ApplyAudio();   // solo el audio: la pantalla y la calidad no cambian al mover un volumen
                 RefreshLabels();
             });
         }
@@ -74,7 +74,14 @@ namespace Nexus7.UI
             if (panel == null) return;
             panel.SetActive(true);
             Refresh();
-            if (firstSelected != null && EventSystem.current != null) EventSystem.current.SetSelectedGameObject(firstSelected.gameObject);
+            StartCoroutine(SelectNextFrame());
+        }
+
+        /// <summary>Selecciona un fotograma después: la tecla que abrió el panel no llega a «pulsar» lo seleccionado.</summary>
+        private System.Collections.IEnumerator SelectNextFrame()
+        {
+            yield return null;
+            if (IsOpen && firstSelected != null && EventSystem.current != null) EventSystem.current.SetSelectedGameObject(firstSelected.gameObject);
         }
 
         public void Close()

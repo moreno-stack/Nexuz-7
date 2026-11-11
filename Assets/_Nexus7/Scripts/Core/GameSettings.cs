@@ -58,13 +58,23 @@ namespace Nexus7.Core
             Save();
         }
 
-        /// <summary>Aplica todo: volumen general, pantalla completa y calidad.</summary>
+        /// <summary>Solo el volumen general (al mover un slider: no toca la pantalla ni la calidad).</summary>
+        public static void ApplyAudio() => AudioListener.volume = Curve(Master);
+
+        /// <summary>Solo la pantalla completa (al cambiarla), para no reasignar el modo de pantalla en cada ajuste.</summary>
+        public static void ApplyDisplay()
+        {
+#if !UNITY_EDITOR
+            var mode = Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            if (Screen.fullScreenMode != mode) Screen.fullScreenMode = mode;
+#endif
+        }
+
+        /// <summary>Aplica todo: volumen general, pantalla completa y calidad (al arrancar y al cargar cada escena).</summary>
         public static void ApplyAll()
         {
-            AudioListener.volume = Curve(Master);
-#if !UNITY_EDITOR
-            Screen.fullScreenMode = Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
-#endif
+            ApplyAudio();
+            ApplyDisplay();
             QualityPresets.Apply(Quality);
         }
 

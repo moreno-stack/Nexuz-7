@@ -13,6 +13,13 @@ namespace Nexus7.UI
         /// <summary>[Intro], ←/→ y LB/RB del menú solo funcionan sin paneles abiertos encima.</summary>
         public static bool AcceptsMainInput(bool settingsOpen, bool confirmOpen) => !settingsOpen && !confirmOpen;
 
+        /// <summary>
+        /// Además, nunca en el mismo fotograma en que se abrió o cerró un panel: la tecla que lo cerró ([Intro] / A sobre
+        /// VOLVER o NO) no debe lanzar también Nueva partida.
+        /// </summary>
+        public static bool AcceptsMainInput(bool settingsOpen, bool confirmOpen, int frame, int lastPanelChangeFrame) =>
+            AcceptsMainInput(settingsOpen, confirmOpen) && frame != lastPanelChangeFrame;
+
         public static int ToPercent(float v) => (int)Math.Round(Math.Max(0f, Math.Min(1f, v)) * 100f, MidpointRounding.AwayFromZero);
         public static float FromPercent(float p) => Math.Max(0f, Math.Min(100f, p)) / 100f;
 
