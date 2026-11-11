@@ -46,7 +46,7 @@ namespace Nexus7.Core
             // El inventario viaja a la siguiente escena.
             var inventory = player != null ? player.GetComponent<InventorySystem>() : null;
             if (inventory != null) GameSession.SaveInventory(inventory);
-            SceneManager.LoadScene(sceneName);
+            SceneLoader.Load(sceneName);   // transición y autoguardado al llegar
         }
     }
 }

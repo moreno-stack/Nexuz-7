@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Nexus7.Core
 {
@@ -40,11 +39,22 @@ namespace Nexus7.Core
 
         public static void StartNewRun()
         {
+            if (SceneLoader.IsLoading) return;   // doble clic o [Intro] durante una carga
             ResetRunState();
             GameSession.NewRun();
             RunStats.EnsureStarted();
             Load(FirstScene);
         }
+
+        /// <summary>Continuar la partida guardada: restaura la sesión y carga el inicio de esa fase.</summary>
+        public static bool ContinueRun()
+        {
+            if (SceneLoader.IsLoading || !SaveSystem.LoadAndApply(out string scene)) return false;
+            return Load(scene);
+        }
+
+        /// <summary>La partida ha terminado (victoria o derrota final): ya no hay nada que continuar.</summary>
+        public static void OnRunFinished() => SaveSystem.Delete();
 
         /// <summary>Reiniciar desde la pantalla de resultados = nueva partida completa.</summary>
         public static void Restart() => StartNewRun();
@@ -93,8 +103,7 @@ namespace Nexus7.Core
                 Debug.LogWarning($"[GameFlow] La escena '{scene}' no está en Build Settings.");
                 return false;
             }
-            SceneManager.LoadScene(scene);
-            return true;
+            return SceneLoader.Load(scene);   // fundido, barra de carga y autoguardado
         }
     }
 }

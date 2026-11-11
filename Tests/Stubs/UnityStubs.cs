@@ -172,6 +172,7 @@ namespace UnityEngine
         public static void DrawCube(Vector3 c, Vector3 s) {} public static void DrawWireCube(Vector3 c, Vector3 s) {}
         public static void DrawRay(Vector3 o, Vector3 d) {} public static void DrawLine(Vector3 a, Vector3 b) {}
     }
+    public class AsyncOperation { public bool isDone = true; public float progress = 1f; public bool allowSceneActivation = true; }
     public static class Resources { public static T Load<T>(string path) where T : Object { return null; } }
     public static class Application { public static string persistentDataPath = System.IO.Path.GetTempPath(); public static bool isPlaying, isBatchMode; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
     public enum FogMode { Linear, Exponential, ExponentialSquared }
@@ -229,7 +230,7 @@ namespace UnityEngine.Events { public class UnityEvent { public void Invoke() {}
 namespace UnityEngine.SceneManagement {
     public struct Scene { public string path; public string name; public GameObject[] GetRootGameObjects() { return new GameObject[0]; } }
     public enum LoadSceneMode { Single, Additive }
-    public static class SceneManager { public static void LoadScene(string n) {} public static event System.Action<Scene, LoadSceneMode> sceneLoaded; public static Scene GetActiveScene() { return default(Scene); } }
+    public static class SceneManager { public static UnityEngine.AsyncOperation LoadSceneAsync(string n) { return new UnityEngine.AsyncOperation(); } public static void LoadScene(string n) {} public static event System.Action<Scene, LoadSceneMode> sceneLoaded; public static Scene GetActiveScene() { return default(Scene); } }
 }
 namespace UnityEngine.Rendering {
     public enum AmbientMode { Skybox, Trilight, Flat } public enum ShadowCastingMode { Off, On, TwoSided, ShadowsOnly }
@@ -275,7 +276,7 @@ namespace TMPro {
     public enum FontStyles { Normal, Bold, Italic }
     public class TMP_TextInfo { public int characterCount; }
     public class TextMeshPro : UnityEngine.MonoBehaviour { public string text; public float fontSize; public TextAlignmentOptions alignment; public UnityEngine.Color color; public UnityEngine.RectTransform rectTransform; }
-    public class TextMeshProUGUI : UnityEngine.UI.Graphic {
+    public class TextMeshProUGUI : UnityEngine.UI.Graphic { public float characterSpacing;
         public FontStyles fontStyle; public bool enableWordWrapping, enableAutoSizing; public float fontSizeMax, fontSizeMin; public string text; public int maxVisibleCharacters; public float fontSize; public TextAlignmentOptions alignment; public TMP_TextInfo textInfo;
         public void ForceMeshUpdate() {}
     }

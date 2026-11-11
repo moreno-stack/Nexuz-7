@@ -68,7 +68,7 @@ namespace Nexus7.Gameplay
             if (ended) return;
             ended = true;
             EndingStarted = true;
-            EndingStarted = true;
+            GameFlow.OnRunFinished();   // partida terminada: ya no hay nada que continuar
             StartCoroutine(EndRoutine(true, false));
         }
 
@@ -77,6 +77,7 @@ namespace Nexus7.Gameplay
         {
             if (ended) return;
             ended = true;
+            GameFlow.OnRunFinished();
             StartCoroutine(EndRoutine(false, timeOut));
         }
 

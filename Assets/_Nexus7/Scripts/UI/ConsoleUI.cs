@@ -185,7 +185,7 @@ namespace Nexus7.UI
                 if (hud != null) yield return hud.Fade(0f, 1f, 1.2f);
                 var inventory = Nexus7.Inventory.ItemRequirementUtil.PlayerInventory;   // el inventario viaja a la siguiente escena
                 if (inventory != null) GameSession.SaveInventory(inventory);
-                SceneManager.LoadScene(action.nextScene);
+                SceneLoader.Load(action.nextScene);   // transición y autoguardado al llegar
             }
             else
             {
