@@ -114,7 +114,7 @@ namespace Nexus7.Combat
             lastPosition = transform.position;
             if (muzzleFlash != null && muzzleFlash.enabled && t > flashUntil) muzzleFlash.enabled = false;
 
-            bool canAct = controller.InputEnabled && !EnemyPatrol.Paused && !GameHud.Hidden
+            bool canAct = controller.InputEnabled && !controller.InputReleasedThisFrame && !EnemyPatrol.Paused && !GameHud.Hidden
                           && Cursor.lockState == CursorLockMode.Locked && Time.timeScale > 0f;
             if (!canAct)
             {
