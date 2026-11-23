@@ -64,7 +64,8 @@ namespace Nexus7.Devices
             if (controller != null && !controller.InputEnabled) { CancelAim(); return; }
 
             var device = Selected;
-            bool mouseOk = Cursor.lockState == CursorLockMode.Locked;   // el primer clic solo captura el ratón
+            // El primer clic solo captura el ratón. Con un arma en la mano el clic es para disparar: los dispositivos van con [G]
+            bool mouseOk = Cursor.lockState == CursorLockMode.Locked && !Nexus7.Combat.PlayerWeapon.ClaimsMouse;
             bool down = Input.GetKeyDown(useKey) || (mouseOk && Input.GetKeyDown(useMouse)) || Input.GetKeyDown(padUseButton);
             bool held = Input.GetKey(useKey) || (mouseOk && Input.GetKey(useMouse)) || Input.GetKey(padUseButton);
 

@@ -92,7 +92,19 @@ static class T {
     var b = new ArsenalModel(); b.Add(new WeaponModel(P(),12,96)); b.Add(new WeaponModel(S(),0,2));
     Check(b.NeediestWeapon().Spec.Id==PlayerWeaponCatalog.Shotgun, "El paquete de munición va al arma con menos munición");
   }
+  static void Sounds(){
+    bool ok=true; foreach(CombatSound k in Enum.GetValues(typeof(CombatSound))){ var d=CombatSoundSynth.Make(k); ok&=d.Length>100; foreach(var x in d) ok&= x>=-1f && x<=1f && !float.IsNaN(x); }
+    Check(ok, "Sonidos del combate generados, sin saturar ni NaN");
+  }
+  static void Session(){
+    CombatSession.Clear(); var a=CombatSession.Load();
+    Check(a.Weapons.Count==PlayerWeaponCatalog.All.Count, "Sin partida guardada: arsenal inicial con todas las armas");
+    a.Current.TryFire(0f,true); a.Select(2,0f); CombatSession.Store(a);
+    var b=CombatSession.Load(); Check(b.CurrentIndex==2 && b.Weapons[0].Ammo==a.Weapons[0].Ammo && b.Weapons[0].Reserve==a.Weapons[0].Reserve, "Entre fases se conservan el arma en mano, el cargador y la reserva");
+    CombatSession.Clear(); Check(!CombatSession.HasSaved, "Nueva partida: se borra el arsenal guardado");
+  }
   static void Main(){
+    Sounds(); Session();
     Catalog(); FireRateAndSemi(); MagazineAndReload(); Heat(); BloomAndSpread(); Falloff(); Health(); Arsenal();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
   }

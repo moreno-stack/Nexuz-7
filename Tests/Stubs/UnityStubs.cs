@@ -102,6 +102,7 @@ namespace UnityEngine
         public static bool SphereCast(Vector3 o, float r, Vector3 d, out RaycastHit h, float dist, int m, QueryTriggerInteraction q) { h = default(RaycastHit); return false; }
         public static bool Linecast(Vector3 a, Vector3 b, out RaycastHit h, int m, QueryTriggerInteraction q) { h = default(RaycastHit); return false; }
         public static int RaycastNonAlloc(Vector3 o, Vector3 d, RaycastHit[] r, float dist, int m, QueryTriggerInteraction q) { return 0; }
+        public static int SphereCastNonAlloc(Vector3 o, float radius, Vector3 d, RaycastHit[] r, float dist, int m, QueryTriggerInteraction q) { return 0; }
     }
     public static class Mathf {
         public const float PI = 3.14f;

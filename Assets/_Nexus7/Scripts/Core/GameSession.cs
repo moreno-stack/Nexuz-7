@@ -37,6 +37,7 @@ namespace Nexus7.Core
         {
             HasSuit = false;
             HotbarSelectedId = null;
+            Nexus7.Combat.CombatSession.Clear();   // nueva partida: arsenal inicial
             RunSeed = unchecked(System.Environment.TickCount * 7919 + RunSeed);
         }
 
