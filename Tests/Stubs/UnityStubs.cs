@@ -245,7 +245,7 @@ namespace UnityEngine.AI {
     public class NavMeshAgent : Behaviour {
         public float speed, radius, height, angularSpeed, acceleration, stoppingDistance, remainingDistance;
         public bool isOnNavMesh, pathPending, isStopped;
-        public Vector3 destination; public int destinationsSet; public bool Warp(Vector3 p) { return true; } public bool SetDestination(Vector3 p) { destination = p; destinationsSet++; return true; } public void ResetPath() {}
+        public Vector3 destination, velocity; public int destinationsSet; public bool Warp(Vector3 p) { return true; } public bool SetDestination(Vector3 p) { destination = p; destinationsSet++; return true; } public void ResetPath() {}
     }
     public struct NavMeshHit { public Vector3 position; }
     public struct NavMeshBuildSettings {}

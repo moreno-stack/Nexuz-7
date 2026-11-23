@@ -13,6 +13,8 @@ namespace Nexus7.Director
         public float RespawnAmmoLoss;     // munición que se pierde al caer
         public float PatrolWait;          // espera en cada waypoint (menos = patrullas más activas)
         public int Reinforcements;        // robots extra que puede añadir al reiniciar un tramo
+        public int ExtraShooters;         // robots extra que pueden disparar a la vez (turnos de ataque)
+        public float EnemySpread;         // dispersión de los disparos de los robots (< 1 = mejor puntería)
     }
 
     /// <summary>Lo que el director decide hacer además de mover perillas.</summary>
@@ -135,6 +137,8 @@ namespace Nexus7.Director
                 RespawnAmmoLoss = Knob(t, 0.3f, 1.2f),
                 PatrolWait = Knob(t, 1.3f, 0.7f),
                 Reinforcements = t >= 0.8f ? 2 : t >= 0.6f ? 1 : 0,
+                ExtraShooters = t >= 0.75f ? 1 : 0,
+                EnemySpread = Knob(t, 1.35f, 0.75f),
             };
         }
 

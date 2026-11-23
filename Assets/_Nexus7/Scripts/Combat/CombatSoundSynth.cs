@@ -2,7 +2,7 @@ using System;
 
 namespace Nexus7.Combat
 {
-    public enum CombatSound { Pistol, Rifle, Shotgun, Railgun, Reload, Overheat, Switch, Empty, HitMetal, Explosion, AmmoPickup }
+    public enum CombatSound { Pistol, Rifle, Shotgun, Railgun, Reload, Overheat, Switch, Empty, HitMetal, Explosion, AmmoPickup, EnemyShot, EnemyWarn }
 
     /// <summary>
     /// Sonidos del combate generados por código (el proyecto no tiene archivos de audio), como ProceduralAudio:
@@ -26,6 +26,8 @@ namespace Nexus7.Combat
                 case CombatSound.Empty:      return Clicks(new[] { 0.0 }, 0.06f, 8);
                 case CombatSound.HitMetal:   return Shot(2200, 1600, 0.09f, 0.3f, 0.45f, 9);
                 case CombatSound.Explosion:  return Shot(140, 40, 0.9f, 0.95f, 0.8f, 10);
+                case CombatSound.EnemyShot:  return Shot(700, 420, 0.14f, 0.3f, 0.45f, 12);   // más grave que la pistola del jugador
+                case CombatSound.EnemyWarn:  return Shot(1800, 1800, 0.22f, 0.0f, 0.35f, 13);  // pitido limpio: «te van a disparar»
                 default:                     return Shot(660, 1320, 0.18f, 0.0f, 0.4f, 11);
             }
         }

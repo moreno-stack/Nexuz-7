@@ -10,6 +10,7 @@ namespace Nexus7.UI
     ///   · Centro: mira de 4 trazos que se abre con la dispersión real del arma y se cierra al apuntar.
     ///     Marca de impacto «X» 0,15 s (amarilla si es crítico, roja si destruye).
     ///   · Sobre los robots heridos: barra de vida durante 3 s.
+    ///   · Alrededor de la mira: arco rojo que señala desde dónde te han dado (hasta 6 a la vez, se apagan en 1,2 s).
     /// Se oculta en las cinemáticas, los finales y con el juego en pausa.
     ///
     /// Colocar en: el jugador (lo añade CombatInstaller).
@@ -18,6 +19,8 @@ namespace Nexus7.UI
     {
         private const float HitMarkerTime = 0.15f;
         private const float BarTime = 3f;
+        private const float IndicatorTime = 1.2f;
+        private const int MaxIndicators = 6;
 
         private static Texture2D white;
         private PlayerWeapon weapon;
@@ -25,17 +28,29 @@ namespace Nexus7.UI
         private float hitMarkerUntil = -1f;
         private Color hitMarkerColor = Color.white;
         private GUIStyle big, small, center;
+        private readonly Vector3[] hitOrigins = new Vector3[MaxIndicators];
+        private readonly float[] hitTimes = { -99f, -99f, -99f, -99f, -99f, -99f };
+        private int nextIndicator;
 
         private void OnEnable()
         {
             CombatEvents.HitLanded += OnHit;
             CombatEvents.EnemyKilled += OnKilled;
+            Nexus7.Player.PlayerHealth.PlayerHit += OnPlayerHit;
         }
 
         private void OnDisable()
         {
             CombatEvents.HitLanded -= OnHit;
             CombatEvents.EnemyKilled -= OnKilled;
+            Nexus7.Player.PlayerHealth.PlayerHit -= OnPlayerHit;
+        }
+
+        private void OnPlayerHit(Vector3 origin)
+        {
+            hitOrigins[nextIndicator] = origin;
+            hitTimes[nextIndicator] = Time.time;
+            nextIndicator = (nextIndicator + 1) % MaxIndicators;
         }
 
         private void Start()
@@ -63,6 +78,7 @@ namespace Nexus7.UI
 
             DrawCrosshair(k);
             DrawEnemyBars(k);
+            DrawDamageIndicators(k);
             DrawWeaponPanel(w, k);
         }
 
@@ -171,6 +187,27 @@ namespace Nexus7.UI
             big = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold };
             small = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold };
             center = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
+        }
+
+        /// <summary>Arco de 7 puntos alrededor de la mira en la dirección del atacante (arriba = delante, abajo = detrás).</summary>
+        private void DrawDamageIndicators(float k)
+        {
+            Transform view = cam != null ? cam.transform : transform;
+            Vector3 f = view.forward;
+            float cx = Screen.width * 0.5f, cy = Screen.height * 0.5f, radius = 150f * k, dot = 6f * k;
+            for (int i = 0; i < MaxIndicators; i++)
+            {
+                float age = Time.time - hitTimes[i];
+                if (age >= IndicatorTime) continue;
+                Vector3 to = hitOrigins[i] - transform.position;
+                float angle = DamageIndicatorMath.ScreenAngle(f.x, f.z, to.x, to.z);
+                var c = new Color(1f, 0.2f, 0.15f, 0.85f * (1f - age / IndicatorTime));
+                for (int j = -3; j <= 3; j++)
+                {
+                    float a = (angle + j * 4f) * Mathf.Deg2Rad;
+                    Rect(cx + Mathf.Sin(a) * radius - dot * 0.5f, cy - Mathf.Cos(a) * radius - dot * 0.5f, dot, dot, c);
+                }
+            }
         }
 
         private static void Rect(float x, float y, float w, float h, Color c)

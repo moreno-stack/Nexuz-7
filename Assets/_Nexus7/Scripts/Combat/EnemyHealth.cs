@@ -42,6 +42,7 @@ namespace Nexus7.Combat
 
         private HealthModel model;
         private EnemyPatrol patrol;
+        private EnemyGun gun;
         private Transform head;
         private float baseMax;
         private Vector3 baseScale = Vector3.one;
@@ -50,6 +51,7 @@ namespace Nexus7.Combat
         private void Awake()
         {
             patrol = GetComponent<EnemyPatrol>();
+            gun = GetComponent<EnemyGun>();
             baseScale = transform.localScale;
             baseMax = maxHealth > 0f ? maxHealth : HealthModel.BaseHealthFor(name);
             model = new HealthModel(baseMax * HealthMultiplier);
@@ -75,6 +77,7 @@ namespace Nexus7.Combat
             info.Amount = amount;
 
             var result = model.Apply(amount);
+            if (gun != null && result != HealthResult.Killed) gun.RegisterDamage(amount);
             LastHitTime = Time.time;
             LastHitCritical = info.Critical;
             CombatSfx.PlayAt(CombatSound.HitMetal, info.Point);
@@ -110,6 +113,8 @@ namespace Nexus7.Combat
             transform.localScale = baseScale;
             var melee = GetComponent<EnemyMeleeAttack>();
             if (melee != null) { melee.Cancel(); melee.enabled = false; }
+            if (gun == null) gun = GetComponent<EnemyGun>();
+            if (gun != null) gun.enabled = false;
             if (patrol != null) patrol.enabled = false;
             var vision = GetComponent<EnemyVision>();
             if (vision != null) vision.enabled = false;
