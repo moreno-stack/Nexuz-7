@@ -103,7 +103,25 @@ static class T {
     var b=CombatSession.Load(); Check(b.CurrentIndex==2 && b.Weapons[0].Ammo==a.Weapons[0].Ammo && b.Weapons[0].Reserve==a.Weapons[0].Reserve, "Entre fases se conservan el arma en mano, el cargador y la reserva");
     CombatSession.Clear(); Check(!CombatSession.HasSaved, "Nueva partida: se borra el arsenal guardado");
   }
+  static void DiskSave(){
+    var a = CombatSession.Load(); a.Current.TryFire(0f,true); a.Select(3,0f); int idx;
+    var list = CombatSession.ToSaved(a, out idx);
+    Check(list.Count==a.Weapons.Count && idx==3 && list[0].ammo==a.Weapons[0].Ammo, "Arsenal → partida guardada (armas, munición y arma en mano)");
+    list.Add(new Nexus7.Core.SavedWeapon{ id="arma_borrada", ammo=5, reserve=5 });
+    CombatSession.RestoreSaved(list, idx); var b = CombatSession.Load();
+    Check(b.Weapons.Count==a.Weapons.Count && b.CurrentIndex==3 && b.Weapons[0].Ammo==a.Weapons[0].Ammo, "Partida guardada → arsenal; un arma que ya no existe se omite");
+    CombatSession.RestoreSaved(new System.Collections.Generic.List<Nexus7.Core.SavedWeapon>(), 0);
+    Check(!CombatSession.HasSaved && CombatSession.Load().Weapons.Count==PlayerWeaponCatalog.All.Count, "Guardado antiguo sin armas → arsenal inicial");
+    var huge = new System.Collections.Generic.List<Nexus7.Core.SavedWeapon>{ new Nexus7.Core.SavedWeapon{ id=PlayerWeaponCatalog.Pistol, ammo=999, reserve=9999 } };
+    CombatSession.RestoreSaved(huge, 7); var c = CombatSession.Load();
+    Check(c.Current.Ammo==P().MagazineSize && c.Current.Reserve==P().MaxReserve, "Valores manipulados se limitan al cargador y la reserva máximos");
+    var json = "{\"version\":1,\"scene\":\"SalaEnergia\",\"savedAtUtcTicks\":1}";
+    var old = Nexus7.Core.SaveSlot.Parse(json);
+    Check(old!=null && (old.weapons==null || old.weapons.Count==0) && !old.hasDirectorTension, "Un guardado de antes de las armas se sigue leyendo");
+    CombatSession.Clear();
+  }
   static void Main(){
+    DiskSave();
     Sounds(); Session();
     Catalog(); FireRateAndSemi(); MagazineAndReload(); Heat(); BloomAndSpread(); Falloff(); Health(); Arsenal();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
