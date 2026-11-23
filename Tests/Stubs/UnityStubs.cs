@@ -123,7 +123,7 @@ namespace UnityEngine
     public static class Input {
         public static float GetAxis(string a) { return 0; } public static float GetAxisRaw(string a) { return 0; }
         public static bool GetKey(KeyCode k) { return false; } public static bool GetKeyDown(KeyCode k) { return false; }
-        public static bool GetMouseButtonDown(int b) { return false; }
+        public static bool GetMouseButtonDown(int b) { return false; } public static string[] GetJoystickNames() { return new string[0]; }
     }
     public enum CursorLockMode { None, Locked, Confined }
     public static class Cursor { public static CursorLockMode lockState; public static bool visible; }

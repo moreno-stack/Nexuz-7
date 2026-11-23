@@ -20,7 +20,7 @@ namespace Nexus7.Player
         [SerializeField] private float maxPitch = 80f;
 
         [Header("Mando (opcional)")]
-        [Tooltip("Actívalo SOLO si creaste los ejes 'LookX' y 'LookY' en Project Settings > Input Manager (stick derecho).")]
+        [Tooltip("Fuerza el stick derecho. No hace falta: se activa solo si existen los ejes 'LookX' y 'LookY' en el Input Manager.")]
         [SerializeField] private bool useGamepadLook = false;
         [SerializeField] private string gamepadAxisX = "LookX";
         [SerializeField] private string gamepadAxisY = "LookY";
@@ -28,8 +28,14 @@ namespace Nexus7.Player
         [SerializeField] private float gamepadSensitivity = 160f;
 
         private float pitch;
+        private bool gamepadLook;
 
-        private void Start() => SetCursorLocked(true);
+        private void Start()
+        {
+            SetCursorLocked(true);
+            // El stick derecho funciona solo si el proyecto tiene los ejes (ahora vienen en el Input Manager)
+            gamepadLook = useGamepadLook || (Nexus7.Core.GamepadAxes.Available(gamepadAxisX) && Nexus7.Core.GamepadAxes.Available(gamepadAxisY));
+        }
 
         private void Update()
         {
@@ -42,10 +48,10 @@ namespace Nexus7.Player
             float yaw = Input.GetAxis("Mouse X") * mouseSensitivity;
             float pitchDelta = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-            if (useGamepadLook)
+            if (gamepadLook)
             {
-                yaw += Input.GetAxis(gamepadAxisX) * gamepadSensitivity * Time.deltaTime;
-                pitchDelta += Input.GetAxis(gamepadAxisY) * gamepadSensitivity * Time.deltaTime;
+                yaw += Nexus7.Core.GamepadAxes.Read(gamepadAxisX) * gamepadSensitivity * Time.deltaTime;
+                pitchDelta += Nexus7.Core.GamepadAxes.Read(gamepadAxisY) * gamepadSensitivity * Time.deltaTime;
             }
 
             if (invertY) pitchDelta = -pitchDelta;

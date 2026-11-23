@@ -120,8 +120,19 @@ static class T {
     Check(old!=null && (old.weapons==null || old.weapons.Count==0) && !old.hasDirectorTension, "Un guardado de antes de las armas se sigue leyendo");
     CombatSession.Clear();
   }
+  static void Gamepad(){
+    var t = new TriggerLatch();
+    Check(!t.Update(0.4f) && t.Update(0.6f), "Gatillo: se pulsa al pasar de 0,5");
+    Check(t.Update(0.4f) && !t.Update(0.2f), "Histéresis: sigue pulsado hasta bajar de 0,3");
+    Check(t.Update(-0.8f), "Mandos que dan −1..1 también valen");
+    var d = new DpadEdges(); d.Update(1f,0f); Check(d.Right && !d.Left, "Cruceta derecha: pulsación");
+    d.Update(1f,0f); Check(!d.Right, "Mantenerla no repite (no cambia de arma cada fotograma)");
+    d.Update(0f,0f); d.Update(0f,-1f); Check(d.Down && !d.Up, "Cruceta abajo (recargar)");
+    d.Update(-1f,0f); Check(d.Left && !d.Down, "Cruceta izquierda (arma anterior)");
+    Check(Nexus7.Core.GamepadAxes.Read("")==0f, "Un eje vacío o inexistente se lee como 0, sin excepción");
+  }
   static void Main(){
-    DiskSave();
+    Gamepad(); DiskSave();
     Sounds(); Session();
     Catalog(); FireRateAndSemi(); MagazineAndReload(); Heat(); BloomAndSpread(); Falloff(); Health(); Arsenal();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);

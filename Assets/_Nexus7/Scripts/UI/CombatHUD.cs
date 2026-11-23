@@ -158,7 +158,9 @@ namespace Nexus7.UI
                 GUI.Label(new Rect(x + 16 * k + i * cell, y + 98 * k, cell, 20 * k), current ? $"> {name}" : name, small);
             }
             GUI.color = new Color(1f, 1f, 1f, 0.5f);
-            GUI.Label(new Rect(x, y - 22 * k, pw, 20 * k), "[Q] cambiar · [R] recargar · clic dcho. apuntar", center);
+            GUI.Label(new Rect(x, y - 22 * k, pw, 20 * k), Nexus7.Core.GamepadAxes.AnyGamepad
+                ? "[RT] disparar · [LT] apuntar · cruceta abajo recargar · izq./der. arma"
+                : "[Q] cambiar · [R] recargar · clic dcho. apuntar", center);
             GUI.color = Color.white;
         }
 
