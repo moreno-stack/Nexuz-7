@@ -9,7 +9,7 @@ Juego de **sigilo en primera o tercera persona** hecho en **Unity (C#)**. Despie
 ```
 Assets/_Nexus7/Scripts/   ← todo el código del juego (C#)
 docs/guias/fases/         ← guías de las 6 fases originales
-Tests/                    ← pruebas automáticas (492 comprobaciones, sin Unity)
+Tests/                    ← pruebas automáticas (852 comprobaciones, sin Unity)
 docs/guias/mejoras/       ← guías de las mejoras (etapas 0 a 8)
 docs/superpowers/         ← diseño (specs) y planes de implementación
 docs/media/               ← vídeo de la maqueta y capturas
@@ -31,6 +31,8 @@ docs/media/               ← vídeo de la maqueta y capturas
 | `Hazards` | Cables y trampas eléctricas |
 | `Interaction` | Puertas, terminales, taquilla del traje, objetos interactivos |
 | `Cinematics` | Cinemáticas con subtítulos en español |
+| `Combat` | Armas del jugador, proyectiles, vida de los robots, munición y HUD de combate |
+| `Director` | IA que analiza al jugador, dificultad adaptativa y reaparición sin repeticiones |
 | `Gameplay` | Flujo de la partida, alertas, reaparición, finales y puntuación |
 | `Core` | Dificultad, sesión de juego y estadísticas |
 | `Environment` | Luces, efectos y ambientación |
@@ -71,10 +73,15 @@ El proyecto ya trae TextMeshPro, los ajustes de URP y *Active Input Handling* en
 | V | Cámara 1ª / 3ª persona |
 | E | Interactuar |
 | 1–9 / rueda | Elegir objeto de la barra rápida |
-| G / clic | Usar o lanzar el dispositivo |
+| Clic izquierdo | Disparar (mantener con el rifle) |
+| Clic derecho | Apuntar |
+| R | Recargar |
+| Q | Cambiar de arma |
+| G | Usar o lanzar el dispositivo |
+| F3 | Panel del director adaptativo (métricas en vivo) |
 | Tab / I | Inventario |
 
-Dificultad (menú principal): **Fácil ×1,0 · Normal ×1,5 · Difícil ×2,0** de daño.
+Dificultad (menú principal): **Fácil ×1,0 · Normal ×1,5 · Difícil ×2,0** de daño. Durante la partida, el director adaptativo ajusta la presión según cómo juegas, y al caer los robots no reaparecen en el mismo sitio. Detalles en [`docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md`](docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md).
 
 ## Menú y pantalla final
 
@@ -90,4 +97,4 @@ Capturas de previsualización generadas desde el código del proyecto (en Unity 
 bash Tests/run_all.sh
 ```
 
-Compila todo el código, incluidos los constructores de escena, y ejecuta las 492 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).
+Compila todo el código, incluidos los constructores de escena, y ejecuta las 852 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).

@@ -22,6 +22,7 @@ namespace Nexus7.Enemies
         [SerializeField] private Color gizmoColor = new Color(1f, 0.6f, 0.1f);
 
         public int Count => transform.childCount;
+        public bool IsPingPong => mode == RouteMode.PingPong;
 
         public Vector3 GetPosition(int index) => transform.GetChild(index).position;
 
@@ -51,7 +52,8 @@ namespace Nexus7.Enemies
         public int GetNextIndex(int current, ref int direction)
         {
             if (Count <= 1) return 0;
-            if (mode == RouteMode.Loop) return (current + 1) % Count;
+            // En bucle también se puede recorrer al revés (direction = −1): lo usa la anti-repetición al reaparecer
+            if (mode == RouteMode.Loop) return ((current + (direction < 0 ? -1 : 1)) % Count + Count) % Count;
 
             int next = current + direction;
             if (next < 0 || next >= Count)

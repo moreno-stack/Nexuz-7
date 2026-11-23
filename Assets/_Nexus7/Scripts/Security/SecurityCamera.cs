@@ -79,6 +79,17 @@ namespace Nexus7.Security
                     : vision != null && vision.Awareness > 0.05f ? new Color(1f, 0.8f, 0.1f) : new Color(0.3f, 0.8f, 1f));
         }
 
+        /// <summary>
+        /// Anti-repetición: el barrido empieza en otro punto ('fraction' de −1 a 1 del ángulo) y, si 'reverse', en el otro sentido.
+        /// Lo llama el director al reaparecer el jugador para que las cámaras no repitan el mismo ciclo.
+        /// </summary>
+        public void VarySweep(float fraction, bool reverse)
+        {
+            offset = Mathf.Clamp(fraction, -1f, 1f) * sweepAngle;
+            if (reverse) direction = -direction;
+            pauseTimer = 0f;
+        }
+
         private void Sweep()
         {
             if (pauseTimer > 0f) { pauseTimer -= Time.deltaTime; return; }

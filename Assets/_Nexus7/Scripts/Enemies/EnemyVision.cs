@@ -128,7 +128,8 @@ namespace Nexus7.Enemies
                 float distanceFactor = Mathf.Lerp(2.5f, 0.4f, distance / range);   // de cerca se detecta mucho antes
                 float rays = PerceptionModel.DetectionFactor(VisibleRays, PerceptionModel.SamplePointCount);
                 float wary = IsWary ? boostMultiplier : 1f;
-                float alert = Nexus7.Core.AlertSystem.Profile.detection * Nexus7.Core.DifficultySettings.DetectionMultiplier;
+                float alert = Nexus7.Core.AlertSystem.Profile.detection * Nexus7.Core.DifficultySettings.DetectionMultiplier
+                              * Nexus7.Core.AdaptiveModifiers.Detection;   // director adaptativo (1 sin director)
                 Awareness += detectionSpeed * visibility * distanceFactor * rays * wary * alert * Time.deltaTime;
             }
             else

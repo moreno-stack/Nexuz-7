@@ -50,6 +50,12 @@ namespace Nexus7.Enemies
         /// <summary>El dron puede volver a moverse (no está congelado, aturdido ni en pausa por una cinemática).</summary>
         public bool CanMove => !frozen && !Paused && CurrentState != EnemyState.Stunned;
 
+        /// <summary>
+        /// Anti-repetición: al reiniciarse tras una caída del jugador, el robot pregunta aquí cómo reaparecer
+        /// (lo pone Nexus7.Director.RespawnVariator). Sin proveedor, o si devuelve null, vuelve a su posición inicial como siempre.
+        /// </summary>
+        public static System.Func<EnemyPatrol, PatrolVariation?> VariationProvider;
+
         /// <summary>Se dispara cuando un dron empieza a perseguir al jugador (alertas, escuadrones).</summary>
         public static event System.Action<EnemyPatrol> PlayerSpotted;
 
@@ -112,6 +118,7 @@ namespace Nexus7.Enemies
 
         public EnemyState CurrentState { get; private set; } = EnemyState.Patrol;
         public EnemyVision Vision => vision;
+        public PatrolRoute Route => route;
         public Vector3 EmpPosition => transform.position;
 
         private NavMeshAgent agent;
@@ -127,6 +134,7 @@ namespace Nexus7.Enemies
         private float lostSightTimer;
         private float repathTimer;
         private bool frozen; // durante la secuencia de captura
+        private float speedVariation = 1f, waitVariation = 1f;   // ritmo propio de este intento (anti-repetición)
         private Vector3 startPosition;
         private Quaternion startRotation;
 
@@ -140,8 +148,8 @@ namespace Nexus7.Enemies
         private bool pursuitPathSet;   // en CHASE sin verlo: ya va hacia la última posición vista
         private float spinDuration;    // en SEARCH: segundos de giro que quedaban al terminar de avanzar
 
-        /// <summary>Velocidad base afectada por el nivel de alerta de la nave.</summary>
-        private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed;
+        /// <summary>Velocidad base afectada por el nivel de alerta de la nave y por el director adaptativo.</summary>
+        private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed * AdaptiveModifiers.EnemySpeed * speedVariation;
 
         private Nexus7.Characters.ProceduralAnimator rig;
 
@@ -267,7 +275,7 @@ namespace Nexus7.Enemies
             if (route.TryGetLookRotation(waypointIndex, out Quaternion look))
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, look, 180f * Time.deltaTime);
 
-            if (waitTimer < route.GetWaitTime(waypointIndex)) return;
+            if (waitTimer < route.GetWaitTime(waypointIndex) * AdaptiveModifiers.PatrolWait * waitVariation) return;
 
             // Fin de la espera: si era un punto de inspección, comprobar si alguien lo ha manipulado.
             if (scanLight != null) scanLight.enabled = false;
@@ -618,11 +626,44 @@ namespace Nexus7.Enemies
             vision.SetBlinded(false);
             vision.ResetAwareness();
             routeDirection = 1;
+            speedVariation = waitVariation = 1f;
             if (!agent.enabled) return;
+            var variation = VariationProvider != null ? VariationProvider(this) : null;
+            if (variation.HasValue && route != null && route.Count > 0) { ApplyVariation(variation.Value); return; }
             agent.Warp(startPosition);
             transform.rotation = startRotation;
             agent.isStopped = false;
             ResumePatrol(startWaypoint);
+        }
+
+        /// <summary>
+        /// Anti-repetición: reaparece en el waypoint 'v.StartIndex' mirando al siguiente, recorre la ruta en el sentido
+        /// 'v.Direction' y con su propio ritmo (espera y velocidad). Así cada intento es distinto.
+        /// </summary>
+        public void ApplyVariation(PatrolVariation v)
+        {
+            if (route == null || route.Count == 0 || !agent.enabled) return;
+            routeDirection = v.Direction >= 0 ? 1 : -1;
+            speedVariation = v.SpeedMultiplier > 0f ? v.SpeedMultiplier : 1f;
+            waitVariation = v.WaitMultiplier > 0f ? v.WaitMultiplier : 1f;
+            int index = Mathf.Clamp(v.StartIndex, 0, route.Count - 1);
+            Vector3 pos = route.GetPosition(index);
+            if (NavMesh.SamplePosition(pos, out NavMeshHit hit, 2f, NavMesh.AllAreas)) pos = hit.position;
+            agent.Warp(pos);
+            int next = route.GetNextIndex(index, ref routeDirection);
+            Vector3 look = route.GetPosition(next) - pos;
+            look.y = 0f;
+            if (look.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(look);
+            agent.isStopped = false;
+            ResumePatrol(next);
+        }
+
+        /// <summary>Refuerzo creado por el director: su ruta, waypoint inicial y sentido (antes de activarlo).</summary>
+        public void AssignRoute(PatrolRoute newRoute, int start, int direction)
+        {
+            route = newRoute;
+            startWaypoint = Mathf.Max(0, start);
+            routeDirection = direction >= 0 ? 1 : -1;
         }
 
         // =============== UTILIDADES ===============

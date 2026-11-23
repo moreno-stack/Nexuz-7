@@ -96,6 +96,8 @@ namespace Nexus7.Player
         public void ClearInputLocks() { if (inputLocks.Count > 0) lockReleasedFrame = Time.frameCount; inputLocks.Clear(); }
         // El fotograma en que se libera un bloqueo no se lee la entrada (la tecla que cerró el hackeo no salta ni se agacha)
         private int lockReleasedFrame = -1;
+        /// <summary>Se acaba de liberar un bloqueo en este fotograma (la tecla que cerró un panel no debe hacer nada más).</summary>
+        public bool InputReleasedThisFrame => Time.frameCount == lockReleasedFrame;
 
         /// <summary>Empujón externo (golpe de un robot). Se suma al movimiento y se amortigua.</summary>
         public void AddImpulse(Vector3 velocity) => impulse += velocity;

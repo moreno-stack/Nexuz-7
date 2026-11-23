@@ -46,6 +46,9 @@ namespace Nexus7.Gameplay
         private bool isRespawning;
 
         public bool IsRespawning => isRespawning;
+        /// <summary>Dónde y mirando hacia dónde reaparecerá (el director evita poner robots ahí o a la vista).</summary>
+        public Vector3 RespawnPoint => respawnPosition;
+        public Quaternion RespawnFacing => respawnRotation;
 
         private void Awake()
         {

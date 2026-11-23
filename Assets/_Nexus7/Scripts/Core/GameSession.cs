@@ -37,6 +37,8 @@ namespace Nexus7.Core
         {
             HasSuit = false;
             HotbarSelectedId = null;
+            Nexus7.Combat.CombatSession.Clear();   // nueva partida: arsenal inicial
+            Nexus7.Director.DirectorSession.Clear();   // y el director vuelve a la base de la dificultad
             RunSeed = unchecked(System.Environment.TickCount * 7919 + RunSeed);
         }
 

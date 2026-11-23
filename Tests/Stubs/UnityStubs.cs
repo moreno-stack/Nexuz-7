@@ -11,6 +11,7 @@ namespace UnityEngine
         public static void DestroyImmediate(Object o) {}
         public static T[] FindObjectsByType<T>(FindObjectsSortMode m) where T : Object { return new T[0]; }
         public static implicit operator bool(Object o) { return o != null; }
+        public static T Instantiate<T>(T o) where T : Object { return o; } public static T Instantiate<T>(T o, Transform parent) where T : Object { return o; } public static T Instantiate<T>(T o, Vector3 p, Quaternion r) where T : Object { return o; }
     }
     public class Component : Object {
         public Transform transform; public GameObject gameObject; public string tag;
@@ -64,6 +65,7 @@ namespace UnityEngine
         public static Vector3 MoveTowards(Vector3 a, Vector3 b, float d) { return a; }
         public static float Distance(Vector3 a, Vector3 b) { return 0; } public static float Angle(Vector3 a, Vector3 b) { return 0; }
         public static Vector3 Lerp(Vector3 a, Vector3 b, float t) { return a; }
+        public static Vector3 Cross(Vector3 a, Vector3 b) { return a; } public static float Dot(Vector3 a, Vector3 b) { return 0; }
     }
     public class Quaternion {
         public static Quaternion identity; public static Quaternion Euler(float x, float y, float z) { return identity; }
@@ -102,6 +104,7 @@ namespace UnityEngine
         public static bool SphereCast(Vector3 o, float r, Vector3 d, out RaycastHit h, float dist, int m, QueryTriggerInteraction q) { h = default(RaycastHit); return false; }
         public static bool Linecast(Vector3 a, Vector3 b, out RaycastHit h, int m, QueryTriggerInteraction q) { h = default(RaycastHit); return false; }
         public static int RaycastNonAlloc(Vector3 o, Vector3 d, RaycastHit[] r, float dist, int m, QueryTriggerInteraction q) { return 0; }
+        public static int SphereCastNonAlloc(Vector3 o, float radius, Vector3 d, RaycastHit[] r, float dist, int m, QueryTriggerInteraction q) { return 0; }
     }
     public static class Mathf {
         public const float PI = 3.14f;
@@ -112,11 +115,11 @@ namespace UnityEngine
         public static float Max(float a, float b) { return Math.Max(a,b); } public static float Exp(float x) { return (float)Math.Exp(x); } public static int Max(int a, int b) { return Math.Max(a,b); }
         public static float Sin(float a) { return a; } public static float PerlinNoise(float a, float b) { return a; }
         public static float SmoothStep(float a, float b, float t) { return a; }
-        public static int FloorToInt(float f) { return 0; } public static int RoundToInt(float f) { return 0; } public const float Rad2Deg = 57.3f; public static float Atan2(float y, float x) { return 0; } public static float DeltaAngle(float a, float b) { return 0; } public static float Repeat(float t, float l) { return 0; } public static float PingPong(float t, float l) { return 0; } public static float Abs(float f) { return f; } public static float Sign(float f) { return 1; } public static float Sqrt(float f) { return f; } public static float Cos(float f) { return f; } public static float Ceil(float f) { return f; } public static int CeilToInt(float f) { return 0; }
+        public static int FloorToInt(float f) { return 0; } public static int RoundToInt(float f) { return 0; } public const float Rad2Deg = 57.3f; public static float Atan2(float y, float x) { return 0; } public static float DeltaAngle(float a, float b) { return 0; } public static float Repeat(float t, float l) { return 0; } public static float PingPong(float t, float l) { return 0; } public static float Abs(float f) { return f; } public static float Sign(float f) { return 1; } public static float Sqrt(float f) { return f; } public static float Cos(float f) { return f; } public static float Ceil(float f) { return f; } public static int CeilToInt(float f) { return 0; } public static float Tan(float f) { return f; } public const float Deg2Rad = 0.0174f;
     }
     public static class Random { public static Vector3 insideUnitSphere; public static float value; public static float Range(float a, float b) { return a; } public static int Range(int a, int b) { return a; } }
     public static class Time { public static float unscaledTime, deltaTime, time, timeScale, unscaledDeltaTime, realtimeSinceStartup; public static int frameCount; }
-    public enum KeyCode { None, KeypadEnter, O, R, M, Space, V, F, H, Mouse0, Mouse1, Alpha4, Alpha5, Alpha6, Alpha7, Alpha8, Alpha9, JoystickButton7, JoystickButton9, E, C, I, G, Q, W, S, A, D, LeftArrow, RightArrow, JoystickButton2, JoystickButton3, Tab, Escape, Return, Backspace, UpArrow, DownArrow, Alpha1, Alpha2, Alpha3, JoystickButton4, JoystickButton5, LeftShift, LeftControl, JoystickButton0, JoystickButton1, JoystickButton6, JoystickButton8 }
+    public enum KeyCode { None, KeypadEnter, O, R, M, Space, V, F, H, Mouse0, Mouse1, Alpha4, Alpha5, Alpha6, Alpha7, Alpha8, Alpha9, JoystickButton7, JoystickButton9, E, C, I, G, Q, W, S, A, D, LeftArrow, RightArrow, JoystickButton2, JoystickButton3, Tab, Escape, Return, Backspace, UpArrow, DownArrow, Alpha1, Alpha2, Alpha3, JoystickButton4, JoystickButton5, LeftShift, LeftControl, JoystickButton0, JoystickButton1, JoystickButton6, JoystickButton8, F3, F4 }
     public static class Input {
         public static float GetAxis(string a) { return 0; } public static float GetAxisRaw(string a) { return 0; }
         public static bool GetKey(KeyCode k) { return false; } public static bool GetKeyDown(KeyCode k) { return false; }
@@ -155,7 +158,7 @@ namespace UnityEngine
     public enum LightShadows { None, Hard, Soft }
     public class Light : Behaviour { public LightType type; public Color color; public float range, intensity, spotAngle, shadowStrength, shadowBias, shadowNormalBias; public LightShadows shadows; }
     public enum CameraClearFlags { Skybox, SolidColor }
-    public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; }
+    public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; public Vector3 WorldToScreenPoint(Vector3 p) { return p; } }
     public class AudioListener : Behaviour { public static float volume = 1f; }
     public enum FullScreenMode { ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed }
     public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; }
@@ -185,7 +188,7 @@ namespace UnityEngine
     public class Sprite : Object { public Texture2D texture; public static Sprite Create(Texture2D t, Rect r, Vector2 pivot, float ppu) { return new Sprite { texture = t }; } }
     public enum RenderMode { ScreenSpaceOverlay }
     public class Canvas : Behaviour { public RenderMode renderMode; public int sortingOrder; }
-    public enum TextAnchor { LowerRight, MiddleCenter }
+    public enum TextAnchor { LowerRight, MiddleCenter, MiddleRight, MiddleLeft, UpperLeft }
     public class YieldInstruction {} public class Coroutine : YieldInstruction {}
     public class WaitForSeconds : YieldInstruction { public WaitForSeconds(float s) {} }
 

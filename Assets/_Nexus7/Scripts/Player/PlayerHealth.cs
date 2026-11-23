@@ -78,7 +78,7 @@ namespace Nexus7.Player
         {
             if (amount <= 0f || Current <= 0f || (respawn != null && respawn.IsRespawning)) return;
 
-            float scaled = amount * DifficultySettings.DamageMultiplier;
+            float scaled = amount * DifficultySettings.DamageMultiplier * (fromEnemy ? AdaptiveModifiers.EnemyDamage : 1f);
             float rest = shield != null ? shield.Absorb(scaled) : scaled;
             lastDamageTime = Time.time;
 
