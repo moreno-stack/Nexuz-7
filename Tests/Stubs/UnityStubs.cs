@@ -11,6 +11,7 @@ namespace UnityEngine
         public static void DestroyImmediate(Object o) {}
         public static T[] FindObjectsByType<T>(FindObjectsSortMode m) where T : Object { return new T[0]; }
         public static implicit operator bool(Object o) { return o != null; }
+        public static T Instantiate<T>(T o) where T : Object { return o; } public static T Instantiate<T>(T o, Transform parent) where T : Object { return o; } public static T Instantiate<T>(T o, Vector3 p, Quaternion r) where T : Object { return o; }
     }
     public class Component : Object {
         public Transform transform; public GameObject gameObject; public string tag;
