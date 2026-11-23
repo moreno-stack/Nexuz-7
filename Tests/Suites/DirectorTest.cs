@@ -92,7 +92,18 @@ static class T {
     Check(f.Tick(0.1f,dying)==DirectorAction.Assist && f.Tension<0.5f, "Caer dos veces seguidas → ayuda y baja la tensión");
   }
   static PlayerPerformanceModel Good(){ var p=new PlayerPerformanceModel(); for(int i=0;i<30;i++){ p.RecordShot(i,i,i%2==0?"a":"b"); p.RecordHit(i,i);} for(int i=0;i<4;i++) p.RecordKill(10f+i); p.Advance(250f); for(int i=0;i<30;i++){ p.RecordShot(200f+i,100+i,i%2==0?"a":"b"); p.RecordHit(200f+i,100+i);} for(int i=0;i<4;i++) p.RecordKill(240f+i); return p; }
+  static void Modifiers(){
+    Nexus7.Core.AdaptiveModifiers.Reset();
+    Check(Nexus7.Core.AdaptiveModifiers.EnemySpeed==1f && Nexus7.Core.AdaptiveModifiers.Detection==1f && Nexus7.Core.AdaptiveModifiers.EnemyDamage==1f, "Sin director los multiplicadores valen 1 (no cambian nada)");
+    Nexus7.Core.AdaptiveModifiers.Set(9f,0f,1.2f,1f);
+    Check(Nexus7.Core.AdaptiveModifiers.EnemySpeed==1.5f && Nexus7.Core.AdaptiveModifiers.Detection==0.5f && Near(Nexus7.Core.AdaptiveModifiers.EnemyDamage,1.2f), "Los multiplicadores se limitan a rangos seguros");
+    Nexus7.Core.AdaptiveModifiers.Reset();
+    Nexus7.Director.DirectorSession.Store(0.7f); var d=new DirectorModel(1, Nexus7.Director.DirectorSession.Tension);
+    Check(Near(d.Tension,0.7f), "La tensión pasa a la fase siguiente");
+    Nexus7.Director.DirectorSession.Clear(); Check(!Nexus7.Director.DirectorSession.HasTension, "Nueva partida: tensión de la dificultad elegida");
+  }
   static void Main(){
+    Modifiers();
     Accuracy(); Rates(); Deaths(); Camping(); Dominance(); PerformanceSign(); Knobs(); TensionFollows(); Relief(); Patterns();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
   }

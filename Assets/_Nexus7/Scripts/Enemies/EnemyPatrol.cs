@@ -140,8 +140,8 @@ namespace Nexus7.Enemies
         private bool pursuitPathSet;   // en CHASE sin verlo: ya va hacia la última posición vista
         private float spinDuration;    // en SEARCH: segundos de giro que quedaban al terminar de avanzar
 
-        /// <summary>Velocidad base afectada por el nivel de alerta de la nave.</summary>
-        private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed;
+        /// <summary>Velocidad base afectada por el nivel de alerta de la nave y por el director adaptativo.</summary>
+        private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed * AdaptiveModifiers.EnemySpeed;
 
         private Nexus7.Characters.ProceduralAnimator rig;
 
@@ -267,7 +267,7 @@ namespace Nexus7.Enemies
             if (route.TryGetLookRotation(waypointIndex, out Quaternion look))
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, look, 180f * Time.deltaTime);
 
-            if (waitTimer < route.GetWaitTime(waypointIndex)) return;
+            if (waitTimer < route.GetWaitTime(waypointIndex) * AdaptiveModifiers.PatrolWait) return;
 
             // Fin de la espera: si era un punto de inspección, comprobar si alguien lo ha manipulado.
             if (scanLight != null) scanLight.enabled = false;
