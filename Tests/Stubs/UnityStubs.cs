@@ -114,7 +114,7 @@ namespace UnityEngine
         public static float Max(float a, float b) { return Math.Max(a,b); } public static float Exp(float x) { return (float)Math.Exp(x); } public static int Max(int a, int b) { return Math.Max(a,b); }
         public static float Sin(float a) { return a; } public static float PerlinNoise(float a, float b) { return a; }
         public static float SmoothStep(float a, float b, float t) { return a; }
-        public static int FloorToInt(float f) { return 0; } public static int RoundToInt(float f) { return 0; } public const float Rad2Deg = 57.3f; public static float Atan2(float y, float x) { return 0; } public static float DeltaAngle(float a, float b) { return 0; } public static float Repeat(float t, float l) { return 0; } public static float PingPong(float t, float l) { return 0; } public static float Abs(float f) { return f; } public static float Sign(float f) { return 1; } public static float Sqrt(float f) { return f; } public static float Cos(float f) { return f; } public static float Ceil(float f) { return f; } public static int CeilToInt(float f) { return 0; }
+        public static int FloorToInt(float f) { return 0; } public static int RoundToInt(float f) { return 0; } public const float Rad2Deg = 57.3f; public static float Atan2(float y, float x) { return 0; } public static float DeltaAngle(float a, float b) { return 0; } public static float Repeat(float t, float l) { return 0; } public static float PingPong(float t, float l) { return 0; } public static float Abs(float f) { return f; } public static float Sign(float f) { return 1; } public static float Sqrt(float f) { return f; } public static float Cos(float f) { return f; } public static float Ceil(float f) { return f; } public static int CeilToInt(float f) { return 0; } public static float Tan(float f) { return f; } public const float Deg2Rad = 0.0174f;
     }
     public static class Random { public static Vector3 insideUnitSphere; public static float value; public static float Range(float a, float b) { return a; } public static int Range(int a, int b) { return a; } }
     public static class Time { public static float unscaledTime, deltaTime, time, timeScale, unscaledDeltaTime, realtimeSinceStartup; public static int frameCount; }
@@ -157,7 +157,7 @@ namespace UnityEngine
     public enum LightShadows { None, Hard, Soft }
     public class Light : Behaviour { public LightType type; public Color color; public float range, intensity, spotAngle, shadowStrength, shadowBias, shadowNormalBias; public LightShadows shadows; }
     public enum CameraClearFlags { Skybox, SolidColor }
-    public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; }
+    public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; public Vector3 WorldToScreenPoint(Vector3 p) { return p; } }
     public class AudioListener : Behaviour { public static float volume = 1f; }
     public enum FullScreenMode { ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed }
     public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; }
@@ -187,7 +187,7 @@ namespace UnityEngine
     public class Sprite : Object { public Texture2D texture; public static Sprite Create(Texture2D t, Rect r, Vector2 pivot, float ppu) { return new Sprite { texture = t }; } }
     public enum RenderMode { ScreenSpaceOverlay }
     public class Canvas : Behaviour { public RenderMode renderMode; public int sortingOrder; }
-    public enum TextAnchor { LowerRight, MiddleCenter }
+    public enum TextAnchor { LowerRight, MiddleCenter, MiddleRight, MiddleLeft, UpperLeft }
     public class YieldInstruction {} public class Coroutine : YieldInstruction {}
     public class WaitForSeconds : YieldInstruction { public WaitForSeconds(float s) {} }
 
