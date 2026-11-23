@@ -12,9 +12,12 @@ namespace Nexus7.Combat
         public static event Action<int, string, int> ShotFired;
         /// <summary>Un proyectil ha impactado a un objetivo (información del impacto, ¿lo ha destruido?).</summary>
         public static event Action<DamageInfo, bool> HitLanded;
+        /// <summary>Un enemigo ha sido destruido.</summary>
+        public static event Action<EnemyHealth> EnemyKilled;
 
         public static void RaiseShot(int shotId, string weaponId, int pellets) => ShotFired?.Invoke(shotId, weaponId, pellets);
         public static void RaiseHit(DamageInfo info, bool killed) => HitLanded?.Invoke(info, killed);
+        public static void RaiseKilled(EnemyHealth enemy) => EnemyKilled?.Invoke(enemy);
 
         private static int nextShotId;
         public static int NextShotId() => ++nextShotId;

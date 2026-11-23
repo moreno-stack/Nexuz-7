@@ -64,6 +64,7 @@ namespace UnityEngine
         public static Vector3 MoveTowards(Vector3 a, Vector3 b, float d) { return a; }
         public static float Distance(Vector3 a, Vector3 b) { return 0; } public static float Angle(Vector3 a, Vector3 b) { return 0; }
         public static Vector3 Lerp(Vector3 a, Vector3 b, float t) { return a; }
+        public static Vector3 Cross(Vector3 a, Vector3 b) { return a; } public static float Dot(Vector3 a, Vector3 b) { return 0; }
     }
     public class Quaternion {
         public static Quaternion identity; public static Quaternion Euler(float x, float y, float z) { return identity; }
