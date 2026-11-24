@@ -144,6 +144,8 @@ namespace Nexus7.Director
             {
                 if (l == null || !l.enabled || l.type == LightType.Directional) continue;
                 if (l.transform.IsChildOf(transform) || l.GetComponentInParent<EnemyPatrol>() != null) continue;   // linternas y ópticas
+                if (l.GetComponentInParent<Nexus7.Interaction.Interactable>() != null || l.GetComponentInParent<AmmoPickup>() != null
+                    || l.GetComponentInParent<ModPickup>() != null) continue;   // el brillo de objetos y botín: que se sigan viendo
                 if ((l.transform.position - spot).sqrMagnitude > r * r) continue;
                 dimmed.Add(l);
                 dimmedIntensity.Add(l.intensity);
