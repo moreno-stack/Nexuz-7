@@ -1,6 +1,26 @@
 # Escape Espacial: Nexus-7 — Fase 5 (Centro de Control)
 
-> **Nota:** desde las mejoras (etapas 0–7) los enemigos son **robots armados**, el **botín es aleatorio** (con los objetos imprescindibles garantizados) y cada sala tiene **banco de trabajo** y **cinemática**. Lo que esta guía diga de drones o de objetos en sitios fijos ya no aplica: consulta [`docs/guias/mejoras/`](../mejoras/).
+## Estado actual (léelo primero)
+
+Esta guía se escribió cuando se creó la fase. Desde entonces el juego ha cambiado. Lo que diga más abajo y contradiga esta sección **ya no aplica**:
+
+- **Motor:** Unity 6 (6000.6) con URP.
+- **Cómo construir y jugar:** menú **Nexus-7 → Construir todo el juego (Fases 1–6 y menú)** y Play desde el menú principal. Las fases se registran solas en *Build Settings*. Ya no hace falta copiar carpetas ni construir cada fase por separado.
+- **Objetos imprescindibles:** salen en un **punto aleatorio** en cada partida, nunca en un sitio fijo. Brillan, tienen un haz de luz de 6 m y, si no los recoges, el traje te dice hacia dónde están a los 40 s (y luego cada 60 s). La consola de Unity muestra la línea `[Botín] … imprescindibles → …` con dónde han salido.
+- **Enemigos:** son **robots armados**, no drones. Los de seguridad, guardia y élite disparan a distancia (con un láser rojo de aviso antes de cada ráfaga), se cubren y flanquean.
+- **Vidas:** 5 / 3 / 2 por fase (Fácil / Normal / Difícil). Sin vidas la fase se reinicia con otra colocación.
+- **Director adaptativo:** ajusta la presión según cómo juegas, lanza eventos de nave, aprende tus rutas y regala accesorios de arma. **F3** muestra todo en vivo.
+- **Al caer**, una tarjeta te dice quién te vio y te da un consejo.
+- **Panel de pruebas F4** (solo editor y *Development Build*): F5 da los objetos imprescindibles que falten, F12 salta a la fase siguiente.
+- Detalles y pasos de prueba de cada sistema: [`GUIA_ARMAS_DIRECTOR.md`](../mejoras/GUIA_ARMAS_DIRECTOR.md).
+
+**En esta fase:**
+
+- **Imprescindible:** 1 circuito de control en un punto aleatorio.
+- **Robots:** hay élites (núcleo cian en la espalda, ×3 de daño). Destruirlas suelta un accesorio de arma.
+- **Encuentro:** al usar la consola de mando, 3 oleadas (3 de seguridad; 2 guardias y 1 de investigación; élite y 2 guardias). En Normal y Difícil la salida queda sellada mientras dura.
+
+---
 
 Requisitos: Fases 1–4 funcionando. Sin paquetes nuevos.
 

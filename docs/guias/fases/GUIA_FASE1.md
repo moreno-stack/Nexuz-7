@@ -1,5 +1,26 @@
 # Escape Espacial: Nexus-7 — Fase 1 (Sala inicial)
 
+## Estado actual (léelo primero)
+
+Esta guía se escribió cuando se creó la fase. Desde entonces el juego ha cambiado. Lo que diga más abajo y contradiga esta sección **ya no aplica**:
+
+- **Motor:** Unity 6 (6000.6) con URP.
+- **Cómo construir y jugar:** menú **Nexus-7 → Construir todo el juego (Fases 1–6 y menú)** y Play desde el menú principal. Las fases se registran solas en *Build Settings*. Ya no hace falta copiar carpetas ni construir cada fase por separado.
+- **Objetos imprescindibles:** salen en un **punto aleatorio** en cada partida, nunca en un sitio fijo. Brillan, tienen un haz de luz de 6 m y, si no los recoges, el traje te dice hacia dónde están a los 40 s (y luego cada 60 s). La consola de Unity muestra la línea `[Botín] … imprescindibles → …` con dónde han salido.
+- **Enemigos:** son **robots armados**, no drones. Los de seguridad, guardia y élite disparan a distancia (con un láser rojo de aviso antes de cada ráfaga), se cubren y flanquean.
+- **Vidas:** 5 / 3 / 2 por fase (Fácil / Normal / Difícil). Sin vidas la fase se reinicia con otra colocación.
+- **Director adaptativo:** ajusta la presión según cómo juegas, lanza eventos de nave, aprende tus rutas y regala accesorios de arma. **F3** muestra todo en vivo.
+- **Al caer**, una tarjeta te dice quién te vio y te da un consejo.
+- **Panel de pruebas F4** (solo editor y *Development Build*): F5 da los objetos imprescindibles que falten, F12 salta a la fase siguiente.
+- Detalles y pasos de prueba de cada sistema: [`GUIA_ARMAS_DIRECTOR.md`](../mejoras/GUIA_ARMAS_DIRECTOR.md).
+
+**En esta fase:**
+
+- **No hay robots**, así que tampoco hay encuentro por oleadas ni capturas.
+- La salida se abre con el terminal de acceso, como describe la guía.
+
+---
+
 Motor: **Unity 2022.3 LTS o Unity 6**, plantilla **3D (Built-in)** o **3D (URP)**. Lenguaje: C#.
 
 ---
