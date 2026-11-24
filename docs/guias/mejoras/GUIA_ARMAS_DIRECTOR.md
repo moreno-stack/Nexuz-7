@@ -157,9 +157,17 @@ Décima entrega (PR #13, rama `feat/encuentros-puertas-recompensas`):
 | 55 | `feat(combate): salida sellada durante los encuentros y recompensa según lo que te falta` | `EncounterDirector` (sello, recompensa y F3) y `SceneExitTrigger.SealedReason` |
 | 56 | `docs: guía de la salida sellada y de la recompensa variada` | Esta guía y el README |
 
+Undécima y última entrega (PR #14, rama `docs/guias-al-dia-cierre`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 57 | `docs(fases): estado actual en las guías de las fases (botín aleatorio, robots, vidas, encuentros, F3 y F4)` | Las 6 guías de `docs/guias/fases/` |
+| 58 | `test(balance): reglas de balance que unen director, vidas, encuentros y reapariciones` | `BalanceTest` |
+| 59 | `docs: resumen del juego completo y cierre del plan` | `docs/guias/RESUMEN_JUEGO.md`, esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1176 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1196 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -710,6 +718,38 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 2. Despéjalo: el mensaje dice 3 paquetes, reparación +40 y +1 vida si habías perdido alguna. La barra de integridad sube 40.
 3. Repite con todo lleno: sale «2 paquetes de munición», es decir, 1 más 1 extra por tener todas las vidas.
 
+### Etapa 23: guías de las fases al día (commit 57)
+
+**Modificadas:** las 6 guías de `docs/guias/fases/`.
+
+**Qué hace:** cada guía empieza con «Estado actual (léelo primero)»:
+
+- lo común a todas: cómo construir, botín aleatorio, robots armados, vidas, director, F3, F4 y la tarjeta de la caída;
+- lo de esa fase: objetos imprescindibles, qué activa el encuentro y cuántas oleadas trae.
+
+En la Fase 2, la tabla del nivel ya no da posiciones fijas para las baterías y la llave.
+
+**Cómo probarlo:** abre `docs/guias/fases/GUIA_FASE2.md` y comprueba que lo primero que se lee es el estado actual y que la tabla del nivel coincide con lo que ves en el juego.
+
+### Etapa 24: revisión final de balance (commits 58 y 59)
+
+**Archivos nuevos:** `Tests/Suites/BalanceTest.cs` y `docs/guias/RESUMEN_JUEGO.md`.
+
+**Qué hace:**
+
+- `BalanceTest` comprueba 20 reglas que unen varios sistemas. Por ejemplo:
+  - la tensión base crece con la dificultad;
+  - con más tensión los robots nunca son más lentos ni dan más munición;
+  - las vidas son 5/3/2;
+  - el sello de la salida (150 s) dura más que el encuentro más largo (84 s);
+  - Fácil y la última vida nunca sellan;
+  - las oleadas y las vigilancias nunca aparecen encima de la reaparición.
+
+  Si al ajustar la tabla de balance falla una regla, el cambio rompe la coherencia del juego aunque cada sistema funcione solo.
+- `RESUMEN_JUEGO.md` resume el juego entero: las fases, todo lo añadido con su etapa, una prueba rápida de 15 minutos y el estado del plan.
+
+**Cómo probarlo:** `bash Tests/run_all.sh` muestra `BalanceTest OK=20`. Para ver una regla en acción, cambia `EncounterSealModel.MaxSeal` a 60 y ejecuta `bash Tests/run.sh BalanceTest`: falla la regla del sello. Devuélvelo a 150.
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -730,6 +770,7 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 | `DeathCauseTest` | 20 | Orden de los consejos, quién te vio y desde dónde, lo que pesó, descargas, fuera de combate y la línea de F3 |
 | `EncounterSealTest` | 9 | Cuándo se sella la salida (dificultad, última vida, estado), tope de 150 s y mensaje |
 | `EncounterRewardTest` | 8 | Munición según lo que queda, reparación, vida o paquete extra, mensaje y fracción de munición |
+| `BalanceTest` | 20 | Reglas entre sistemas: tensión y perillas, vidas, castigo, sello frente a la duración del encuentro, recompensa mínima, distancias de aparición y legibilidad |
 | `HeatmapTest` | 13 | Celdas, enfriamiento, mínimo de calor, distancia a la reaparición, sin repetir y desempate estable |
 | `TelemetryTest` | 9 | Cabecera y fila del CSV, formato de números, escape de textos y precisión sin dato |
 | `PhaseReportTest` | 23 | Recuento de la fase, precisión por disparo, arma dominante, estilos de juego, veredicto y líneas del panel |
