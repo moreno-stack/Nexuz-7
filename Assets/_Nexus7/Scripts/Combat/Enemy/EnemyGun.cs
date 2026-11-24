@@ -52,6 +52,7 @@ namespace Nexus7.Combat
         private System.Random rng;
         private int id;
         private bool holdingAgent;
+        private float dazzledUntil = -99f, noBurstUntil = -99f;
 
         /// <summary>Lo llama CombatInstaller justo después de añadirlo.</summary>
         public void Configure(EnemyGunSpec spec)
@@ -90,7 +91,7 @@ namespace Nexus7.Combat
 
             if (burst.Current == BurstModel.Phase.Idle)
             {
-                if (canShoot && Tokens.TryAcquire(id) && burst.Begin(now))
+                if (canShoot && now >= noBurstUntil && Tokens.TryAcquire(id) && burst.Begin(now))
                 {
                     HoldAgent();
                     CombatSfx.PlayAt(CombatSound.EnemyWarn, transform.position);
@@ -111,6 +112,15 @@ namespace Nexus7.Combat
 
             UpdateLaser(target);
             if (holdingAgent) FaceTarget(target);
+        }
+
+        /// <summary>Disparo en la óptica: 2 s de mala puntería (+6°) y 0,8 s sin empezar ráfagas; corta el aviso en curso.</summary>
+        public void Dazzle()
+        {
+            float now = Time.time;
+            dazzledUntil = now + WeakPointModel.DazzleSeconds;
+            noBurstUntil = now + WeakPointModel.DazzleNoBurstSeconds;
+            if (burst.Current == BurstModel.Phase.Warning) { burst.Cancel(now, rng.NextDouble()); EndBurst(); }
         }
 
         /// <summary>Daño recibido: si acumula 15 en 0,3 s se tambalea y corta la ráfaga (lo llama EnemyHealth).</summary>
@@ -164,7 +174,7 @@ namespace Nexus7.Combat
 
             float speed = new Vector3(v.x, 0f, v.z).magnitude;
             bool moving = agent != null && agent.enabled && agent.velocity.sqrMagnitude > 0.04f;
-            float spread = AimModel.Spread(distance, speed, moving, vision != null && vision.IsBlinded,
+            float spread = AimModel.Spread(distance, speed, moving, (vision != null && vision.IsBlinded) || Time.time < dazzledUntil,
                                            (int)DifficultySettings.Current, DirectorSpreadMultiplier);
             Vector3 dir = Quaternion.AngleAxis(RandomSigned() * spread, Vector3.up)
                         * Quaternion.AngleAxis(RandomSigned() * spread * 0.5f, transform.right) * aim.normalized;

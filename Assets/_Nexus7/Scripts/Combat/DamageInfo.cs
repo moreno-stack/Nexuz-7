@@ -16,6 +16,8 @@ namespace Nexus7.Combat
         public Vector3 Origin;
         /// <summary>Lo rellena el receptor: el impacto fue en un punto débil (cabeza / óptica).</summary>
         public bool Critical;
+        /// <summary>Lo rellena el receptor: zona alcanzada (cuerpo, óptica o núcleo trasero de la élite).</summary>
+        public HitZone Zone;
         public GameObject Source;
         /// <summary>Id del arma (PlayerWeaponCatalog) que disparó.</summary>
         public string WeaponId;

@@ -8,7 +8,8 @@ namespace Nexus7.UI
     ///   · Abajo a la derecha: arma en mano, munición «cargador / reserva», barra de calor y avisos RECARGANDO,
     ///     SOBRECALENTADA y SIN MUNICIÓN, y la lista de armas con la tecla para cambiar.
     ///   · Centro: mira de 4 trazos que se abre con la dispersión real del arma y se cierra al apuntar.
-    ///     Marca de impacto «X» 0,15 s (amarilla si es crítico, roja si destruye).
+    ///     Marca de impacto «X» 0,15 s (amarilla en la óptica, cian en el núcleo, roja si destruye) y el rótulo
+    ///     ÓPTICA / NÚCLEO ×3 bajo la mira.
     ///   · Sobre los robots heridos: barra de vida durante 3 s.
     ///   · Alrededor de la mira: arco rojo que señala desde dónde te han dado (hasta 6 a la vez, se apagan en 1,2 s).
     /// Se oculta en las cinemáticas, los finales y con el juego en pausa.
@@ -25,9 +26,10 @@ namespace Nexus7.UI
         private static Texture2D white;
         private PlayerWeapon weapon;
         private Camera cam;
-        private float hitMarkerUntil = -1f;
+        private float hitMarkerUntil = -1f, zoneLabelUntil = -1f;
+        private string zoneLabel;
         private Color hitMarkerColor = Color.white;
-        private GUIStyle big, small, center;
+        private GUIStyle big, small, center, zoneStyle;
         private readonly Vector3[] hitOrigins = new Vector3[MaxIndicators];
         private readonly float[] hitTimes = { -99f, -99f, -99f, -99f, -99f, -99f };
         private int nextIndicator;
@@ -62,7 +64,11 @@ namespace Nexus7.UI
         private void OnHit(DamageInfo info, bool killed)
         {
             hitMarkerUntil = Time.time + HitMarkerTime;
-            hitMarkerColor = killed ? new Color(1f, 0.25f, 0.2f) : info.Critical ? new Color(1f, 0.85f, 0.2f) : Color.white;
+            var zoneColor = info.Zone == HitZone.Core ? new Color(0.3f, 0.95f, 1f) : new Color(1f, 0.85f, 0.2f);
+            hitMarkerColor = killed ? new Color(1f, 0.25f, 0.2f) : info.Critical ? zoneColor : Color.white;
+            if (info.Zone == HitZone.Body) return;
+            zoneLabel = info.Zone == HitZone.Core ? "NÚCLEO ×3" : "ÓPTICA ×2";
+            zoneLabelUntil = Time.time + 0.5f;
         }
 
         private void OnKilled(EnemyHealth enemy) =>
@@ -94,6 +100,14 @@ namespace Nexus7.UI
             Rect(cx - th * 0.5f, cy + gap, th, len, c);
             Rect(cx - gap - len, cy - th * 0.5f, len, th, c);
             Rect(cx + gap, cy - th * 0.5f, len, th, c);
+
+            if (Time.time < zoneLabelUntil)
+            {
+                var old = GUI.color;
+                GUI.color = hitMarkerColor;
+                GUI.Label(new Rect(cx - 100f * k, cy + 34f * k, 200f * k, 24f * k), zoneLabel, zoneStyle);
+                GUI.color = old;
+            }
 
             if (Time.time < hitMarkerUntil)
             {
@@ -187,6 +201,7 @@ namespace Nexus7.UI
             big = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold };
             small = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold };
             center = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
+            zoneStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 14 };
         }
 
         /// <summary>Arco de 7 puntos alrededor de la mira en la dirección del atacante (arriba = delante, abajo = detrás).</summary>
