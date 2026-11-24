@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Nexus7.Combat;
 using Nexus7.Core;
 using Nexus7.Gameplay;
@@ -30,6 +31,8 @@ namespace Nexus7.Director
         public PlayerPerformanceModel Performance { get; private set; }
         public DirectorModel Model { get; private set; }
         public string LastAction { get; private set; } = "—";
+        /// <summary>Informe de la fase en curso (se enseña al entrar en la siguiente).</summary>
+        public PhaseReportModel Report { get; private set; }
 
         private PlayerHealth health;
         private float timer;
@@ -56,6 +59,7 @@ namespace Nexus7.Director
             Instance = this;
             health = GetComponent<PlayerHealth>();
             Performance = new PlayerPerformanceModel(Time.time);
+            Report = new PhaseReportModel(GameFlow.PhaseTitle(SceneManager.GetActiveScene().name));
             Model = new DirectorModel((int)DifficultySettings.Current, DirectorSession.HasTension ? DirectorSession.Tension : -1f);
             EnemyHealth.WeaponDamageModifier = id => Model.WeaponDamageFactor(id);
             Apply(Model.Knobs);
@@ -68,6 +72,7 @@ namespace Nexus7.Director
             CombatEvents.EnemyKilled += OnKill;
             PlayerHealth.PlayerDied += OnDied;
             EnemyPatrol.PlayerSpotted += OnSpotted;
+            PlayerRespawn.PlayerCaught += OnCaught;
             if (health != null) health.Damaged += OnDamaged;
         }
 
@@ -78,12 +83,14 @@ namespace Nexus7.Director
             CombatEvents.EnemyKilled -= OnKill;
             PlayerHealth.PlayerDied -= OnDied;
             EnemyPatrol.PlayerSpotted -= OnSpotted;
+            PlayerRespawn.PlayerCaught -= OnCaught;
             if (health != null) health.Damaged -= OnDamaged;
         }
 
         private void OnDestroy()
         {
             if (Model != null) DirectorSession.Store(Model.Tension);
+            if (Report != null && Report.Meaningful) DirectorSession.StoreReport(Report, SceneManager.GetActiveScene().name);
             if (Instance != this) return;
             Instance = null;
             AdaptiveModifiers.Reset();
@@ -95,15 +102,17 @@ namespace Nexus7.Director
             EnemyTactics.DirectorTempo = 1f;
         }
 
-        private void OnShot(int shotId, string weaponId, int pellets) => Performance.RecordShot(Time.time, shotId, weaponId);
-        private void OnHit(DamageInfo info, bool killed) => Performance.RecordHit(Time.time, info.ShotId);
-        private void OnKill(EnemyHealth enemy) => Performance.RecordKill(Time.time);
-        private void OnDamaged(float amount) => Performance.RecordDamageTaken(Time.time, amount);
-        private void OnSpotted(EnemyPatrol by) => Performance.RecordDetected(Time.time);
+        private void OnShot(int shotId, string weaponId, int pellets) { Performance.RecordShot(Time.time, shotId, weaponId); Report.RecordShot(weaponId); }
+        private void OnHit(DamageInfo info, bool killed) { Performance.RecordHit(Time.time, info.ShotId); Report.RecordHit(info.ShotId); }
+        private void OnKill(EnemyHealth enemy) { Performance.RecordKill(Time.time); Report.RecordKill(); }
+        private void OnDamaged(float amount) { Performance.RecordDamageTaken(Time.time, amount); Report.RecordDamage(amount); }
+        private void OnSpotted(EnemyPatrol by) { Performance.RecordDetected(Time.time); Report.RecordDetected(); }
+        private void OnCaught() => Report.RecordLifeLost();
 
         private void OnDied()
         {
             Performance.RecordDeath(Time.time);
+            Report.RecordDeath();
             Model.OnPlayerDeath();
             Apply(Model.Knobs);
             LastAction = "Caída: respiro de " + Model.ReliefDuration.ToString("0") + " s";
@@ -121,6 +130,7 @@ namespace Nexus7.Director
             if (health != null) Performance.HealthFraction = health.Normalized;
             Model.LastLife = LivesSystem.IsLastLife;
             var action = Model.Tick(dt, Performance);
+            Report.Sample(dt, Model.Tension, Performance.CampingScore);
             Apply(Model.Knobs);
             Handle(action);
         }
@@ -146,12 +156,14 @@ namespace Nexus7.Director
                     var unit = NearestFreeRobot(target);
                     if (unit == null) return;
                     unit.RespondToSquad(target);
+                    Report.RecordFlush();
                     Say("IA NEXUS-7: patrón detectado. Llevas un rato en la misma zona: una unidad viene a comprobarlo.");
                     LastAction = "Acampada → " + unit.name + " investiga";
                     break;
                 case DirectorAction.AdaptToWeapon:
                     var spec = PlayerWeaponCatalog.Get(Model.AdaptedWeapon);
                     string weaponName = spec != null ? spec.DisplayName : Model.AdaptedWeapon;
+                    Report.RecordAdaptation();
                     Say($"IA NEXUS-7: los robots han analizado tu {weaponName.ToLowerInvariant()} y refuerzan su blindaje. Varía de arma.");
                     LastAction = "Blindaje adaptado a " + weaponName;
                     break;
@@ -161,6 +173,7 @@ namespace Nexus7.Director
                     break;
                 case DirectorAction.Assist:
                     AmmoPickup.Spawn(transform.position + transform.forward * 2f + Vector3.up * 0.4f, 2f);
+                    Report.RecordAssist();
                     Say("TRAJE: suministro de emergencia liberado delante de ti. Respira y busca otra ruta.");
                     LastAction = "Ayuda: munición y menos tensión";
                     break;
@@ -194,7 +207,7 @@ namespace Nexus7.Director
             if (style == null) style = new GUIStyle(GUI.skin.label) { fontSize = 14, richText = true };
             var p = Performance;
             var k = Model.Knobs;
-            float x = 16f, y = 16f, w = 360f, h = 470f;
+            float x = 16f, y = 16f, w = 360f, h = 490f;
             GUI.color = new Color(0f, 0f, 0f, 0.72f);
             GUI.DrawTexture(new Rect(x, y, w, h), white);
             GUI.color = Color.white;
@@ -223,6 +236,7 @@ namespace Nexus7.Director
             L($"Tempo táctico ×{k.TacticTempo:0.00}   {EnemyTactics.Summary()}");
             L(EncounterDirector.Summary());
             L(RobotAffixDirector.Summary());
+            L(ShipEventDirector.Summary());
             L($"Vidas {LivesSystem.Lives}/{LivesSystem.Max}{(LivesSystem.IsLastLife ? "  <color=#f66>ÚLTIMA: director clemente</color>" : "")}   Reinicios de la fase {LivesSystem.RestartsHere}");
             L($"Blindaje adaptado: {(Model.AdaptedWeapon ?? "no")}");
             cy += 6f;
