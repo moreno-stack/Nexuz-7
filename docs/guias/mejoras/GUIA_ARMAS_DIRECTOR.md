@@ -138,9 +138,19 @@ Octava entrega (PR #11, rama `feat/mapa-calor-registro`):
 | 46 | `feat(director): guardar una línea del registro de partida al salir de cada fase` | `TelemetryLog` y la línea en F3 |
 | 47 | `docs: guía del mapa de calor y del registro de partida` | Esta guía y el README |
 
+Novena entrega (PR #12, rama `feat/panel-pruebas-analisis-caida`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 48 | `feat(director): modelo del panel de pruebas F4 (acciones y disponibilidad)` | `DebugPanelModel`, `DirectorModel.SetTension` y `DebugPanelTest` |
+| 49 | `feat(director): panel de pruebas F4 en el editor y en compilaciones de desarrollo` | `DebugPanel`, `GameDirector.ForceTension`, `ShipEventDirector.Force` y `RoomLootSpawner.Guaranteed` |
+| 50 | `feat(director): modelo del análisis de la caída (causa y consejo)` | `DeathCauseModel` y `DeathCauseTest` |
+| 51 | `feat(director): tarjeta con la causa de la caída y un consejo al reaparecer` | `DeathAnalyzer` y la línea en F3 |
+| 52 | `docs: guía del panel de pruebas y del análisis de la caída` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1115 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1159 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -577,6 +587,73 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 3. Abre el CSV con Excel: hay una fila con la Fase 2, tus disparos, tu precisión y tu estilo. Cada fase que juegues añade otra.
 4. Para equilibrar, compara filas: si la tensión media se queda siempre por encima de 0,8 o por debajo de 0,3, toca `Range` o los objetivos del analizador (ver la tabla de abajo).
 
+### Etapa 19: panel de pruebas F4 (commits 48 y 49)
+
+**Archivos nuevos:** `Scripts/Director/DebugPanelModel.cs` y `DebugPanel.cs`. **Modificados:** `DirectorModel` (`SetTension`), `GameDirector` (`ForceTension`), `ShipEventDirector` (`Force`) y `RoomLootSpawner` (`Guaranteed`).
+
+**Qué hace:**
+
+- **Solo en el editor o en una compilación con «Development Build»**. En la versión final el panel no se crea.
+- **F4** abre o cierra el panel, a la derecha de la pantalla. Con el panel abierto se usan **F5–F12**, porque los números 1–9 ya son de la barra rápida:
+
+| Tecla | Acción |
+|---|---|
+| F5 | Da los objetos imprescindibles de la fase que te falten (por ejemplo, las 3 baterías de la Fase 2) |
+| F6 | Llena la reserva de munición de todas las armas |
+| F7 | Da un accesorio (en rueda: supresor, cargador ampliado, estabilizador, disipador; se salta los que no caben) |
+| F8 | +1 vida (si no estás al máximo) |
+| F9 / F10 | Sube o baja la tensión del director 0,1 (las perillas cambian al momento) |
+| F11 | Fuerza un evento de nave (en rueda: apagón, vapor, barrido). Si no hay sitio a 6–25 m, lo pone 8 m por delante |
+| F12 | Salta a la fase siguiente, con el inventario, como al cruzar la salida |
+
+- Lo que no se puede usar ahora sale **en gris con el motivo**, por ejemplo «vidas al máximo», «ya los tienes» o «es la última fase».
+- Bajo la lista se ve el resultado de la última acción, que también sale como aviso amarillo «[PRUEBAS] …».
+- Los eventos forzados no cuentan en el informe de la IA.
+
+**Cómo probarlo:**
+
+1. Dale a Play en Unity, entra en la Fase 2 y pulsa **F4**: sale «PANEL DE PRUEBAS» con las 8 acciones.
+2. Pulsa **F5**: el aviso dice «Objetos imprescindibles: +3» y las baterías están en el inventario. La línea de F5 pasa a gris («ya los tienes»).
+3. Pulsa **F6** y mira la munición en el HUD. Pulsa **F7** dos veces: salen dos accesorios distintos.
+4. Abre también **F3** y pulsa **F9** varias veces: la tensión sube de 0,1 en 0,1 hasta 0,95 y la línea se pone en gris.
+5. Pulsa **F11**: sale el mensaje de un evento de nave y F3 lo muestra. Otra vez F11: sale el siguiente de la rueda.
+6. Pulsa **F12**: carga la Fase 3 con tu inventario. Si sale el aviso de fase que no está en la lista, usa «Nexus-7 → Registrar las fases en Build Settings».
+
+### Etapa 20: análisis de la caída (commits 50 y 51)
+
+**Archivos nuevos:** `Scripts/Director/DeathCauseModel.cs` y `DeathAnalyzer.cs`. **Modificado:** `GameDirector` (línea en F3).
+
+**Qué hace:**
+
+- El analizador apunta **quién te ve** (cuando un robot empieza a perseguirte) y cómo ibas en ese momento: con luz, en sombra, agachado, corriendo y cuánto ruido hacías. También suma el daño que recibes. Solo cuentan los últimos 20 s.
+- Al reaparecer sale **9 s** una tarjeta, «ANÁLISIS DE LA IA · TE HAN ATRAPADO», «FUERA DE COMBATE» o «ACCIDENTE», con tres partes:
+  - **Quién te vio**: «Te vio un robot tirador a 14 m, 6 s antes de caer» (dron de seguridad, robot armado o robot tirador).
+  - **Lo que pesó**: luz directa, correr, agachado en la sombra, ruido, varios robots o el daño recibido.
+  - **Un consejo**, el primero que se cumple de esta lista:
+
+| Situación | Consejo |
+|---|---|
+| Descarga eléctrica | Cortarla o esperar a que se apague |
+| Corrías cuando te vieron | Correr solo cuando nadie mire |
+| Bajo luz directa | Cruzar por lo oscuro y agacharte |
+| Te vieron 2 o más robots | Romper la línea de visión tras una pared |
+| Fuera de combate | Disparar desde una cobertura y recargar detrás |
+| Nadie te vio, pero hacías ruido (≥ 6 m) | Agacharte y usar señuelos |
+| Nadie te vio | Escuchar los pasos y asomarte a las esquinas |
+| Te vieron desde 12 m o más | Cruzar los pasillos largos agachado y por los bordes |
+| Te vieron a 5 m o menos | Esperar a que la patrulla se dé la vuelta |
+| Lo demás | Observar la ruta antes de cruzar |
+
+- En **F3**, la línea «Última caída:» repite el tipo y el consejo.
+
+**Cómo probarlo:**
+
+1. En la Fase 2, deja que un dron te vea mientras **corres** y que te atrape. Al reaparecer, la tarjeta dice «Te vio un dron de seguridad a … m» y aconseja no correr a la vista.
+2. Ponte bajo una luz, quieto y de pie, y deja que te atrapen: el consejo es evitar la luz.
+3. Acércate agachado a una esquina y deja que te atrapen de cerca sin persecución: dice «Ningún robot te persiguió antes» y aconseja mirar las esquinas.
+4. En una fase con robots tiradores, deja que te bajen la vida a 0: sale «FUERA DE COMBATE», con el daño recibido.
+5. Toca una barrera eléctrica hasta caer: sale «ACCIDENTE» y el consejo de las descargas.
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -593,6 +670,8 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 | `ShipEventTest` | 8 | Qué evento según la tensión y las caídas, sin repetir, y elección del sitio (distancia, por delante, sin repetir) |
 | `WeaponModTest` | 29 | Efectos de cada accesorio, huecos y sustitución, munición al montar y quitar, guardado y a qué arma va |
 | `ModRewardTest` | 13 | Qué accesorio según cómo juegas, variedad sin repetir, solo los que caben y el motivo |
+| `DebugPanelTest` | 24 | Solo en desarrollo, teclas F5–F12, cuándo está disponible cada acción, tensión con límites, ruedas de eventos y accesorios, fase siguiente |
+| `DeathCauseTest` | 20 | Orden de los consejos, quién te vio y desde dónde, lo que pesó, descargas, fuera de combate y la línea de F3 |
 | `HeatmapTest` | 13 | Celdas, enfriamiento, mínimo de calor, distancia a la reaparición, sin repetir y desempate estable |
 | `TelemetryTest` | 9 | Cabecera y fila del CSV, formato de números, escape de textos y precisión sin dato |
 | `PhaseReportTest` | 23 | Recuento de la fase, precisión por disparo, arma dominante, estilos de juego, veredicto y líneas del panel |
@@ -657,6 +736,9 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | Salen demasiados módulos | Quitar el módulo del élite (`OnKilled`) o del encuentro (`OnCleared`) | `ModRewardDirector` |
 | La IA te persigue demasiado por tus rutas | `MinHeat` (2), `DeathHeat` (3), `DetectionHeat` (1) y `DecayPerAttempt` (0,6) | `HeatmapModel` |
 | La vigilancia aparece muy cerca de la reaparición | `SafeDistance` (10 m) y `AssignDelay` (2,5 s) | `HeatmapModel`, `HeatmapDirector` |
+| El panel F4 sube o baja la tensión muy poco | `TensionStep` (0,1) | `DebugPanelModel` |
+| La tarjeta de la caída se equivoca de consejo | `FarSpot` (12 m), `CloseSpot` (5 m), `LoudNoise` (6 m), `Memory` (20 s) y el orden de `ChooseTip` | `DeathCauseModel` |
+| La tarjeta de la caída dura poco o estorba | `CardTime` (9 s) | `DeathCauseModel` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
 Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada a un extremo, el problema está en `Range` o en los objetivos del analizador. Si oscila, sube `DeadZone` o baja `RisePerSecond`.
