@@ -24,6 +24,6 @@ bash Tests/run_all.sh
 
 Si está instalado el SDK de .NET 8 (`dotnet`), también se compila todo con **Roslyn**, el compilador que usa Unity, que es más estricto que `mcs` (`bash Tests/roslyn_check.sh`). Sin `dotnet`, ese paso se omite.
 
-El resultado esperado es `ROSLYN: compilación OK` y `TOTAL: 942 comprobaciones, 0 fallos`. Los ejecutables y los registros se generan en `Tests/bin/`, que no se sube a git.
+El resultado esperado es `ROSLYN: compilación OK` y `TOTAL: 985 comprobaciones, 0 fallos`. Los ejecutables y los registros se generan en `Tests/bin/`, que no se sube a git.
 
 > Esta carpeta está **fuera de `Assets/`** a propósito: Unity no la compila, porque las definiciones de `Stubs/` chocarían con las reales de Unity.
