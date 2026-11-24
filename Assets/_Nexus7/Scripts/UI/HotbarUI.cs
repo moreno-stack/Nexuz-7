@@ -102,6 +102,7 @@ namespace Nexus7.UI
             {
                 var go = new GameObject("IconosBarraRapida", typeof(RectTransform));
                 go.transform.SetParent(slotsText.transform.parent, false);
+                go.transform.SetSiblingIndex(slotsText.transform.GetSiblingIndex() + 1);   // no tapa cinemáticas ni resultados
                 iconRow = go.GetComponent<RectTransform>();
                 if (iconRow == null) return;
                 iconRow.anchorMin = iconRow.anchorMax = new Vector2(0.5f, 0f);
