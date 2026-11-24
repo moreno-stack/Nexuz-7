@@ -219,7 +219,7 @@ namespace Nexus7.Director
             if (style == null) style = new GUIStyle(GUI.skin.label) { fontSize = 14, richText = true };
             var p = Performance;
             var k = Model.Knobs;
-            float x = 16f, y = 16f, w = 360f, h = 550f;
+            float x = 16f, y = 16f, w = 360f, h = 570f;
             GUI.color = new Color(0f, 0f, 0f, 0.72f);
             GUI.DrawTexture(new Rect(x, y, w, h), white);
             GUI.color = Color.white;
@@ -251,6 +251,7 @@ namespace Nexus7.Director
             L(ShipEventDirector.Summary());
             L(ModRewardDirector.Summary());
             L(HeatmapDirector.Summary());
+            L(DeathAnalyzer.Summary());
             L($"Registro: {TelemetryLog.RowsThisSession} fases guardadas (persistentDataPath/{TelemetryModel.FileName})");
             L($"Vidas {LivesSystem.Lives}/{LivesSystem.Max}{(LivesSystem.IsLastLife ? "  <color=#f66>ÚLTIMA: director clemente</color>" : "")}   Reinicios de la fase {LivesSystem.RestartsHere}");
             L($"Blindaje adaptado: {(Model.AdaptedWeapon ?? "no")}");
