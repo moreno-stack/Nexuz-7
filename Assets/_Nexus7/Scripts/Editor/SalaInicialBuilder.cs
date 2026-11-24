@@ -411,7 +411,7 @@ namespace Nexus7.EditorTools
             fade.rectTransform.offsetMin = fade.rectTransform.offsetMax = Vector2.zero;
 
             var prompt    = UIText("TextoInteraccion", go.transform, new Vector2(0.5f, 0.5f), new Vector2(0, -70),  new Vector2(900, 60),   30, TextAlignmentOptions.Center, new Color(0.6f, 0.95f, 1f));
-            var message   = UIText("TextoMensajes",    go.transform, new Vector2(0.5f, 0f),   new Vector2(0, 150),  new Vector2(1500, 170), 34, TextAlignmentOptions.Center, Color.white);
+            var message   = UIText("TextoMensajes",    go.transform, new Vector2(0.5f, 0f),   new Vector2(0, 190),  new Vector2(1500, 170), 34, TextAlignmentOptions.Center, Color.white);
             var hint      = UIText("TextoTutorial",    go.transform, new Vector2(0.5f, 1f),   new Vector2(0, -110), new Vector2(1300, 120), 30, TextAlignmentOptions.Center, new Color(1f, 0.85f, 0.3f));
             var objective = UIText("TextoObjetivo",    go.transform, new Vector2(0f, 1f),     new Vector2(40, -40), new Vector2(620, 90),   26, TextAlignmentOptions.TopLeft, new Color(0.6f, 0.9f, 1f));
             objective.rectTransform.pivot = new Vector2(0, 1);
@@ -488,10 +488,10 @@ namespace Nexus7.EditorTools
             SetRef(stamUi, "noiseFill", noiseFill);
             SetRef(stamUi, "noiseLabel", noiseLabel);
 
-            // --- Indicador de banco de trabajo cercano (encima de la barra rápida) ---
+            // --- Indicador de banco de trabajo cercano (encima de la fila de iconos de la barra rápida, 84–128 px) ---
             var benchIcon = UIImage("IconoBanco", canvas, new Color(1f, 0.65f, 0.15f, 0.9f));
-            Anchor(benchIcon.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-300f, 100f), new Vector2(22f, 22f));
-            var benchLabel = UIText("TextoBanco", canvas, new Vector2(0.5f, 0f), new Vector2(0f, 100f), new Vector2(560f, 36f), 24f, TextAlignmentOptions.Center, new Color(1f, 0.75f, 0.35f));
+            Anchor(benchIcon.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-300f, 150f), new Vector2(22f, 22f));
+            var benchLabel = UIText("TextoBanco", canvas, new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(560f, 36f), 24f, TextAlignmentOptions.Center, new Color(1f, 0.75f, 0.35f));
             var benchUi = canvas.gameObject.AddComponent<Nexus7.UI.WorkbenchIndicatorUI>();
             SetRef(benchUi, "label", benchLabel);
             SetRef(benchUi, "icon", benchIcon);
