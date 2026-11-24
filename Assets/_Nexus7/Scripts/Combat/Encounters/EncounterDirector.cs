@@ -6,6 +6,7 @@ using Nexus7.Core;
 using Nexus7.Director;
 using Nexus7.Enemies;
 using Nexus7.Gameplay;
+using Nexus7.Player;
 using Nexus7.UI;
 
 namespace Nexus7.Combat
@@ -16,7 +17,10 @@ namespace Nexus7.Combat
     ///     lanzamiento). En fases sin objetivos, con el primer punto seguro; sin ninguno de los dos, al alejarse 20 m.
     ///   · Cuenta atrás de 3 s y aparece la oleada (copias de los robots de la fase) en puntos a 8–35 m, fuera de la vista
     ///     si se puede y distintos del intento anterior. Los robots llegan avisados y van a por el jugador.
-    ///   · Siguiente oleada con 1 o 0 robots vivos, o a los 25 s. Al despejar la última: «Zona despejada» y munición.
+    ///   · Siguiente oleada con 1 o 0 robots vivos, o a los 25 s. Al despejar la última: «Zona despejada» y una recompensa
+    ///     según lo que te falte (EncounterRewardModel: munición, reparación, vida).
+    ///   · En Normal y Difícil, y salvo con la última vida, la salida de la fase queda sellada mientras dura (como mucho
+    ///     150 s por intento, EncounterSealModel).
     ///   · Si el jugador cae a mitad, los robots de las oleadas se retiran y el encuentro vuelve a empezar 4 s después
     ///     de reaparecer, con otros puntos de aparición. La dificultad y la tensión del director deciden cuántos vienen.
     /// Lo crea CombatInstaller en cada fase (no hace falta reconstruir escenas).
@@ -45,6 +49,8 @@ namespace Nexus7.Combat
         private bool hasObjectives, hasCheckpoints, restartPending;
         private float restartAt = -1f;
         private int attempt, spawnCount;
+        private bool sealsThisAttempt, sealOpenAnnounced;
+        private float sealSince;
         private string lastEvent = "—";
 
         public static void EnsureForScene()
@@ -62,6 +68,7 @@ namespace Nexus7.Combat
             ObjectiveEvents.Completed += OnObjective;
             PlayerRespawn.PlayerCaught += OnCaught;
             PlayerRespawn.PlayerRespawned += OnRespawned;
+            SceneExitTrigger.SealedReason = SealReason;
         }
 
         private void OnDisable()
@@ -69,6 +76,7 @@ namespace Nexus7.Combat
             ObjectiveEvents.Completed -= OnObjective;
             PlayerRespawn.PlayerCaught -= OnCaught;
             PlayerRespawn.PlayerRespawned -= OnRespawned;
+            if (SceneExitTrigger.SealedReason == (System.Func<string>)SealReason) SceneExitTrigger.SealedReason = null;
         }
 
         private void OnDestroy()
@@ -106,7 +114,11 @@ namespace Nexus7.Combat
             waves = EncounterCatalog.Scale(catalog, (int)DifficultySettings.Current, tension);
             BuildCandidates();
             lastEvent = "Activado por " + reason;
-            Say($"IA NEXUS-7: intrusión confirmada. Unidades de respuesta en camino ({waves.Count} oleada{(waves.Count == 1 ? "" : "s")}).");
+            sealsThisAttempt = EncounterSealModel.ShouldSeal((int)DifficultySettings.Current, LivesSystem.IsLastLife);
+            sealSince = Time.time;
+            sealOpenAnnounced = false;
+            Say($"IA NEXUS-7: intrusión confirmada. Unidades de respuesta en camino ({waves.Count} oleada{(waves.Count == 1 ? "" : "s")})."
+                + (sealsThisAttempt ? " Salida de la fase sellada." : ""));
             CombatSfx.Play(CombatSound.EnemyWarn, 0.9f);
         }
 
@@ -124,6 +136,13 @@ namespace Nexus7.Combat
                 && Vector3.Distance(player.position, startPosition) >= EncounterTriggerRule.WanderDistance)
                 Activate("exploración");
 
+            if (sealsThisAttempt && !sealOpenAnnounced && model.State == EncounterState.Active
+                && !EncounterSealModel.IsSealed(model.State, true, sealSince, Time.time))
+            {
+                sealOpenAnnounced = true;
+                Say("Bloqueo sobrecargado: la salida de la fase vuelve a estar abierta.");
+            }
+
             int alive = 0;
             foreach (var e in currentWave) if (e != null && e.IsAlive) alive++;
             switch (model.Tick(Time.time, alive))
@@ -135,12 +154,34 @@ namespace Nexus7.Combat
                     break;
                 case EncounterEvent.Cleared:
                     lastEvent = "Zona despejada";
-                    Say("Zona despejada. Los refuerzos han caído: munición de recompensa disponible.");
-                    AmmoPickup.Spawn(player.position + player.forward * 1.5f + Vector3.up * 0.4f, 2f);
-                    LivesSystem.GainLife();
+                    GiveReward();
                     Cleared?.Invoke(player.position + player.right * 1.5f + player.forward * 1.5f + Vector3.up * 0.4f);
                     break;
             }
+        }
+
+        /// <summary>Recompensa según lo que te falte (EncounterRewardModel). El accesorio lo suelta ModRewardDirector.</summary>
+        private void GiveReward()
+        {
+            var weapon = PlayerWeapon.Instance;
+            var health = player.GetComponent<PlayerHealth>();
+            float ammo = EncounterRewardModel.AmmoFraction(weapon != null && weapon.Arsenal != null ? weapon.Arsenal.Weapons : null);
+            float hp = health != null && health.Max > 0f ? health.Current / health.Max : 1f;
+            var reward = EncounterRewardModel.Choose(ammo, hp, LivesSystem.Lives, LivesSystem.Max);
+            bool wasSealed = sealsThisAttempt && !sealOpenAnnounced;
+            Say(EncounterRewardModel.Message(reward) + (wasSealed ? " Salida desbloqueada." : ""));
+            AmmoPickup.Spawn(player.position + player.forward * 1.5f + Vector3.up * 0.4f, reward.AmmoPacks);
+            if (reward.Heal > 0f && health != null) health.Heal(reward.Heal);
+            if (reward.Life) LivesSystem.GainLife();
+            lastEvent = "Zona despejada · " + EncounterRewardModel.Message(reward).Replace("Zona despejada. ", "");
+        }
+
+        /// <summary>Para SceneExitTrigger: el texto del sello, o null si la salida está abierta.</summary>
+        private string SealReason()
+        {
+            if (model == null || !EncounterSealModel.IsSealed(model.State, sealsThisAttempt, sealSince, Time.time)) return null;
+            int wave = model.State == EncounterState.Active ? model.CurrentWave + 1 : 0;
+            return EncounterSealModel.Message(wave, model.WaveCount, EncounterSealModel.Remaining(sealSince, Time.time));
         }
 
         // ------------------------- Oleadas -------------------------
@@ -306,7 +347,8 @@ namespace Nexus7.Combat
                          : d.model.State == EncounterState.Countdown ? $"cuenta atrás {d.model.CountdownLeft(Time.time):0.0} s"
                          : d.model.State == EncounterState.Active ? $"oleada {d.model.CurrentWave + 1}/{d.model.WaveCount}"
                          : "despejado";
-            return $"Encuentro: {state} · {d.lastEvent}";
+            string seal = d.SealReason() != null ? $" · <color=#f86>salida sellada {EncounterSealModel.Remaining(d.sealSince, Time.time):0} s</color>" : "";
+            return $"Encuentro: {state}{seal} · {d.lastEvent}";
         }
     }
 }

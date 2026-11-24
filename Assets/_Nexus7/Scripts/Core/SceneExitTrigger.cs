@@ -28,9 +28,42 @@ namespace Nexus7.Core
 
         private void Reset() => GetComponent<Collider>().isTrigger = true;
 
+        /// <summary>
+        /// Si devuelve un texto, la salida está sellada (encuentro en curso, EncounterSealModel): se muestra y no se sale.
+        /// Lo pone EncounterDirector.
+        /// </summary>
+        public static System.Func<string> SealedReason;
+
+        private bool waitingSeal;
+
         private void OnTriggerEnter(Collider other)
         {
             if (used || !other.CompareTag("Player")) return;
+            string seal = SealedReason?.Invoke();
+            if (!string.IsNullOrEmpty(seal))
+            {
+                waitingSeal = true;
+                if (HUDManager.Instance != null) HUDManager.Instance.QueueMessage(seal, 4f);
+                return;
+            }
+            Use(other);
+        }
+
+        /// <summary>Si estabas dentro cuando se abrió el sello, sales sin tener que volver a entrar.</summary>
+        private void OnTriggerStay(Collider other)
+        {
+            if (used || !waitingSeal || !other.CompareTag("Player")) return;
+            if (!string.IsNullOrEmpty(SealedReason?.Invoke())) return;
+            Use(other);
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("Player")) waitingSeal = false;
+        }
+
+        private void Use(Collider other)
+        {
             used = true;
 
             if (!string.IsNullOrEmpty(sceneName) && Application.CanStreamedLevelBeLoaded(sceneName))
