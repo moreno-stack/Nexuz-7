@@ -226,6 +226,23 @@ namespace Nexus7.Combat
             return true;
         }
 
+        /// <summary>
+        /// Módulo de accesorio recogido: va al arma de la mano si le sirve (ArsenalModel.ModTarget). Si ninguna arma lo
+        /// admite, devuelve false y el módulo se queda en el suelo.
+        /// </summary>
+        public bool GiveMod(WeaponMod mod)
+        {
+            var w = Arsenal.ModTarget(mod);
+            if (w == null) return false;
+            var result = w.InstallMod(mod, out WeaponMod replaced);
+            if (result != ModInstall.Installed && result != ModInstall.Replaced) return false;
+            CombatSfx.Play(CombatSound.Switch, 0.8f);
+            string text = $"{WeaponModModel.Name(mod)} en {w.Spec.DisplayName}: {WeaponModModel.Effect(mod)}";
+            if (result == ModInstall.Replaced) text += $" (sustituye al {WeaponModModel.Name(replaced).ToLowerInvariant()})";
+            PickupNotificationUI.Notify(text, new Color(0.75f, 0.6f, 1f));
+            return true;
+        }
+
         private void OnRespawned()
         {
             int lost = Arsenal.ApplyRespawnPenalty(respawnAmmoLoss * RespawnLossMultiplier);

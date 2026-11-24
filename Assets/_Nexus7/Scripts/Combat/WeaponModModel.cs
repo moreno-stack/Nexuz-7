@@ -120,11 +120,11 @@ namespace Nexus7.Combat
         }
 
         /// <summary>Lista → texto para guardar ("Suppressor,Stabilizer").</summary>
-        public static string Serialize(IList<WeaponMod> mods)
+        public static string Serialize(IEnumerable<WeaponMod> mods)
         {
-            if (mods == null || mods.Count == 0) return "";
             var sb = new StringBuilder();
-            for (int i = 0; i < mods.Count; i++) { if (i > 0) sb.Append(','); sb.Append(mods[i]); }
+            if (mods == null) return "";
+            foreach (var m in mods) { if (sb.Length > 0) sb.Append(','); sb.Append(m); }
             return sb.ToString();
         }
 

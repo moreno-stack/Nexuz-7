@@ -61,8 +61,23 @@ static class T {
     Check(WeaponModModel.Name(WeaponMod.ExtendedMag)=="Cargador ampliado" && WeaponModModel.Tag(WeaponMod.Stabilizer)=="EST", "Nombres y etiquetas en español");
   }
 
+  static void Targets(){
+    var a = new ArsenalModel();
+    foreach (var spec in PlayerWeaponCatalog.All) a.Add(WeaponModel.Fresh(spec));
+    a.Select(PlayerWeaponCatalog.IndexOf(PlayerWeaponCatalog.Shotgun), 0f);
+    Check(a.ModTarget(WeaponMod.Suppressor)==a.Current, "El accesorio va al arma de la mano si le sirve");
+    Check(a.ModTarget(WeaponMod.Heatsink).Spec.Id==PlayerWeaponCatalog.Pistol, "Si a la de la mano no le sirve (disipador en la escopeta), va a otra");
+    a.Current.InstallMod(WeaponMod.Suppressor, out _);
+    Check(a.ModTarget(WeaponMod.Suppressor).Spec.Id!=PlayerWeaponCatalog.Shotgun, "Si la de la mano ya lo lleva, va a otra");
+    a.Weapons[0].InstallMod(WeaponMod.Stabilizer, out _); a.Weapons[0].InstallMod(WeaponMod.Heatsink, out _);
+    Check(a.ModTarget(WeaponMod.Suppressor)!=a.Weapons[0], "Prefiere un arma con hueco libre antes que sustituir");
+    var solo = new ArsenalModel(); solo.Add(WeaponModel.Fresh(PlayerWeaponCatalog.Get(PlayerWeaponCatalog.Shotgun)));
+    Check(solo.ModTarget(WeaponMod.Heatsink)==null, "Si ninguna arma lo admite, nadie lo recoge");
+    Check(WeaponModModel.Serialize(a.Weapons[0].Mods)=="Stabilizer,Heatsink", "Se guardan los accesorios del arma");
+  }
+
   static void Main(){
-    Effects(); Slots(); Model(); Saving();
+    Effects(); Slots(); Model(); Saving(); Targets();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
   }
 }
