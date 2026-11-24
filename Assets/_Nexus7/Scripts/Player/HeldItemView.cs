@@ -1,12 +1,12 @@
 using UnityEngine;
-using Nexus7.Devices;
 using Nexus7.Inventory;
+using Nexus7.Visual.Models;
 
 namespace Nexus7.Player
 {
     /// <summary>
-    /// Muestra en la mano del jugador una forma sencilla del objeto seleccionado en la barra rápida:
-    /// cilindro (baterías y dispositivos), caja (piezas y componentes) o cápsula (herramientas).
+    /// Muestra en la mano del jugador el modelo del objeto seleccionado en la barra rápida (ModelLibrary):
+    /// batería, circuito, llave, tarjeta, señuelo, PEM... con su lado mayor de 'size' metros.
     ///
     /// Colocar en: el GameObject raíz "Player". 'Hand Socket' = la mano derecha del modelo (o un punto delante de la cámara).
     /// </summary>
@@ -17,7 +17,6 @@ namespace Nexus7.Player
         [SerializeField] private float size = 0.16f;
 
         private GameObject current;
-        private static Material sharedMaterial;
 
         public Transform HandSocket { get => handSocket; set { handSocket = value; Rebuild(); } }
 
@@ -26,44 +25,22 @@ namespace Nexus7.Player
         private void OnDisable() { if (hotbar != null) hotbar.SelectionChanged -= Rebuild; }
         private void Start() => Rebuild();
 
-        private Material ownMaterial;
-
         public void Rebuild()
         {
             if (current != null) Destroy(current);
-            if (ownMaterial != null) Destroy(ownMaterial);   // sin fugas de materiales al cambiar de objeto
-            current = null; ownMaterial = null;
+            current = null;
             var item = hotbar != null ? hotbar.SelectedItem : null;
             if (item == null || handSocket == null) return;
 
-            PrimitiveType shape = item.Category == ItemCategory.Tool ? PrimitiveType.Capsule
-                                : item.Category == ItemCategory.Battery || item.Category == ItemCategory.Device ? PrimitiveType.Cylinder
-                                : PrimitiveType.Cube;
-            current = GameObject.CreatePrimitive(shape);
-            current.name = "ObjetoEnMano";
-            var col = current.GetComponent<Collider>();
-            if (col != null) { col.enabled = false; Destroy(col); }
-            current.transform.SetParent(handSocket, false);
-            current.transform.localPosition = new Vector3(0f, 0f, size * 0.6f);
-            current.transform.localScale = shape == PrimitiveType.Cube ? new Vector3(size, size * 0.6f, size)
-                                         : new Vector3(size * 0.7f, size * 0.6f, size * 0.7f);
-
-            var device = item as DeviceItemData;
-            Color c = device != null ? device.DeviceColor
-                    : item.Category == ItemCategory.Battery ? new Color(0.3f, 0.9f, 0.4f)
-                    : item.Category == ItemCategory.Component ? new Color(0.3f, 0.6f, 1f)
-                    : new Color(0.6f, 0.62f, 0.66f);
-            var r = current.GetComponent<Renderer>();
-            if (r != null)
-            {
-                if (sharedMaterial == null) sharedMaterial = r.sharedMaterial;
-                var m = new Material(sharedMaterial) { color = c };
-                m.EnableKeyword("_EMISSION");
-                m.SetColor("_EmissionColor", c * 0.4f);
-                r.sharedMaterial = m;
-                ownMaterial = m;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            }
+            // Modelo del objeto (ModelLibrary) con su lado mayor = 'size' (los materiales son compartidos: no se destruyen)
+            var bp = ItemModels.For(item);
+            var mn = bp.MinCorner(); var mx = bp.MaxCorner();
+            float largest = System.Math.Max(mx.x - mn.x, System.Math.Max(mx.y - mn.y, mx.z - mn.z));
+            if (largest > 1e-4f) bp = bp.Scaled(size / largest);
+            var model = ModelFactory.Build(bp, handSocket, false);
+            model.name = "ObjetoEnMano";
+            model.localPosition = new Vector3(0f, 0f, size * 0.6f);
+            current = model.gameObject;
         }
     }
 }
