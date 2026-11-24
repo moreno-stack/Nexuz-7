@@ -140,4 +140,11 @@ namespace Nexus7.Visual.Models
             return b;
         }
     }
+
+    /// <summary>Escala que hay que dar a la primitiva de Unity para que mida 'size' (cilindro y cápsula miden 2 de alto).</summary>
+    public static class ModelScale
+    {
+        public static MVec ForUnity(ModelShape shape, MVec size)
+            => shape == ModelShape.Cylinder || shape == ModelShape.Capsule ? new MVec(size.x, size.y * 0.5f, size.z) : size;
+    }
 }
