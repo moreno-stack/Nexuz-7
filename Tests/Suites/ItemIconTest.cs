@@ -19,10 +19,11 @@ static class T {
     Check(ItemIcons.For(null) == null, "Sin objeto → sin icono");
     Check(ItemIcons.Size == 64, "Iconos de 64 px");
 
-    string hb = Src("UI/HotbarUI.cs"), inv = Src("UI/InventoryUI.cs");
-    Check(hb.Contains("ItemIcons.For(") && hb.Contains("IconSlot"), "Barra rápida: fila de iconos");
-    Check(inv.Contains("ItemIcons.For(") && inv.Contains("GridColumns = 4"), "Inventario: rejilla de iconos de 4 columnas");
-    Check(!hb.Contains("ItemIcons.For(it)") || hb.Contains("iconCache") || hb.Contains("shownItems"), "La barra rápida no vuelve a pedir iconos si no cambia");
+    string hb = Src("UI/HotbarUI.cs"), inv = Src("UI/InventoryUI.cs"), slot = Src("UI/IconSlot.cs");
+    Check(slot.Contains("ItemIcons.For("), "La casilla de icono dibuja el icono del objeto");
+    Check(hb.Contains("IconSlot.Create(") && hb.Contains(".Set(it,"), "Barra rápida: fila de iconos");
+    Check(inv.Contains("IconSlot.Create(") && inv.Contains("GridColumns = 4"), "Inventario: rejilla de iconos de 4 columnas");
+    Check(hb.Contains("if (state == shownState) return;"), "La barra rápida solo actualiza los iconos cuando algo cambia");
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
   }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -26,6 +27,13 @@ namespace Nexus7.UI
         [SerializeField] private Image cloakOverlay;
 
         private readonly StringBuilder sb = new StringBuilder();
+
+        // Fila de iconos encima del texto (se crea por código; solo se actualiza cuando algo cambia)
+        public const float IconSize = 44f, IconGap = 8f;
+        private RectTransform iconRow;
+        private readonly List<IconSlot> slots = new List<IconSlot>();
+        private readonly List<ItemData> shownItems = new List<ItemData>();
+        private string shownState;
 
         private void Start()
         {
@@ -64,6 +72,7 @@ namespace Nexus7.UI
                     sb.Append($"\n<size=75%><color=#9AB8CC>{action}</color></size>");
                 }
                 slotsText.text = sb.ToString();
+                UpdateIcons(m);
             }
 
             bool cloaked = stealth != null && stealth.IsCloaked;
@@ -76,6 +85,41 @@ namespace Nexus7.UI
                 if (cloaked && stealth.CloakRemaining < 3f) target *= Mathf.Repeat(Time.time * 4f, 1f) < 0.5f ? 1f : 0.3f;
                 c.a = Mathf.MoveTowards(c.a, target, Time.deltaTime);
                 cloakOverlay.color = c;
+            }
+        }
+
+        /// <summary>Un icono por casilla de la barra rápida; la seleccionada con marco blanco y algo mayor.</summary>
+        private void UpdateIcons(HotbarModel m)
+        {
+            sb.Clear();
+            for (int i = 0; i < m.Count; i++) sb.Append(m.Get(i)?.Id).Append(':').Append(inventory.GetCount(m.Get(i))).Append(';');
+            sb.Append(m.Selected);
+            string state = sb.ToString();
+            if (state == shownState) return;
+            shownState = state;
+
+            if (iconRow == null)
+            {
+                var go = new GameObject("IconosBarraRapida", typeof(RectTransform));
+                go.transform.SetParent(slotsText.transform.parent, false);
+                iconRow = go.GetComponent<RectTransform>();
+                if (iconRow == null) return;
+                iconRow.anchorMin = iconRow.anchorMax = new Vector2(0.5f, 0f);
+                iconRow.pivot = new Vector2(0.5f, 0f);
+                iconRow.anchoredPosition = new Vector2(0f, 84f);   // encima del texto de la barra (y = 12, alto 64)
+                iconRow.sizeDelta = new Vector2(0f, IconSize);
+            }
+            while (slots.Count < m.Count) slots.Add(IconSlot.Create(iconRow, IconSize));
+            shownItems.Clear();
+            for (int i = 0; i < slots.Count; i++)
+            {
+                bool used = i < m.Count;
+                slots[i].gameObject.SetActive(used);
+                if (!used) continue;
+                var it = m.Get(i);
+                shownItems.Add(it);
+                slots[i].Set(it, inventory.GetCount(it).ToString(), i == m.Selected);
+                slots[i].Place(new Vector2(0.5f, 0f), new Vector2((i - (m.Count - 1) * 0.5f) * (IconSize + IconGap), IconSize * 0.5f));
             }
         }
     }
