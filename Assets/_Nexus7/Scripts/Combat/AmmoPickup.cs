@@ -1,9 +1,10 @@
 using UnityEngine;
+using Nexus7.Visual.Models;
 
 namespace Nexus7.Combat
 {
     /// <summary>
-    /// Paquete de munición que suelta un robot destruido: un cubo brillante que flota y gira.
+    /// Paquete de munición que suelta un robot destruido: una caja con tres balas de plasma que flota y gira.
     /// Se recoge solo al pasar a menos de 1,4 m y va al arma que menos munición tiene (ArsenalModel.NeediestWeapon).
     /// Si todas las armas están llenas, se queda en el suelo.
     /// </summary>
@@ -21,20 +22,9 @@ namespace Nexus7.Combat
         public static AmmoPickup Spawn(Vector3 position, float packs)
         {
             if (packs <= 0f) return null;
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = "PaqueteMunicion";
-            var col = go.GetComponent<Collider>();
-            if (col != null) Destroy(col);
+            var go = new GameObject("PaqueteMunicion");
             go.transform.position = position;
-            go.transform.localScale = new Vector3(0.28f, 0.18f, 0.18f);
-            var r = go.GetComponent<Renderer>();
-            if (r != null)
-            {
-                var c = new Color(0.35f, 0.9f, 1f);
-                r.material.color = c;
-                r.material.EnableKeyword("_EMISSION");
-                r.material.SetColor("_EmissionColor", c * 2.5f);
-            }
+            ModelFactory.Build(ModelLibrary.Ammo().Scaled(1.4f), go.transform, true);   // caja con tres balas de plasma
             var lightGo = new GameObject("Brillo");
             lightGo.transform.SetParent(go.transform, false);
             var light = lightGo.AddComponent<Light>();
