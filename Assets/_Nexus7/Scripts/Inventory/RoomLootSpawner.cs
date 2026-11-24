@@ -1,6 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
+using UnityEngine.AI;
 using Nexus7.Core;
+using Nexus7.UI;
 
 namespace Nexus7.Inventory
 {
@@ -8,7 +12,9 @@ namespace Nexus7.Inventory
     /// Botín aleatorio de una sala: en cada PARTIDA cambian los objetos y su sitio (semilla de GameSession),
     /// pero los objetos imprescindibles ('Guaranteed') aparecen siempre. Al reaparecer tras una captura no se
     /// vuelve a tirar (la escena no se recarga), así que lo recogido no reaparece.
-    /// Los imprescindibles brillan más y llevan un haz de luz vertical de 3 m para verlos desde lejos.
+    /// Los imprescindibles brillan más y llevan un haz de luz vertical de 6 m (se ve por encima de las estanterías).
+    /// Si su punto está tapado por algo, se mueven al suelo libre más cercano. La consola dice dónde salió cada uno, y el
+    /// traje avisa de vez en cuando de la distancia y la dirección al más cercano que siga en el suelo (KeyItemSignal).
     ///
     /// Colocar en: un objeto "Botin" de la sala, con LootSpawnPoint como hijos (o asignados en 'Points').
     /// </summary>
@@ -22,8 +28,9 @@ namespace Nexus7.Inventory
         [SerializeField] private int fixedSeed = 1234;
 
         private static Material pickupMaterial, beamMaterial;
+        private readonly List<PickupItem> keyItems = new List<PickupItem>();
         /// <summary>Brillo y haz de los objetos imprescindibles (para encontrarlos en salas oscuras).</summary>
-        public const float BeaconLightRange = 4f, BeaconLightIntensity = 2f, BeaconHeight = 3f, BeaconWidth = 0.06f;
+        public const float BeaconLightRange = 4f, BeaconLightIntensity = 2f, BeaconHeight = 6f, BeaconWidth = 0.06f;
 
         private void Start()
         {
@@ -36,16 +43,68 @@ namespace Nexus7.Inventory
             var empty = new float[points.Length];
             for (int i = 0; i < points.Length; i++) empty[i] = points[i] != null ? points[i].emptyChance : 1f;
 
+            foreach (var g in guaranteed)
+                if (g.item == null || g.amount <= 0)
+                    Debug.LogError($"[Botín] {name}: hay un objeto imprescindible sin asignar. Reconstruye la fase (Nexus-7 → Construir todo el juego).", this);
+
             var placements = LootRoller.Roll(seed, points.Length, empty, guaranteed, table != null ? table.entries : null);
             var perPoint = new Dictionary<int, int>();
+            var log = new StringBuilder();
             foreach (var p in placements)
             {
                 int n; perPoint.TryGetValue(p.point, out n); perPoint[p.point] = n + 1;
-                Spawn(p.point >= 0 ? points[p.point].transform : transform, p, n);
+                var pickup = Spawn(p.point >= 0 ? points[p.point].transform : transform, p, n);
+                if (!p.guaranteed || pickup == null) continue;
+                keyItems.Add(pickup);
+                Vector3 at = pickup.transform.position;
+                log.Append(log.Length > 0 ? " · " : "").Append($"{p.item.DisplayName} ×{p.amount} en ({at.x:0.0}, {at.z:0.0})");
+            }
+            if (log.Length > 0) Debug.Log($"[Botín] {gameObject.scene.name}/{name}: imprescindibles → {log}", this);
+            if (keyItems.Count > 0) StartCoroutine(SignalRoutine());
+        }
+
+        /// <summary>El traje avisa de la distancia y la dirección al imprescindible más cercano que siga en el suelo.</summary>
+        private IEnumerator SignalRoutine()
+        {
+            yield return new WaitForSeconds(KeyItemSignal.FirstDelay);
+            var player = GameObject.FindGameObjectWithTag("Player");
+            while (player != null)
+            {
+                PickupItem nearest = null;
+                float best = float.MaxValue;
+                foreach (var k in keyItems)
+                {
+                    if (k == null) continue;
+                    float d = (k.transform.position - player.transform.position).sqrMagnitude;
+                    if (d < best) { best = d; nearest = k; }
+                }
+                if (nearest == null) yield break;   // ya los ha recogido todos
+                Vector3 delta = nearest.transform.position - player.transform.position;
+                string msg = KeyItemSignal.Message(nearest.Item != null ? nearest.Item.DisplayName : "objeto", delta.x, delta.z);
+                if (msg != null && HUDManager.Instance != null) HUDManager.Instance.QueueMessage(msg, 4f);
+                yield return new WaitForSeconds(KeyItemSignal.Repeat);
             }
         }
 
-        private void Spawn(Transform at, LootPlacement p, int stackIndex)
+        /// <summary>Si algo tapa el punto (caja, estantería), el objeto imprescindible baja al suelo libre más cercano.</summary>
+        private static void MoveToFreeFloor(Transform root)
+        {
+            Vector3 p = root.position;
+            if (!Physics.CheckSphere(p + Vector3.up * 0.4f, 0.2f, ~(1 << 2), QueryTriggerInteraction.Ignore)) return;
+            for (float radius = 1f; radius <= 4f; radius += 1f)
+                for (int i = 0; i < 8; i++)
+                {
+                    float a = i * Mathf.PI / 4f;
+                    Vector3 c = p + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius;
+                    if (!NavMesh.SamplePosition(c, out NavMeshHit hit, 1f, NavMesh.AllAreas)) continue;
+                    if (Physics.CheckSphere(hit.position + Vector3.up * 0.4f, 0.2f, ~(1 << 2), QueryTriggerInteraction.Ignore)) continue;
+                    root.position = hit.position;
+                    Debug.Log($"[Botín] {root.name} estaba tapado: movido a ({hit.position.x:0.0}, {hit.position.z:0.0}).");
+                    return;
+                }
+        }
+
+        private PickupItem Spawn(Transform at, LootPlacement p, int stackIndex)
         {
             var root = new GameObject("Botin_" + p.item.DisplayName);
             root.transform.SetParent(at, false);
@@ -87,6 +146,13 @@ namespace Nexus7.Inventory
             pickup.Setup(p.item, p.amount);
             pickup.SetNoise(PickupNoiseFor(p.item.Category));
             pickup.SetVisual(visual.transform);
+            if (p.guaranteed)
+            {
+                col.enabled = false;   // que no cuente su propio colisionador como obstáculo
+                MoveToFreeFloor(root.transform);
+                col.enabled = true;
+            }
+            return pickup;
         }
 
         /// <summary>

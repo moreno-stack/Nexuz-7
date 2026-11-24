@@ -100,6 +100,7 @@ namespace UnityEngine
     public struct LayerMask { public static implicit operator int(LayerMask m) { return 0; } public static implicit operator LayerMask(int i) { return new LayerMask(); } }
     public enum QueryTriggerInteraction { UseGlobal, Ignore, Collide }
     public static class Physics { public static Vector3 gravity; public static RaycastHit[] RaycastAll(Ray r, float d, int m, QueryTriggerInteraction q) { return new RaycastHit[0]; } public static void IgnoreCollision(Collider a, Collider b) {}
+        public static bool CheckSphere(Vector3 p, float r, int m, QueryTriggerInteraction q) { return false; }
         public static bool Raycast(Ray r, out RaycastHit h, float d, int m, QueryTriggerInteraction q) { h = default(RaycastHit); return false; }
         public static bool SphereCast(Vector3 o, float r, Vector3 d, out RaycastHit h, float dist, int m, QueryTriggerInteraction q) { h = default(RaycastHit); return false; }
         public static bool Linecast(Vector3 a, Vector3 b, out RaycastHit h, int m, QueryTriggerInteraction q) { h = default(RaycastHit); return false; }
@@ -128,7 +129,7 @@ namespace UnityEngine
     public enum CursorLockMode { None, Locked, Confined }
     public static class Cursor { public static CursorLockMode lockState; public static bool visible; }
     public static class Debug {
-        public static void Log(object o) {} public static void LogWarning(object o) {} public static void LogWarning(object o, Object c) {}
+        public static void Log(object o) {} public static void Log(object o, Object c) {} public static void LogWarning(object o) {} public static void LogWarning(object o, Object c) {}
         public static void LogError(object o, Object c) {} public static void LogError(object o) {} public static void LogException(Exception e) {}
     }
     public class Collider : Component { public bool isTrigger; public bool enabled; public Bounds bounds; }
