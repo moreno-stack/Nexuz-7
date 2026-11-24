@@ -35,28 +35,52 @@ namespace Nexus7.Visual.Models
             if (extent <= 1e-6f) return px;
             float cu = (minU + maxU) * 0.5f, cv = (minV + maxV) * 0.5f;
 
-            MVec dirWorld = FromView(new MVec(0f, 0f, 1f));
+            // Datos de cada pieza calculados una vez (el rayo es lineal en u, v): origen y dirección en su espacio
+            // y el rectángulo que ocupa en la vista, para descartarla rápido en los píxeles que no toca.
+            int n = bp.Parts.Count;
+            var o0 = new MVec[n]; var du = new MVec[n]; var dv = new MVec[n]; var dl = new MVec[n];
+            var rect = new float[n * 4];
+            MVec dirWorld = FromView(new MVec(0f, 0f, 1f)), uAxis = FromView(new MVec(1f, 0f, 0f)), vAxis = FromView(new MVec(0f, 1f, 0f));
+            MVec back = FromView(new MVec(0f, 0f, -10f));
+            for (int k = 0; k < n; k++)
+            {
+                var p = bp.Parts[k];
+                o0[k] = MVec.InverseRotate(back - p.Position, p.Euler);
+                du[k] = MVec.InverseRotate(uAxis, p.Euler);
+                dv[k] = MVec.InverseRotate(vAxis, p.Euler);
+                dl[k] = MVec.InverseRotate(dirWorld, p.Euler);
+                float a = float.MaxValue, b2 = float.MinValue, c = float.MaxValue, d = float.MinValue;
+                var h = p.Size * 0.5f;
+                for (int i = 0; i < 8; i++)
+                {
+                    var corner = new MVec((i & 1) == 0 ? -h.x : h.x, (i & 2) == 0 ? -h.y : h.y, (i & 4) == 0 ? -h.z : h.z);
+                    var v = ToView(MVec.Rotate(corner, p.Euler) + p.Position);
+                    a = Math.Min(a, v.x); b2 = Math.Max(b2, v.x); c = Math.Min(c, v.y); d = Math.Max(d, v.y);
+                }
+                rect[k * 4] = a; rect[k * 4 + 1] = b2; rect[k * 4 + 2] = c; rect[k * 4 + 3] = d;
+            }
+
             var hit = new bool[size * size];
             for (int y = 0; y < size; y++)
                 for (int x = 0; x < size; x++)
                 {
                     float u = cu + ((x + 0.5f) / size - 0.5f) * extent;
                     float v = cv + ((y + 0.5f) / size - 0.5f) * extent;
-                    MVec origin = FromView(new MVec(u, v, -10f));
                     float best = float.MaxValue; int bestPart = -1; MVec bestNormal = default(MVec);
-                    for (int k = 0; k < bp.Parts.Count; k++)
+                    for (int k = 0; k < n; k++)
                     {
+                        if (u < rect[k * 4] || u > rect[k * 4 + 1] || v < rect[k * 4 + 2] || v > rect[k * 4 + 3]) continue;
                         var p = bp.Parts[k];
-                        MVec o = MVec.InverseRotate(origin - p.Position, p.Euler);
-                        MVec d = MVec.InverseRotate(dirWorld, p.Euler);
-                        if (Intersect(p.Shape, p.Size * 0.5f, o, d, out float t, out MVec n) && t < best)
+                        MVec o = o0[k] + du[k] * u + dv[k] * v;
+                        if (Intersect(p.Shape, p.Size * 0.5f, o, dl[k], out float t, out MVec nrm) && t < best)
                         {
-                            best = t; bestPart = k; bestNormal = MVec.Rotate(n, p.Euler);
+                            best = t; bestPart = k; bestNormal = nrm;
                         }
                     }
                     if (bestPart < 0) continue;
                     hit[y * size + x] = true;
-                    Shade(bp.Parts[bestPart], ToViewDir(bestNormal).Normalized, px, (y * size + x) * 4);
+                    var bpPart = bp.Parts[bestPart];
+                    Shade(bpPart, ToViewDir(MVec.Rotate(bestNormal, bpPart.Euler)).Normalized, px, (y * size + x) * 4);
                 }
 
             // Contorno: los píxeles vacíos junto al objeto se pintan casi negros
