@@ -198,7 +198,8 @@ namespace Nexus7.Director
             var d = Instance;
             if (d == null || d.Current == ShipEvent.None) return "Evento de nave: ninguno";
             float dist = Vector3.Distance(d.transform.position, d.spot);
-            string extra = d.Current == ShipEvent.SecuritySweep ? $" · próximo barrido en {Mathf.Max(0f, d.nextSweep - Time.time):0} s" : "";
+            string extra = d.Current == ShipEvent.SecuritySweep ? $" · próximo barrido en {Mathf.Max(0f, d.nextSweep - Time.time):0} s"
+                         : d.Current == ShipEvent.Blackout ? $" · {d.dimmed.Count} luces atenuadas" : "";
             return $"Evento de nave: <b>{ShipEventModel.Name(d.Current)}</b> a {dist:0} m{extra}";
         }
     }
