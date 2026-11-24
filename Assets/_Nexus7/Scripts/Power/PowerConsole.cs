@@ -58,6 +58,7 @@ namespace Nexus7.Power
                 }
             }
             Activate();
+            Nexus7.Core.ObjectiveEvents.Raise("energia", transform.position);
         }
 
         protected override void OnActivated()

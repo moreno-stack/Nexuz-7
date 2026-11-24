@@ -84,9 +84,20 @@ Tercera entrega (PR #3, rama `feat/combate-tactico-coberturas`):
 | 19 | `feat(combate): óptica que deslumbra y núcleo trasero de la élite en juego` | `EnemyHealth` (zonas y núcleo visible), `EnemyGun.Dazzle`, rótulos del HUD |
 | 20 | `docs: guía de combate táctico y puntos débiles` | Esta guía y el README |
 
+Cuarta entrega (PR #4, rama `feat/combate-oleadas-desarme`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 21 | `feat(combate): modelos de retroceso al impacto y brazo del arma (desarme)` | `HitRecoilModel`, `WeaponArmModel`, zona `Arm` en `WeakPointModel` y pruebas en `WeakPointTest` |
+| 22 | `feat(combate): retroceso al recibir impactos y desarme por el brazo del arma` | `ProceduralAnimator` (retroceso y brazo colgando), `EnemyHealth.Disarm`, `CombatEvents.EnemyDisarmed`, HUD |
+| 23 | `feat(combate): modelos de encuentros por oleadas (catálogo, secuencia y puntos de aparición)` | `EncounterCatalog`, `EncounterTriggerRule`, `WaveModel`, `EncounterSpawnPicker` y `EncounterTest` |
+| 24 | `feat(juego): aviso de objetivo cumplido en terminales, consolas y puntos seguros` | `ObjectiveEvents` y los enganches en `HackTerminal`, `AccessTerminal`, `PowerConsole`, `ConsoleUI`, `LaunchStepTerminal` y `Checkpoint` |
+| 25 | `feat(combate): encuentros por oleadas activados por los objetivos de cada fase` | `EncounterDirector`, `CombatInstaller` y la línea del encuentro en F3 |
+| 26 | `docs: guía de oleadas, desarme y retroceso` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 942 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 985 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -257,6 +268,62 @@ Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no h
 2. En la Fase 5, rodea a una élite (o espera a que flanquee y te dé la espalda) y dispárale a la esfera cian: sale «NÚCLEO ×3» en cian y cae mucho antes.
 3. Dispárale al pecho de frente: «X» blanca, sin rótulo.
 
+### Etapa 9: retroceso y desarme (commits 21 y 22)
+
+**Archivos nuevos:** `Scripts/Characters/HitRecoilModel.cs` y `Scripts/Combat/Enemy/WeaponArmModel.cs`. **Modificados:** `WeakPointModel` (zona `Arm`), `ProceduralAnimator`, `EnemyHealth`, `CombatEvents` y `CombatHUD`.
+
+**Qué hace:**
+
+- **Retroceso:** con cada impacto el torso del robot se echa hacia atrás (hasta 12° en 0,06 s y vuelve en 0,25 s). Un impacto fuerte, como la escopeta de cerca o el cañón de riel, lo echa más (×0,4 a ×1,5 según el daño).
+- **Brazo del arma:** en los robots tiradores, los impactos a menos de 25 cm del antebrazo o la mano derechos dan en el **brazo**. Hacen el daño normal al robot y además restan de los **30 de vida del brazo**. Al llegar a 0:
+  - salen chispas y el brazo queda colgando;
+  - el robot deja de disparar y de usar coberturas, y pasa al **cuerpo a cuerpo**, como antes de las armas;
+  - el HUD avisa «Robot desarmado: solo cuerpo a cuerpo».
+- La «X» de impacto es **naranja** en el brazo, con el rótulo «BRAZO DEL ARMA». Orden de prioridad: óptica, brazo, núcleo y cuerpo.
+- Un robot desarmado sigue desarmado aunque caigas y reaparezcas.
+
+**Cómo probarlo:**
+
+1. Dispara al pecho de un robot: se nota el respingo del torso. Con la escopeta de cerca el retroceso es mayor.
+2. Apunta (clic derecho) a la mano derecha de un robot de seguridad mientras se asoma y dispárale con la pistola. Tras 2 o 3 impactos con el rótulo naranja «BRAZO DEL ARMA», salen chispas, el brazo cae y aparece «Robot desarmado».
+3. Ese robot ya no hace el láser de aviso: corre hacia ti y ataca cuerpo a cuerpo.
+
+### Etapa 10: encuentros por oleadas (commits 23 a 25)
+
+**Archivos nuevos:** `Scripts/Combat/Encounters/WaveModels.cs`, `EncounterDirector.cs` y `Scripts/Core/ObjectiveEvents.cs`. **Modificados:** `HackTerminal`, `AccessTerminal`, `PowerConsole`, `ConsoleUI`, `LaunchStepTerminal` y `Checkpoint` (avisan del objetivo cumplido), `CombatInstaller` y `GameDirector`.
+
+**Qué hace:**
+
+- Cada fase tiene **un encuentro** que se activa una vez:
+  - al cumplir un objetivo: hackeo con éxito, terminal de acceso, consola de energía, desactivar un sector o desbloquear una compuerta desde la consola de mando, o un paso de la secuencia de lanzamiento;
+  - en las fases sin esos objetivos, con el primer **punto seguro**;
+  - en las fases sin ninguno de los dos (Laboratorio), al **alejarte 20 m** de donde empezaste.
+- Al activarse sale «IA NEXUS-7: intrusión confirmada…». A los 3 s llega la **oleada 1**: copias de los robots de la fase, con un anillo rojo donde aparece cada uno, que van directos a por ti con la detección reforzada.
+- Cuando de la oleada quedan **1 o 0 robots**, o a los **25 s**, sale «¡REFUERZOS! Oleada 2/3 en 3 s». Tras despejar la última: «Zona despejada» y un paquete doble de munición a tus pies.
+- **Dónde aparecen:** en waypoints de patrulla o puntos de cobertura a 8–35 m de ti (mejor a 12–20 m), fuera de tu vista si hay otra opción y, en cada intento, en puntos distintos del intento anterior.
+- **Cuántos:** las oleadas del diseño (ver la tabla), ×0,7 en Fácil y ×1,3 en Difícil (mínimo 1). El director añade 1 robot a la última oleada con tensión ≥ 0,7 y quita 1 de la mayor con tensión ≤ 0,3.
+- **Si caes a mitad:** los robots de las oleadas se retiran y el encuentro **vuelve a empezar 4 s después de reaparecer**, con otros puntos de aparición. Los robots de la fase destruidos siguen destruidos.
+- En **F3**, la línea «Encuentro: …» muestra el estado (en espera, cuenta atrás, oleada n/N, despejado) y qué lo activó.
+
+| Fase | Se activa con | Oleadas en Normal |
+|---|---|---|
+| 1 · Sala inicial | Terminal de acceso | 2 seguridad |
+| 2 · Almacén de carga | Primer punto seguro | 2 seguridad · 1 guardia + 1 seguridad |
+| 3 · Sala de energía | Hackeo o consola de energía (lo primero que hagas) | 2 seguridad + 1 investigación · 2 guardias |
+| 4 · Laboratorio | Alejarse 20 m del inicio | 2 seguridad · 2 guardias · 1 élite + 1 seguridad |
+| 5 · Centro de control | Acción de la consola de mando | 3 seguridad · 2 guardias + 1 investigación · 1 élite + 2 guardias |
+| 6 · Evacuación | Acción de la consola o paso de la secuencia de lanzamiento | 2 guardias + 1 seguridad · 2 élites |
+
+Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que falte, y guardia en lugar de la élite.
+
+**Cómo probarlo:**
+
+1. En la Fase 1 usa la terminal de acceso con **F3** abierto. «Encuentro» pasa a «cuenta atrás» y, a los 3 s, aparecen 2 robots de seguridad con un anillo rojo, lejos de ti y fuera de tu vista.
+2. Destruye uno: con 1 vivo en la última oleada no pasa nada más. Destruye el otro: «Zona despejada» y munición a tus pies.
+3. En la Fase 3, hackea la terminal o activa la consola de energía. Deja vivo solo a uno de la primera oleada: aparece «¡REFUERZOS! Oleada 2/2 en 3 s».
+4. Deja que te atrapen a mitad: los robots de la oleada desaparecen y, 4 s después de reaparecer, el encuentro vuelve a empezar. Los anillos rojos salen en otros sitios.
+5. En Difícil la primera oleada de la Fase 5 trae 4 robots en vez de 3.
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -266,7 +333,8 @@ Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no h
 | `WeaponTest` | 63 | Cadencia, semiautomática, cargador, recarga, calor, dispersión, caída de daño, vida, arsenal, sonidos, sesión, guardado en disco y mando (gatillos y cruceta) |
 | `EnemyFireTest` | 29 | Armas por tipo de robot, dispersión y anticipación, turnos de ataque, ráfagas con aviso, tambaleo e indicador de daño |
 | `TacticalCoverTest` | 37 | Estilos, puntuación de coberturas, mejor punto, reservas, ciclo cubrirse/asomarse, asomadas fallidas, relojes de avance y flanqueo, tempo del director |
-| `WeakPointTest` | 11 | Óptica, núcleo trasero por la espalda, ángulos, alturas y multiplicadores |
+| `WeakPointTest` | 26 | Óptica, núcleo trasero, brazo del arma y desarme, prioridades, multiplicadores y curva del retroceso |
+| `EncounterTest` | 28 | Oleadas por fase, escalado por dificultad y director, activadores, secuencia, reinicio y puntos de aparición justos y variados |
 | `DirectorTest` | 40 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
 | `SpawnVariationTest` | 16 | Anti-repetición, justicia, ritmo, refuerzos, cámaras y reproducibilidad |
 
@@ -304,6 +372,12 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | Faltan o sobran coberturas en una fase | Nombres de objetos en `Names`, `Offset` (0,8 m) y `MinSpacing` (0,9 m) | `CoverField` |
 | El director cambia poco el ritmo táctico | Los extremos de `TacticTempo` (1,4 / 0,7) | `DirectorModel.KnobsFor` |
 | Los puntos débiles deciden demasiado | `OpticMultiplier` (×2), `CoreMultiplier` (×3), `CoreMinDot` (0,5 = 60°) y `DazzleSeconds`/`DazzleNoBurstSeconds` (2 / 0,8 s) | `WeakPointModel` |
+| Desarmar es demasiado fácil o difícil | `MaxHealth` del brazo (30) y `ArmRadius` (0,25 m) | `WeaponArmModel`, `WeakPointModel` |
+| El retroceso se nota poco o demasiado | `MaxDegrees` (12°), `Duration` (0,25 s) y `DamageForFull` (20) | `HitRecoilModel` |
+| Las oleadas abruman | Tamaños de cada fase, `DifficultyFactor` (0,7 / 1 / 1,3) y los umbrales 0,7 / 0,3 de tensión | `EncounterCatalog` |
+| Las oleadas llegan demasiado seguidas | `AdvanceWhenAlive` (1), `MaxWaveTime` (25 s) y `CountdownTime` (3 s) | `WaveModel` |
+| Aparecen demasiado cerca o a la vista | `MinDistance` (8 m), `ViewDistance` (18 m) y `ViewHalfAngle` (35°) | `EncounterSpawnPicker` |
+| El encuentro tarda en volver tras caer | `RestartDelay` (4 s) | `EncounterDirector` |
 | Los gatillos del mando se disparan solos | Umbrales 0,5 / 0,3 de `TriggerLatch` y `dead` (0,1) de los ejes | `CombatInput`, `InputManager.asset` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
@@ -315,6 +389,7 @@ Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada
 - El HUD de combate y el panel F3 usan IMGUI (`OnGUI`) para no depender de los constructores de escena. Si se quiere el estilo del resto del HUD (TextMeshPro), se pueden pasar a un constructor más adelante.
 - El mando usa ejes de XInput en Windows (ver la Etapa 5). En otras plataformas puede hacer falta cambiar los números de eje.
 - Las coberturas se generan por el nombre de los objetos de la escena. Un objeto con otro nombre no sirve de cobertura hasta que se añada a `CoverField.Names`.
-- Del diseño «IA de combate» (`ia-combate-design.md`) faltan el brazo del arma con vida propia (desarmar), la pose de retroceso al recibir impactos y los encuentros por oleadas (`EncounterZone`).
+- Diferencias con el diseño «IA de combate» (`ia-combate-design.md`) en los encuentros: no se bloquean puertas durante el encuentro, no hay caja de recompensa con material (solo munición) y los activadores son los objetivos que ya tiene cada fase, no objetos colocados a mano. Para cambiar el activador de una fase basta con lanzar `ObjectiveEvents.Raise` desde otro objeto.
+- Un robot desarmado no recupera el arma al reaparecer el jugador, igual que los robots destruidos siguen destruidos.
 - El láser de aviso usa el material `Sprites/Default`. Si una compilación lo elimina del build, el aviso se queda en el pitido: añádelo a *Always Included Shaders*.
 - No hay vidas limitadas: el director usa las caídas recientes como medida de «vidas perdidas».

@@ -10,7 +10,7 @@ namespace Nexus7.Combat
     ///   · al jugador: PlayerWeapon y el HUD de combate;
     ///   · al jugador: PlayerTarget (para que le den los disparos de los robots);
     ///   · a cada robot (EnemyPatrol): EnemyHealth, y EnemyGun + EnemyTactics si su tipo lleva arma (EnemyGunCatalog.ForRobot);
-    ///   · a la fase: las coberturas de combate (CoverField).
+    ///   · a la fase: las coberturas de combate (CoverField) y el encuentro por oleadas (EncounterDirector).
     /// Es idempotente (si el constructor de la escena ya los puso, no duplica nada). En el menú no hace nada.
     /// </summary>
     public static class CombatInstaller
@@ -39,6 +39,7 @@ namespace Nexus7.Combat
             if (player.GetComponent<PlayerTarget>() == null) player.AddComponent<PlayerTarget>();
             EnemyGun.Tokens.Clear();
             CoverField.Build();
+            EncounterDirector.EnsureForScene();
             foreach (var robot in Object.FindObjectsByType<EnemyPatrol>(FindObjectsSortMode.None)) InstallRobot(robot.gameObject);
             PlayerInstalled?.Invoke(player);
         }

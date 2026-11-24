@@ -124,6 +124,7 @@ namespace Nexus7.Security
 
             if (!inventory.TryConsume(cost)) { Deny("El hackeo ha fallado: faltan recursos."); yield break; }
             RunStats.RecordHackSuccess();
+            Nexus7.Core.ObjectiveEvents.Raise("hackeo", transform.position);
             float duration = disableDuration * AlertSystem.Profile.hackDuration; // en alerta, la seguridad se recupera antes
             foreach (var target in Targets) target.Disable(duration);
             PickupNotificationUI.Notify($"{TargetLabel}: desactivada {duration:0} s", new Color(0.4f, 0.8f, 1f));

@@ -219,6 +219,7 @@ namespace Nexus7.Director
             L($"Espera en waypoints ×{k.PatrolWait:0.00}   Refuerzos {k.Reinforcements}");
             L($"Tiradores extra {k.ExtraShooters}   Dispersión robots ×{k.EnemySpread:0.00}   Turnos {EnemyGun.Tokens.InUse}/{EnemyGun.Tokens.Capacity}");
             L($"Tempo táctico ×{k.TacticTempo:0.00}   {EnemyTactics.Summary()}");
+            L(EncounterDirector.Summary());
             L($"Blindaje adaptado: {(Model.AdaptedWeapon ?? "no")}");
             cy += 6f;
             L($"Última acción: {LastAction}");

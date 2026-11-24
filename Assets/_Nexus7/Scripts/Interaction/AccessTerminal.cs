@@ -32,6 +32,7 @@ namespace Nexus7.Interaction
         {
             used = true;
             if (targetDoor != null) targetDoor.Unlock();
+            Nexus7.Core.ObjectiveEvents.Raise("acceso", transform.position);
 
             var hud = HUDManager.Instance;
             if (hud != null)

@@ -38,6 +38,7 @@ namespace Nexus7.UI
         {
             CombatEvents.HitLanded += OnHit;
             CombatEvents.EnemyKilled += OnKilled;
+            CombatEvents.EnemyDisarmed += OnDisarmed;
             Nexus7.Player.PlayerHealth.PlayerHit += OnPlayerHit;
         }
 
@@ -45,6 +46,7 @@ namespace Nexus7.UI
         {
             CombatEvents.HitLanded -= OnHit;
             CombatEvents.EnemyKilled -= OnKilled;
+            CombatEvents.EnemyDisarmed -= OnDisarmed;
             Nexus7.Player.PlayerHealth.PlayerHit -= OnPlayerHit;
         }
 
@@ -64,12 +66,16 @@ namespace Nexus7.UI
         private void OnHit(DamageInfo info, bool killed)
         {
             hitMarkerUntil = Time.time + HitMarkerTime;
-            var zoneColor = info.Zone == HitZone.Core ? new Color(0.3f, 0.95f, 1f) : new Color(1f, 0.85f, 0.2f);
-            hitMarkerColor = killed ? new Color(1f, 0.25f, 0.2f) : info.Critical ? zoneColor : Color.white;
+            var zoneColor = info.Zone == HitZone.Core ? new Color(0.3f, 0.95f, 1f)
+                          : info.Zone == HitZone.Arm ? new Color(1f, 0.6f, 0.25f) : new Color(1f, 0.85f, 0.2f);
+            hitMarkerColor = killed ? new Color(1f, 0.25f, 0.2f) : info.Zone != HitZone.Body ? zoneColor : Color.white;
             if (info.Zone == HitZone.Body) return;
-            zoneLabel = info.Zone == HitZone.Core ? "NÚCLEO ×3" : "ÓPTICA ×2";
+            zoneLabel = info.Zone == HitZone.Core ? "NÚCLEO ×3" : info.Zone == HitZone.Arm ? "BRAZO DEL ARMA" : "ÓPTICA ×2";
             zoneLabelUntil = Time.time + 0.5f;
         }
+
+        private void OnDisarmed(EnemyHealth enemy) =>
+            PickupNotificationUI.Notify("Robot desarmado: solo cuerpo a cuerpo", new Color(1f, 0.75f, 0.3f));
 
         private void OnKilled(EnemyHealth enemy) =>
             PickupNotificationUI.Notify("Robot destruido", new Color(1f, 0.6f, 0.3f));

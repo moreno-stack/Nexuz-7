@@ -58,6 +58,7 @@ namespace Nexus7.Gameplay
             pending = null;
             if (latestPending == this) latestPending = null;
             respawn.SetCheckpoint(transform);
+            Nexus7.Core.ObjectiveEvents.Raise("punto_seguro", transform.position);
             if (!string.IsNullOrEmpty(notification)) PickupNotificationUI.Notify(notification, new Color(0.5f, 0.9f, 1f));
         }
 

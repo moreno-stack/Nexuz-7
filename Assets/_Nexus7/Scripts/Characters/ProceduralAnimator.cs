@@ -22,6 +22,8 @@ namespace Nexus7.Characters
         private bool crouched, airborne, stunned;
         private float attackStart = -999f, attackWindup, attackStrike;
         private float hipsBaseY;
+        private float recoilStart = -999f, recoilStrength;
+        private bool armDisabled;
 
         public Transform ModelRoot => modelRoot;
 
@@ -56,6 +58,10 @@ namespace Nexus7.Characters
         public void SetFirstPersonArms(bool value) => firstPersonArms = value;
         public void PlayAttack(float windup, float strike) { attackStart = Time.time; attackWindup = windup; attackStrike = strike; }
         public void CancelAttack() => attackStart = -999f;
+        /// <summary>Retroceso del torso al recibir un impacto (HitRecoilModel).</summary>
+        public void PlayHitRecoil(float strength) { recoilStart = Time.time; recoilStrength = strength; }
+        /// <summary>Brazo derecho colgando (robot desarmado), salvo durante un golpe.</summary>
+        public void SetArmDisabled(bool value) => armDisabled = value;
 
         private void LateUpdate()
         {
@@ -82,7 +88,8 @@ namespace Nexus7.Characters
             Rot(lShin, Mathf.Max(0f, -s) * leg * 0.9f + crouchShin); Rot(rShin, Mathf.Max(0f, s) * leg * 0.9f + crouchShin);
 
             Vector3 hp = hips.localPosition; hp.y = hipsBaseY - 0.35f * crouch + bob; hips.localPosition = hp;
-            if (spine != null) spine.localRotation = Quaternion.Euler(10f * crouch + speed * 1.5f, 0f, 0f);
+            float recoil = HitRecoilModel.Angle(Time.time - recoilStart, recoilStrength);
+            if (spine != null) spine.localRotation = Quaternion.Euler(10f * crouch + speed * 1.5f - recoil, 0f, 0f);
 
             // Brazos: contrarios a las piernas; el derecho lo controla el golpe si hay uno en curso.
             Rot(lUp, -s * arm, 0f, -6f - 10f * air); if (lFore != null) Rot(lFore, -15f - 20f * crouch);
@@ -90,8 +97,8 @@ namespace Nexus7.Characters
             float attack = AttackPose.RightArmAngle(t, attackWindup, attackStrike);
             bool attacking = attack != 0f;
             var fp = GaitModel.FirstPersonRightArm(crouch);
-            Rot(rUp, attacking ? attack : firstPersonArms ? fp.Key : s * arm, 0f, 6f + 10f * air);
-            if (rFore != null) Rot(rFore, attacking ? -20f : firstPersonArms ? fp.Value : -15f - 20f * crouch);
+            Rot(rUp, attacking ? attack : firstPersonArms ? fp.Key : armDisabled ? 8f : s * arm, 0f, armDisabled && !attacking ? 14f : 6f + 10f * air);
+            if (rFore != null) Rot(rFore, attacking ? -20f : firstPersonArms ? fp.Value : armDisabled ? -3f : -15f - 20f * crouch);
 
             if (head != null)
                 head.localRotation = stunned ? Quaternion.Euler(Mathf.Sin(Time.time * 9f) * 12f, Mathf.Sin(Time.time * 6f) * 20f, 0f)
