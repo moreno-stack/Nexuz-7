@@ -104,7 +104,7 @@ namespace Nexus7.Combat
             muzzleFlash.enabled = false;
 
             view = WeaponViewModel.Build(cam.transform, GetComponent<CameraModeSwitcher>());
-            view.Show(Arsenal.Current?.Spec);
+            RefreshView();
             lastPosition = transform.position;
         }
 
@@ -210,8 +210,14 @@ namespace Nexus7.Combat
         private void OnSwitched(WeaponModel w)
         {
             CombatSfx.Play(CombatSound.Switch, 0.6f);
-            if (view != null) view.Show(w?.Spec);
+            if (view != null) view.Show(w?.Spec, w?.Mods);
             lastState = w != null ? w.State : WeaponState.Ready;
+        }
+
+        /// <summary>Vuelve a montar el arma de la mano con sus accesorios.</summary>
+        private void RefreshView()
+        {
+            if (view != null) view.Show(Arsenal.Current?.Spec, Arsenal.Current?.Mods);
         }
 
         /// <summary>Paquete de munición recogido: va al arma que menos tiene. Devuelve false si todo está lleno.</summary>
@@ -237,6 +243,7 @@ namespace Nexus7.Combat
             var result = w.InstallMod(mod, out WeaponMod replaced);
             if (result != ModInstall.Installed && result != ModInstall.Replaced) return false;
             CombatSfx.Play(CombatSound.Switch, 0.8f);
+            RefreshView();   // el accesorio se ve montado en el arma
             string text = $"{WeaponModModel.Name(mod)} en {w.Spec.DisplayName}: {WeaponModModel.Effect(mod)}";
             if (result == ModInstall.Replaced) text += $" (sustituye al {WeaponModModel.Name(replaced).ToLowerInvariant()})";
             PickupNotificationUI.Notify(text, new Color(0.75f, 0.6f, 1f));
