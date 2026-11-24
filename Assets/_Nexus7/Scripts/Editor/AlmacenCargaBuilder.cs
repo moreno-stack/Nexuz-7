@@ -529,20 +529,14 @@ namespace Nexus7.EditorTools
             col.center = new Vector3(0f, 0.25f, 0f);
             col.size = new Vector3(0.5f, 0.5f, 0.5f);
 
-            var visual = GameObject.CreatePrimitive(shape);
-            visual.name = "Visual";
-            Object.DestroyImmediate(visual.GetComponent<Collider>());
-            visual.transform.SetParent(root.transform, false);
-            visual.transform.localPosition = new Vector3(0f, 0.3f, 0f);
-            visual.transform.localScale = visualScale;
-            visual.GetComponent<Renderer>().sharedMaterial = mat;
+            // La forma la monta PickupItem al empezar con el modelo del objeto (ModelLibrary): 'shape', 'visualScale' y
+            // 'mat' ya no se usan, se mantienen para no cambiar las llamadas.
 
             if (glow) PointLight("Brillo", root.transform, new Vector3(0f, 0.6f, 0f), item.UiColor, 2f, 0.8f, false);
 
             var pickup = root.AddComponent<PickupItem>();
             B.SetRef(pickup, "item", item);
             SetInt(pickup, "amount", amount);
-            B.SetRef(pickup, "visual", visual.transform);
             SetFloat(pickup, "pickupNoiseRadius", noise);
             return root;
         }

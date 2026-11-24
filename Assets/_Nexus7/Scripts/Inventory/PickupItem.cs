@@ -2,6 +2,7 @@ using UnityEngine;
 using Nexus7.Core;
 using Nexus7.Interaction;
 using Nexus7.UI;
+using Nexus7.Visual.Models;
 
 namespace Nexus7.Inventory
 {
@@ -55,6 +56,13 @@ namespace Nexus7.Inventory
 
         private void Awake()
         {
+            // Objeto colocado en el editor sin forma: monta el modelo del objeto (el botín de las salas lo pone con SetVisual)
+            if (visual == null && item != null && Application.isPlaying)
+            {
+                visual = ModelFactory.Build(ItemModels.For(item), transform, true);
+                visual.name = "Visual";
+                visual.localPosition = new Vector3(0f, 0.3f, 0f);
+            }
             if (visual != null) visualBasePos = visual.localPosition;
         }
 
