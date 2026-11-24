@@ -24,7 +24,7 @@ namespace UnityEngine
     public class MonoBehaviour : Behaviour { public Coroutine StartCoroutine(IEnumerator e) { return null; } public void StopCoroutine(Coroutine c) {} public void StopAllCoroutines() {} }
     public class ScriptableObject : Object { public static T CreateInstance<T>() where T : ScriptableObject { return null; } }
     public class GameObject : Object {
-        public GameObject(string n) {} public GameObject(string n, params Type[] c) {}
+        public GameObject(string n) { transform = new Transform(); } public GameObject(string n, params Type[] c) { transform = new Transform(); }
         public Transform transform; public int layer; public string tag; public bool isStatic; public bool activeSelf, activeInHierarchy;
         public T AddComponent<T>() where T : Component { return null; }
         public T GetComponent<T>() { return default(T); } public T GetComponentInChildren<T>() { return default(T); } public T[] GetComponentsInChildren<T>(bool inactive) { return new T[0]; } public UnityEngine.SceneManagement.Scene scene; public Component GetComponent(Type t) { return null; } public Component AddComponent(Type t) { return null; }
@@ -42,7 +42,7 @@ namespace UnityEngine
         public void SetParent(Transform p) { parent = p; } public void SetParent(Transform p, bool w) { parent = p; }
         public void Rotate(Vector3 e) {} public void Rotate(float x, float y, float z) {} public void Rotate(Vector3 e, Space s) {} public void Rotate(Vector3 a, float ang) {} public void Rotate(Vector3 a, float ang, Space s) {}
         public Transform GetChild(int i) { return null; } public bool IsChildOf(Transform t) { var c = this; while (c != null) { if (c == t) return true; c = c.parent; } return false; }
-        public void SetPositionAndRotation(Vector3 p, Quaternion r) {} public Vector3 InverseTransformDirection(Vector3 d) { return d; } public Vector3 TransformPoint(Vector3 p) { return p; } public Vector3 TransformDirection(Vector3 d) { return d; } public Vector3 InverseTransformPoint(Vector3 p) { return p; } public void LookAt(Vector3 p) {} public void SetSiblingIndex(int i) {} public Transform Find(string n) { return null; }
+        public void SetPositionAndRotation(Vector3 p, Quaternion r) {} public Vector3 InverseTransformDirection(Vector3 d) { return d; } public Vector3 TransformPoint(Vector3 p) { return p; } public Vector3 TransformDirection(Vector3 d) { return d; } public Vector3 InverseTransformPoint(Vector3 p) { return p; } public void LookAt(Vector3 p) {} public void SetSiblingIndex(int i) {} public int GetSiblingIndex() { return 0; } public Transform Find(string n) { return null; }
         public IEnumerator GetEnumerator() { return null; }
     }
     public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, anchoredPosition, sizeDelta, pivot, offsetMin, offsetMax; public Rect rect; }
