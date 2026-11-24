@@ -376,9 +376,9 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 
 **Cómo probarlo:**
 
-1. En Difícil (tensión de base 0,62), entra en la Fase 3: a los 0,6 s, 2 robots llevan una esfera de color. **F3** dice cuáles («RobotGuardia_A Blindado · …»).
-2. Dispara al blindado: su barra de vida baja más despacio que la de un guardia normal.
-3. Deja que te atrapen: el mensaje «IA NEXUS-7: unidades mejoradas en este intento: …» y las esferas aparecen en **otros** robots.
+1. En Difícil (tensión de base 0,62 → 2 variantes), entra en la Fase 3: como solo hay 2 guardias, a los 0,6 s uno de ellos lleva una esfera de color (como mucho la mitad). **F3** dice cuál («RobotGuardia_Reactor Blindado», por ejemplo).
+2. Si es el blindado, dispárale: su barra de vida baja más despacio que la del otro guardia.
+3. Deja que te atrapen: sale el mensaje «IA NEXUS-7: unidades mejoradas en este intento: …» y la esfera pasa al **otro** guardia.
 4. En Fácil (base 0,38) no deberías ver ninguna esfera al empezar, salvo que juegues muy bien y la tensión pase de 0,4.
 
 ## 4. Pruebas finales y balance
