@@ -10,7 +10,7 @@ namespace Nexus7.Combat
     /// <summary>
     /// Vida de un robot: recibe los disparos del jugador (IDamageable).
     ///   · Vida según el tipo (HealthModel.BaseHealthFor): seguridad 60, guardia 90, investigación 50, élite 120.
-    ///   · Disparo en la cabeza = crítico ×2.
+    ///   · Puntos débiles (WeakPointModel): óptica ×2 y la deslumbra; núcleo trasero de la élite ×3 (brilla en su espalda).
     ///   · Al recibir un impacto «da un respingo», y si no estaba persiguiendo va corriendo a investigar de dónde vino el disparo.
     ///   · Destruido: se apagan patrulla, visión, ataque y agente, cae hacia atrás, suelta munición y hace ruido.
     ///     Sigue destruido aunque el jugador reaparezca (los robots desactivados no se reinician).
@@ -35,6 +35,9 @@ namespace Nexus7.Combat
         public float Normalized => model != null ? model.Normalized : 0f;
         public float LastHitTime { get; private set; } = -999f;
         public bool LastHitCritical { get; private set; }
+        public HitZone LastHitZone { get; private set; }
+        /// <summary>Tiene núcleo trasero (solo la élite).</summary>
+        public bool HasCore { get; private set; }
         /// <summary>Punto sobre la cabeza para la barra de vida del HUD.</summary>
         public Vector3 BarPosition => (head != null ? head.position : transform.position + Vector3.up * 1.8f) + Vector3.up * 0.45f;
         /// <summary>Robot añadido por el director (refuerzo): lo retira al reiniciar el tramo.</summary>
@@ -56,6 +59,29 @@ namespace Nexus7.Combat
             baseMax = maxHealth > 0f ? maxHealth : HealthModel.BaseHealthFor(name);
             model = new HealthModel(baseMax * HealthMultiplier);
             head = Nexus7.Characters.CharacterRigFactory.FindDeep(transform, Nexus7.Characters.RigJoints.Head);
+            HasCore = EnemyGunCatalog.ForRobot(name) == EnemyGunCatalog.Elite;
+            if (HasCore) BuildCore();
+        }
+
+        /// <summary>Núcleo trasero visible: esfera cian brillante en la espalda de la élite (los refuerzos copiados ya lo traen).</summary>
+        private void BuildCore()
+        {
+            if (transform.Find("NucleoTrasero") != null) return;
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = "NucleoTrasero";
+            var col = go.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = new Vector3(0f, 1.15f, -0.32f);
+            go.transform.localScale = Vector3.one * 0.2f;
+            var r = go.GetComponent<Renderer>();
+            if (r != null)
+            {
+                var c = new Color(0.3f, 0.95f, 1f);
+                r.material.color = c;
+                r.material.EnableKeyword("_EMISSION");
+                r.material.SetColor("_EmissionColor", c * 3f);
+            }
         }
 
         private void OnEnable() => All.Add(this);
@@ -71,8 +97,12 @@ namespace Nexus7.Combat
         public void TakeDamage(DamageInfo info)
         {
             if (!IsAlive) return;
-            info.Critical = head != null && info.Point.y >= head.position.y - 0.2f;
-            float amount = info.Amount * (info.Critical ? HealthModel.CriticalMultiplier : 1f);
+            Vector3 fwd = transform.forward;
+            float feet = transform.position.y;
+            info.Zone = WeakPointModel.Classify(HasCore, info.Point.y - feet, head != null ? head.position.y - feet : 0f,
+                                                info.Direction.x, info.Direction.z, fwd.x, fwd.z);
+            info.Critical = info.Zone != HitZone.Body;
+            float amount = info.Amount * WeakPointModel.Multiplier(info.Zone);
             if (WeaponDamageModifier != null) amount *= WeaponDamageModifier(info.WeaponId);
             info.Amount = amount;
 
@@ -80,6 +110,8 @@ namespace Nexus7.Combat
             if (gun != null && result != HealthResult.Killed) gun.RegisterDamage(amount);
             LastHitTime = Time.time;
             LastHitCritical = info.Critical;
+            LastHitZone = info.Zone;
+            if (info.Zone == HitZone.Optic && gun != null && result != HealthResult.Killed) gun.Dazzle();
             CombatSfx.PlayAt(CombatSound.HitMetal, info.Point);
 
             if (result == HealthResult.Killed) Die(info);
@@ -115,6 +147,8 @@ namespace Nexus7.Combat
             if (melee != null) { melee.Cancel(); melee.enabled = false; }
             if (gun == null) gun = GetComponent<EnemyGun>();
             if (gun != null) gun.enabled = false;
+            var tactics = GetComponent<EnemyTactics>();
+            if (tactics != null) tactics.enabled = false;   // suelta su cobertura
             if (patrol != null) patrol.enabled = false;
             var vision = GetComponent<EnemyVision>();
             if (vision != null) vision.enabled = false;
@@ -123,6 +157,8 @@ namespace Nexus7.Combat
             var anim = GetComponent<Nexus7.Characters.ProceduralAnimator>();
             if (anim != null) anim.enabled = false;
             foreach (var l in GetComponentsInChildren<Light>(true)) l.enabled = false;   // se apaga el foco de visión
+            var core = transform.Find("NucleoTrasero");
+            if (core != null) core.gameObject.SetActive(false);
 
             NoiseSystem.Emit(transform.position, 12f, gameObject);
             CombatSfx.PlayAt(CombatSound.Explosion, transform.position);

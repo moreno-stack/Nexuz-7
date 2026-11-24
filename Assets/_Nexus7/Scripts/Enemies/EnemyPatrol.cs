@@ -55,6 +55,12 @@ namespace Nexus7.Enemies
         /// (lo pone Nexus7.Director.RespawnVariator). Sin proveedor, o si devuelve null, vuelve a su posición inicial como siempre.
         /// </summary>
         public static System.Func<EnemyPatrol, PatrolVariation?> VariationProvider;
+        /// <summary>
+        /// Destino en persecución mientras ve al jugador (EnemyTactics: cobertura, asomarse o distancia de tiro).
+        /// Null o false = ir hacia el jugador, como siempre.
+        /// </summary>
+        public ChaseDestinationProvider ChaseDestination;
+        public delegate bool ChaseDestinationProvider(out Vector3 destination);
 
         /// <summary>Se dispara cuando un dron empieza a perseguir al jugador (alertas, escuadrones).</summary>
         public static event System.Action<EnemyPatrol> PlayerSpotted;
@@ -403,7 +409,12 @@ namespace Nexus7.Enemies
                 lostSightTimer = 0f;
                 pursuitPathSet = false;
                 repathTimer -= Time.deltaTime;
-                if (repathTimer <= 0f) { repathTimer = 0.2f; agent.SetDestination(player.position); }
+                if (repathTimer <= 0f)
+                {
+                    repathTimer = 0.2f;
+                    if (ChaseDestination == null || !ChaseDestination(out Vector3 tactical)) tactical = player.position;
+                    agent.SetDestination(tactical);
+                }
             }
             else
             {

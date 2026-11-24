@@ -74,9 +74,19 @@ Segunda entrega (PR #2, rama `feat/combate-mando-guardado-robots-tiradores`):
 | 14 | `feat(combate): robots de seguridad, guardia y élite disparan a distancia` | `EnemyGun`, `PlayerTarget`, `PlasmaBolt` hostil, `PlayerHealth.TakeRangedDamage`, indicador de daño, perillas nuevas del director |
 | 15 | `docs: guía de mando, robots tiradores y guardado de armas` | Esta guía y el README |
 
+Tercera entrega (PR #3, rama `feat/combate-tactico-coberturas`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 16 | `feat(combate): modelos de coberturas y tácticas por tipo de robot` | `CoverScoring`, `CoverReservations`, `TacticsModel`, `TacticsCatalog` y `TacticalCoverTest` |
+| 17 | `feat(combate): los robots tiradores se cubren, se asoman, avanzan y flanquean` | `CoverField`, `EnemyTactics`, `EnemyPatrol.ChaseDestination`, `EnemyGun.FireGate` y la perilla `TacticTempo` |
+| 18 | `feat(combate): modelo de puntos débiles (óptica y núcleo trasero de la élite)` | `WeakPointModel` y `WeakPointTest` |
+| 19 | `feat(combate): óptica que deslumbra y núcleo trasero de la élite en juego` | `EnemyHealth` (zonas y núcleo visible), `EnemyGun.Dazzle`, rótulos del HUD |
+| 20 | `docs: guía de combate táctico y puntos débiles` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 894 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 942 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -205,6 +215,48 @@ Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no h
 6. En la Fase 5 o 6, con varios robots persiguiéndote en Normal, abre **F3**: «Turnos» nunca pasa de 2/2 (3/3 con tensión ≥ 0,75).
 7. Los robots de **investigación** (Fase 4) solo atacan cuerpo a cuerpo.
 
+### Etapa 7: combate táctico con coberturas (commits 16 y 17)
+
+**Archivos nuevos:** `Scripts/Combat/Enemy/CoverModels.cs`, `CoverField.cs` y `EnemyTactics.cs`. **Modificados:** `EnemyPatrol` (`ChaseDestination`: destino en persecución), `EnemyGun` (`FireGate`, `BurstsCompleted`, `TokenAvailable`), `CombatInstaller`, `EnemyHealth`, `DirectorModel` y `GameDirector`.
+
+**Qué hace:**
+
+- Al cargar cada fase se generan **puntos de cobertura** a 0,8 m de cada cara de las cajas, estanterías, contenedores, consolas, mesas, tabiques, bidones y columnas con colisionador, solo si caen sobre el NavMesh. La consola muestra «Coberturas de combate: N puntos».
+- Cuando un robot tirador te ve, **corre a la mejor cobertura** que lo tape de ti, a 6–14 m y con poco recorrido. Cada punto es de un solo robot. Mientras corre **no dispara**.
+- A cubierto espera 0,6–1,2 s y, si hay turno de ataque libre, **se asoma** 0,9 m por el lado desde el que te ve, dispara una ráfaga (con el láser de aviso de siempre) y **vuelve a cubrirse**.
+- Cada tipo pelea distinto:
+  - **Seguridad** aguanta en su cobertura. Si se asoma 2 veces sin tiro, cambia de cobertura.
+  - **Guardia** avanza cada 5 s a una cobertura más cercana a ti.
+  - **Élite** flanquea cada 4–6 s, o en cuanto se asoma sin tiro: busca un punto que cambie el ángulo 60° o más.
+- Si lo rodeas y su cobertura ya no lo tapa, se recoloca. Sin coberturas útiles pelea **al descubierto a 8–12 m**. Mientras se mueve siempre te mira, así que no te pierde de vista al recolocarse.
+- Si te pierde de vista más de 1,5 s, suelta la cobertura y vuelve a la búsqueda normal.
+- El **director** acelera o frena todos estos tiempos con la perilla «Tempo táctico»: ×1,4 con tensión 0 (más pausados) y ×0,7 con tensión 1 (avanzan y flanquean antes). El panel **F3** muestra cuántos robots están cubiertos, asomados, moviéndose o al descubierto.
+
+**Cómo probarlo:**
+
+1. En la Fase 2 (almacén, con cajas y contenedores), deja que te vea un robot de seguridad a unos 10 m. Debe correr a una caja, quedarse detrás, asomarse por un lado con el láser rojo, disparar y volver a esconderse.
+2. Con **F3** abierto verás la línea «Tácticas: cubiertos 1 · asomados 0 …» cambiar a «asomados 1» en cada ráfaga.
+3. Rodéalo hasta verlo por el lado descubierto: en menos de un segundo debe ir a otra cobertura.
+4. En la Fase 3 (guardias) quédate quieto tras una columna. El guardia debe acercarse de cobertura en cobertura cada ~5 s.
+5. En la Fase 5 o 6 (élite), escóndete tras una caja grande. La élite debe moverse hacia un lado para dispararte desde otro ángulo.
+6. Juega bien un rato hasta que la tensión pase de 0,7: «Tempo táctico» baja de 1 y los avances y flanqueos se notan más frecuentes.
+
+### Etapa 8: puntos débiles (commits 18 y 19)
+
+**Archivo nuevo:** `Scripts/Combat/Enemy/WeakPointModel.cs`. **Modificados:** `DamageInfo` (`Zone`), `EnemyHealth`, `EnemyGun` (`Dazzle`) y `CombatHUD`.
+
+**Qué hace:**
+
+- **Óptica** (la cabeza de todos los robots): daño **×2**, como el crítico de antes, y además **deslumbra**. Corta el láser de aviso si estaba apuntando, la puntería empeora 2 s (+6°) y no puede empezar ráfagas en 0,8 s.
+- **Núcleo trasero** (solo la élite): una esfera cian brillante en su espalda. Los disparos que entran **por detrás** (a menos de 60° de hacia donde mira) a la altura del torso hacen **×3**. Flanquear a la élite compensa.
+- En el HUD la «X» de impacto es **amarilla en la óptica y cian en el núcleo**, con el rótulo «ÓPTICA ×2» o «NÚCLEO ×3» bajo la mira.
+
+**Cómo probarlo:**
+
+1. Dispara a la cabeza de un robot mientras ves su láser de aviso: el láser se apaga, sale «ÓPTICA ×2» y tarda en volver a disparar.
+2. En la Fase 5, rodea a una élite (o espera a que flanquee y te dé la espalda) y dispárale a la esfera cian: sale «NÚCLEO ×3» en cian y cae mucho antes.
+3. Dispárale al pecho de frente: «X» blanca, sin rótulo.
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -213,6 +265,8 @@ Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no h
 |---|---|---|
 | `WeaponTest` | 63 | Cadencia, semiautomática, cargador, recarga, calor, dispersión, caída de daño, vida, arsenal, sonidos, sesión, guardado en disco y mando (gatillos y cruceta) |
 | `EnemyFireTest` | 29 | Armas por tipo de robot, dispersión y anticipación, turnos de ataque, ráfagas con aviso, tambaleo e indicador de daño |
+| `TacticalCoverTest` | 37 | Estilos, puntuación de coberturas, mejor punto, reservas, ciclo cubrirse/asomarse, asomadas fallidas, relojes de avance y flanqueo, tempo del director |
+| `WeakPointTest` | 11 | Óptica, núcleo trasero por la espalda, ángulos, alturas y multiplicadores |
 | `DirectorTest` | 40 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
 | `SpawnVariationTest` | 16 | Anti-repetición, justicia, ritmo, refuerzos, cámaras y reproducibilidad |
 
@@ -243,6 +297,13 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | Disparan sin parar o casi nunca | `BurstCount`, `BurstRate`, `PauseMin`/`PauseMax` (1,2–2 s; élite 0,9–1,5 s) | `EnemyGunCatalog` |
 | Disparan desde muy lejos o muy cerca | `MinRange` (3,5 m) y `MaxRange` (24 m) | `EnemyGunCatalog` |
 | Cuesta interrumpirlos | `Threshold` (15), `Window` (0,3 s) y `Duration` (0,6 s) | `StaggerModel` |
+| Los robots se esconden demasiado o casi nunca disparan | `WaitMin`/`WaitMax` (0,6–1,2 s), `PeekMax` (2,5 s) y la capacidad de los turnos | `TacticsModel`, `AttackTokens` |
+| El guardia te come terreno muy deprisa | `AdvanceEvery` (5 s), `AdvanceBonus` (20) y `AdvanceGain` (2 m) | `TacticsModel`, `CoverScoring` |
+| La élite flanquea demasiado | `FlankMin`/`FlankMax` (4–6 s), `FlankBonus` (25) y `FlankAngle` (60°) | `TacticsModel`, `CoverScoring` |
+| Eligen coberturas absurdas | `Protects` (50), rango ideal `IdealMin`/`IdealMax` (6–14 m), `TravelPerMeter` (1) y `SearchRadius` (15 m) | `CoverScoring` |
+| Faltan o sobran coberturas en una fase | Nombres de objetos en `Names`, `Offset` (0,8 m) y `MinSpacing` (0,9 m) | `CoverField` |
+| El director cambia poco el ritmo táctico | Los extremos de `TacticTempo` (1,4 / 0,7) | `DirectorModel.KnobsFor` |
+| Los puntos débiles deciden demasiado | `OpticMultiplier` (×2), `CoreMultiplier` (×3), `CoreMinDot` (0,5 = 60°) y `DazzleSeconds`/`DazzleNoBurstSeconds` (2 / 0,8 s) | `WeakPointModel` |
 | Los gatillos del mando se disparan solos | Umbrales 0,5 / 0,3 de `TriggerLatch` y `dead` (0,1) de los ejes | `CombatInput`, `InputManager.asset` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
@@ -253,6 +314,7 @@ Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada
 - Esta implementación se ha comprobado con las pruebas automáticas y con la compilación como la de Unity (Roslyn), **no dentro del editor de Unity**. La primera partida en Unity es la prueba de integración.
 - El HUD de combate y el panel F3 usan IMGUI (`OnGUI`) para no depender de los constructores de escena. Si se quiere el estilo del resto del HUD (TextMeshPro), se pueden pasar a un constructor más adelante.
 - El mando usa ejes de XInput en Windows (ver la Etapa 5). En otras plataformas puede hacer falta cambiar los números de eje.
-- Los robots tiradores no buscan cobertura ni flanquean: persiguen como antes y se paran a disparar. La cobertura y el flanqueo del diseño «IA de combate» (`ia-combate-design.md`) quedan para otra entrega.
+- Las coberturas se generan por el nombre de los objetos de la escena. Un objeto con otro nombre no sirve de cobertura hasta que se añada a `CoverField.Names`.
+- Del diseño «IA de combate» (`ia-combate-design.md`) faltan el brazo del arma con vida propia (desarmar), la pose de retroceso al recibir impactos y los encuentros por oleadas (`EncounterZone`).
 - El láser de aviso usa el material `Sprites/Default`. Si una compilación lo elimina del build, el aviso se queda en el pitido: añádelo a *Always Included Shaders*.
 - No hay vidas limitadas: el director usa las caídas recientes como medida de «vidas perdidas».
