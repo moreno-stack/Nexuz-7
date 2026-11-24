@@ -6,7 +6,7 @@ Esta guía se escribió cuando se creó la fase. Desde entonces el juego ha camb
 
 - **Motor:** Unity 6 (6000.6) con URP.
 - **Cómo construir y jugar:** menú **Nexus-7 → Construir todo el juego (Fases 1–6 y menú)** y Play desde el menú principal. Las fases se registran solas en *Build Settings*. Ya no hace falta copiar carpetas ni construir cada fase por separado.
-- **Objetos imprescindibles:** salen en un **punto aleatorio** en cada partida, nunca en un sitio fijo. Brillan, tienen un haz de luz de 6 m y, si no los recoges, el traje te dice hacia dónde están a los 40 s (y luego cada 60 s). La consola de Unity muestra la línea `[Botín] … imprescindibles → …` con dónde han salido.
+- **Objetos imprescindibles:** salen en un **punto aleatorio** en cada partida, nunca en un sitio fijo. El traje los marca en pantalla con su nombre y los metros, también a través de las paredes. Brillan, tienen un haz de luz de 6 m y, si no los recoges, el traje te dice hacia dónde están a los 40 s (y luego cada 60 s). La consola de Unity muestra la línea `[Botín] … imprescindibles → …` con dónde han salido.
 - **Enemigos:** son **robots armados**, no drones. Los de seguridad, guardia y élite disparan a distancia (con un láser rojo de aviso antes de cada ráfaga), se cubren y flanquean.
 - **Vidas:** 5 / 3 / 2 por fase (Fácil / Normal / Difícil). Sin vidas la fase se reinicia con otra colocación.
 - **Director adaptativo:** ajusta la presión según cómo juegas, lanza eventos de nave, aprende tus rutas y regala accesorios de arma. **F3** muestra todo en vivo.
