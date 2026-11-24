@@ -41,9 +41,44 @@ static class T {
     var rot = new ModelBlueprint("giro", Cyan); rot.Add(ModelShape.Box, new MVec(0,0,0), new MVec(1f,0.1f,0.1f), MaterialRole.Body, new MVec(0,90,0));
     Check(Math.Abs(Length(rot) - 1f) < 0.01f, "Los límites tienen en cuenta el giro de la pieza");
 
-    if (args_items) Items();
+    Items();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
   }
-  static bool args_items = false;
-  static void Items(){}
+  static void Items(){
+    // ---------- Tarea 2: objetos, dispositivos, munición y accesorios ----------
+    string[] own = { "battery_ion", "scrap_metal", "component_circuit", "component_optic_crystal", "tool_hydraulic_wrench", "key_director_card", "key_reactor_module" };
+    ItemCategory[] cats = { ItemCategory.Battery, ItemCategory.Part, ItemCategory.Component, ItemCategory.Component, ItemCategory.Tool, ItemCategory.Tool, ItemCategory.Tool };
+    var green = new MColor(0.55f,1f,0.35f);
+    var sigs = new List<string>();
+    for (int n = 0; n < own.Length; n++){
+      string id = own[n];
+      var b = ModelLibrary.Item(id, cats[n], green);
+      Check(ModelLibrary.HasOwnModel(id), id + ": tiene modelo propio");
+      Check(Valid(b) && b.Parts.Count >= 3, id + ": piezas válidas (" + b.Parts.Count + ")");
+      Check(Largest(b) <= 0.45f, id + ": cabe en el punto de botín (" + Largest(b).ToString("0.00") + " m)");
+      Check(Lit(b), id + ": tiene una parte de su color");
+      Check(b.Accent.Equals(green) && b.Parts.Where(p => p.Role == MaterialRole.Accent || p.Role == MaterialRole.Glow).Any(p => p.Color.Equals(green)), id + ": usa el color del objeto");
+      sigs.Add(Sig(b));
+    }
+    Check(sigs.Distinct().Count() == own.Length, "Los 7 objetos son distintos entre sí");
+    foreach (ItemCategory cat in Enum.GetValues(typeof(ItemCategory))){
+      var g = ModelLibrary.Item("objeto_nuevo", cat, green);
+      Check(Valid(g) && g.Key == "generic_" + cat, "Id desconocido de " + cat + " → forma genérica de su categoría");
+    }
+    Check(!ModelLibrary.HasOwnModel("objeto_nuevo") && !ModelLibrary.HasOwnModel(null), "Un Id desconocido o nulo no tiene modelo propio");
+    var dsig = new List<string>();
+    foreach (DeviceKind k in Enum.GetValues(typeof(DeviceKind))){
+      var d = ModelLibrary.Device(k, green);
+      Check(Valid(d) && Lit(d) && Largest(d) <= 0.45f, "Dispositivo " + k + ": modelo válido, con luz y de tamaño de mano");
+      dsig.Add(Sig(d));
+    }
+    Check(dsig.Distinct().Count() == 4, "Los 4 dispositivos son distintos");
+    var ammo = ModelLibrary.Ammo();
+    Check(Valid(ammo) && ammo.Parts.Count(p => p.Role == MaterialRole.Glow) >= 3 && Largest(ammo) <= 0.45f, "Munición: caja con 3 balas que brillan");
+    foreach (var mod in WeaponModModel.All){
+      var c = ModelLibrary.ModCase(mod);
+      Check(Valid(c) && Largest(c) <= 0.45f && c.Parts.Count >= 3, "Accesorio suelto " + mod + ": maletín con su forma");
+    }
+    Check(Sig(ModelLibrary.ModCase(WeaponMod.Suppressor)) != Sig(ModelLibrary.ModCase(WeaponMod.Heatsink)), "Cada accesorio suelto enseña su forma");
+  }
 }
