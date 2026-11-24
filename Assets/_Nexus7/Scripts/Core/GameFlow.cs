@@ -30,6 +30,13 @@ namespace Nexus7.Core
             return false;
         }
 
+        /// <summary>Posición de la fase (0 = Fase 1) o −1 si no es una fase.</summary>
+        public static int PhaseIndex(string scene)
+        {
+            for (int i = 0; i < Phases.GetLength(0); i++) if (Phases[i, 0] == scene) return i;
+            return -1;
+        }
+
         /// <summary>"Fase 3 · Sala de energía" (si no es una fase, el propio nombre).</summary>
         public static string PhaseTitle(string scene)
         {

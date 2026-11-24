@@ -25,8 +25,6 @@ namespace Nexus7.Director
         private const float InitialDelay = 1f, RespawnDelay = 0.5f, MessageTime = 3.5f;
 
         public ShipEvent Current { get; private set; } = ShipEvent.None;
-        /// <summary>Eventos lanzados en esta fase (para el informe de la IA).</summary>
-        public int EventsThisPhase { get; private set; }
 
         private readonly List<Vector3> spots = new List<Vector3>();
         private readonly List<float> xs = new List<float>(), zs = new List<float>();
@@ -104,7 +102,7 @@ namespace Nexus7.Director
             previousSpot = i;
             spot = spots[i];
             Current = previous = next;
-            EventsThisPhase++;
+            if (director != null) director.Report.RecordShipEvent();
 
             switch (next)
             {
