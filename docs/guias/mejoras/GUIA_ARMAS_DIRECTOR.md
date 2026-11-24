@@ -105,9 +105,20 @@ Quinta entrega (PR #6, rama `feat/vidas-variantes-robot`):
 | 30 | `feat(director): el director reparte variantes de robot en cada intento` | `RobotAffixDirector`, `RobotAffixState` y los enganches en `EnemyHealth`, `EnemyPatrol`, `EnemyVision` y `EnemyGun` |
 | 31 | `docs: guía de vidas y variantes de robot` | Esta guía y el README |
 
+Sexta entrega (PR #7, rama `feat/eventos-nave-informe-ia`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 32 | `feat(director): modelo de eventos de nave (apagón, fuga de vapor, barrido de seguridad)` | `ShipEventModel` y `ShipEventTest` |
+| 33 | `feat(director): eventos de nave en cada intento (apagón, vapor y barrido) con línea en F3` | `ShipEventDirector`, `BlackoutZone` y la línea en F3 |
+| 34 | `feat(director): modelo del informe de la IA por fase (estadísticas, estilo y veredicto)` | `PhaseReportModel` y `PhaseReportTest` |
+| 35 | `feat(director): informe de la IA al entrar en la fase siguiente (o tras reiniciarla)` | `PhaseReportPanel`, `DirectorSession` (informe pendiente), `GameFlow.PhaseIndex` y los registros en `GameDirector` |
+| 36 | `feat(director): el panel F3 cuenta las luces atenuadas por el apagón` | `ShipEventDirector.Summary` |
+| 37 | `docs: guía de eventos de nave e informe de la IA` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1008 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1039 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -381,6 +392,63 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 3. Deja que te atrapen: sale el mensaje «IA NEXUS-7: unidades mejoradas en este intento: …» y la esfera pasa al **otro** guardia.
 4. En Fácil (base 0,38) no deberías ver ninguna esfera al empezar, salvo que juegues muy bien y la tensión pase de 0,4.
 
+### Etapa 13: eventos de nave (commits 32, 33 y 36)
+
+**Archivos nuevos:** `Scripts/Director/ShipEventModel.cs`, `ShipEventDirector.cs` y `BlackoutZone.cs`. **Modificado:** `GameDirector` (línea en F3).
+
+**Qué hace:**
+
+- Al empezar cada fase (a 1 s) y **en cada reaparición**, el director puede lanzar un **evento de nave** en un punto de tu camino: una cobertura o un waypoint de patrulla a 6–25 m, mejor si está por delante de ti (60° a cada lado).
+
+| Evento | Cuándo | Qué pasa | Mensaje |
+|---|---|---|---|
+| Apagón | Vas mal: tensión < 0,45 o alguna caída reciente | Las lámparas a menos de 7 m bajan al 20 % y una zona de 14 × 14 m cuenta como sombra (te detectan más despacio) | «NAVE: fallo eléctrico en un sector cercano…» |
+| Fuga de vapor | Vas mal (alterna con el apagón) | 2 nubes de vapor separadas 2,6 m que tapan la vista de los robots | «NAVE: fuga de vapor en un conducto cercano…» |
+| Barrido de seguridad | Vas sobrado: tensión ≥ 0,65 | A los 15 s, y luego cada 45 s, un aviso de 25 m manda a los robots cercanos a revisar ese punto | «IA NEXUS-7: barrido de seguridad programado en 15 s…» y «…barrido en curso» |
+
+- Con la tensión en medio (0,45–0,65), la mitad de los intentos no hay evento y la otra mitad sale cualquiera.
+- **Anti-repetición:** nunca repite el evento ni el sitio del intento anterior si hay otra opción.
+- El evento dura hasta tu siguiente caída: entonces las luces vuelven a su intensidad y el vapor desaparece.
+- En **F3**, la línea «Evento de nave:» dice cuál está activo, a cuántos metros y cuántas luces ha atenuado o cuánto falta para el siguiente barrido.
+
+**Cómo probarlo:**
+
+1. En Fácil (tensión de base 0,38), entra en la Fase 2. Al segundo sale un mensaje «NAVE: …» y en F3 ves «Evento de nave: Apagón a 14 m» o «Fuga de vapor a 14 m».
+2. Si es la fuga, mira hacia delante: hay dos columnas de vapor gris. Ponte detrás de ellas respecto a un robot y comprueba que no te detecta aunque estés a la vista.
+3. Si es el apagón, acércate al punto: si había lámparas, la zona se ve más oscura (F3 dice cuántas luces). Dentro cuentas como en sombra: los robots tardan más en detectarte.
+4. Deja que te atrapen: el evento anterior desaparece y, si sigues yendo mal, sale **el otro** evento de ayuda en otro sitio.
+5. En Difícil (base 0,62), juega bien un rato hasta que la tensión pase de 0,65 y cae una vez: al reaparecer sale «barrido de seguridad programado en 15 s». En F3 ves la cuenta atrás; al llegar a 0, los robots cercanos dejan la patrulla y van a investigar ese punto.
+
+### Etapa 14: informe de la IA (commits 34 y 35)
+
+**Archivos nuevos:** `Scripts/Director/PhaseReportModel.cs` y `PhaseReportPanel.cs`. **Modificados:** `GameDirector` (rellena el informe), `DirectorSession` (lo guarda entre escenas), `ShipEventDirector` y `GameFlow` (`PhaseIndex`).
+
+**Qué hace:**
+
+- Mientras juegas, el analizador apunta **toda la fase** (no solo los últimos 60 s del F3): disparos y aciertos, bajas, vidas perdidas, muertes en combate, daño recibido, detecciones, arma más usada, acampada media, tensión media y máxima, y lo que hizo la IA (expulsiones por acampar, blindajes adaptados, ayudas y eventos de nave).
+- Al entrar en la **fase siguiente**, a los 1,5 s aparece arriba a la derecha durante 9 s el panel «INFORME DE LA IA · fase anterior», con el estilo de juego que ha visto y lo que hará con eso:
+
+| Estilo | Cuándo | Veredicto |
+|---|---|---|
+| Fantasma | 0 disparos y como mucho 1 detección | El sigilo no se castiga |
+| En apuros | 2 vidas perdidas o más | La siguiente fase empieza con menos presión |
+| Atrincherado | Acampada media ≥ 50 % | Mandará unidades a sacarte |
+| Tirador | 3 bajas o más con precisión ≥ 45 % | Afinarán la puntería y dispararán más a la vez |
+| Agresivo | 2 bajas por minuto o más | Más tiradores y refuerzos |
+| Equilibrado | Lo demás | La presión se mantiene |
+
+- Si has disparado 10 veces o más y el 70 % fue con la misma arma, el veredicto añade que el blindaje adaptativo lo notará.
+- Si la fase se **reinicia por quedarte sin vidas**, el panel dice «intento anterior» y resume ese intento.
+- Solo sale si la fase duró 20 s o más, y solo en la fase siguiente o al reiniciar la misma (una partida nueva no enseña un informe viejo).
+
+**Cómo probarlo:**
+
+1. Juega la Fase 2 entera: dispara con la pistola, derriba algún robot y deja que te atrapen una vez.
+2. Al entrar en la Fase 3, a los 1,5 s aparece el panel con «Fase 2 · Almacén de carga», tu precisión (por ejemplo «Precisión 42% (8/19)»), «Vidas perdidas 1», «Arma dominante Pistola 100%», las acciones de la IA y el estilo. Abajo, en amarillo, el veredicto entre comillas.
+3. El panel se desvanece a los 9 s.
+4. Pasa la Fase 3 sin disparar ni ser visto: en la Fase 4 el estilo es «Fantasma».
+5. Pierde todas las vidas en una fase: al reiniciarse, el panel dice «intento anterior» y el estilo «En apuros».
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -394,6 +462,8 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 | `EncounterTest` | 29 | Oleadas por fase, escalado por dificultad y director, activadores, secuencia, reinicio y puntos de aparición justos y variados |
 | `LivesTest` | 10 | Vidas por dificultad, perder y ganar, máximo, reinicio de fase y relleno al cambiar de fase |
 | `AffixTest` | 10 | Cuántas variantes según la tensión, efectos de cada rasgo y reparto sin repetir |
+| `ShipEventTest` | 8 | Qué evento según la tensión y las caídas, sin repetir, y elección del sitio (distancia, por delante, sin repetir) |
+| `PhaseReportTest` | 23 | Recuento de la fase, precisión por disparo, arma dominante, estilos de juego, veredicto y líneas del panel |
 | `DirectorTest` | 42 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
 | `SpawnVariationTest` | 16 | Anti-repetición, justicia, ritmo, refuerzos, cámaras y reproducibilidad |
 
@@ -442,6 +512,13 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | Demasiadas o pocas variantes | Umbrales 0,4 / 0,6 / 0,8 de `CountFor` y el tope de la mitad de los robots | `RobotAffixModel` |
 | Una variante es injusta | `ArmoredHealth` (1,4), `SwiftSpeed` (1,2), `HawkeyeDetection` (1,3) y `HawkeyeSpread` (0,8) | `RobotAffixModel` |
 | Los gatillos del mando se disparan solos | Umbrales 0,5 / 0,3 de `TriggerLatch` y `dead` (0,1) de los ejes | `CombatInput`, `InputManager.asset` |
+| Los eventos de nave ayudan demasiado o casi nunca salen | `HelpBelow` (0,45), `HurtFrom` (0,65) y el 50 % sin evento en la zona media | `ShipEventModel.Choose` |
+| El apagón no se nota | `BlackoutRadius` (7 m) y `BlackoutLightFactor` (0,2) | `ShipEventModel` |
+| El vapor tapa demasiado | `SteamClouds` (2), la separación (±1,3 m) y el radio de `VisionSmoke` (1,8 m) | `ShipEventModel`, `ShipEventDirector` |
+| El barrido agobia | `SweepDelay` (15 s), `SweepRepeat` (45 s) y `SweepNoiseRadius` (25 m) | `ShipEventModel` |
+| Los eventos salen muy lejos o a la espalda | `MinDistance`/`MaxDistance` (6–25 m) y `AheadAngle` (60°) | `ShipEventModel` |
+| El informe se equivoca de estilo | `StruggleDeaths` (2), `EntrenchedCamp` (0,5), `SharpKills` (3), `SharpAccuracy` (0,45), `AggressiveKpm` (2) y `OneWeaponShare` (0,7) | `PhaseReportModel` |
+| El informe dura poco o estorba | `ShowDelay` (1,5 s), `ShowTime` (9 s) y `MinDuration` (20 s) | `PhaseReportPanel`, `PhaseReportModel` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
 Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada a un extremo, el problema está en `Range` o en los objetivos del analizador. Si oscila, sube `DeadZone` o baja `RisePerSecond`.
@@ -457,3 +534,5 @@ Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada
 - El láser de aviso usa el material `Sprites/Default`. Si una compilación lo elimina del build, el aviso se queda en el pitido: añádelo a *Always Included Shaders*.
 - Las vidas viven en memoria durante la partida: al pulsar Continuar empiezas la fase guardada con las vidas llenas.
 - Al reiniciar una fase sin vidas se vuelve a cargar la escena, así que su introducción (si la tiene) se vuelve a ver.
+- El apagón solo atenúa lámparas puntuales y focos (no la luz direccional). Si cerca del punto no hay lámparas, la zona sigue contando como sombra pero no se ve más oscura.
+- El informe de la IA vive en memoria: si vuelves al menú y pulsas Continuar en la misma fase, verás el informe del intento que dejaste.
