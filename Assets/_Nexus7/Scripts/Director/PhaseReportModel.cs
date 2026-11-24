@@ -33,6 +33,7 @@ namespace Nexus7.Director
         public int Adaptations { get; private set; }
         public int Assists { get; private set; }
         public int ShipEvents { get; private set; }
+        public int ModRewards { get; private set; }
         public float TensionMax { get; private set; }
 
         private readonly HashSet<int> hitShots = new HashSet<int>();
@@ -61,6 +62,7 @@ namespace Nexus7.Director
         public void RecordAdaptation() => Adaptations++;
         public void RecordAssist() => Assists++;
         public void RecordShipEvent() => ShipEvents++;
+        public void RecordModReward() => ModRewards++;
 
         /// <summary>Muestra periódica (cada tick del director): tensión y acampada en [0, 1].</summary>
         public void Sample(float dt, float tension, float camping)
@@ -146,7 +148,7 @@ namespace Nexus7.Director
             lines.Add($"Arma dominante {name}{(id != null ? $" {share * 100f:0}%" : "")}   Daño recibido {DamageTaken:0}");
             lines.Add($"Detecciones {Detections}   Acampada media {AverageCamping * 100f:0}%");
             lines.Add($"Tensión media {AverageTension:0.00} (máx. {TensionMax:0.00})");
-            lines.Add($"Acciones de la IA: {Flushes} expulsiones · {Adaptations} blindajes · {Assists} ayudas · {ShipEvents} eventos de nave");
+            lines.Add($"Acciones de la IA: {Flushes} expulsiones · {Adaptations} blindajes · {Assists} ayudas · {ShipEvents} eventos de nave · {ModRewards} módulos");
             lines.Add($"Estilo: {StyleName(Style)}");
             return lines;
         }

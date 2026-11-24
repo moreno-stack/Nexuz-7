@@ -24,6 +24,8 @@ namespace Nexus7.Combat
     public class EncounterDirector : MonoBehaviour
     {
         public static EncounterDirector Instance { get; private set; }
+        /// <summary>Encuentro despejado: posición de la recompensa (el director de recompensas suelta ahí un módulo).</summary>
+        public static event System.Action<Vector3> Cleared;
 
         private const float RestartDelay = 4f;
         private const float SpawnJitter = 1.2f;
@@ -136,6 +138,7 @@ namespace Nexus7.Combat
                     Say("Zona despejada. Los refuerzos han caído: munición de recompensa disponible.");
                     AmmoPickup.Spawn(player.position + player.forward * 1.5f + Vector3.up * 0.4f, 2f);
                     LivesSystem.GainLife();
+                    Cleared?.Invoke(player.position + player.right * 1.5f + player.forward * 1.5f + Vector3.up * 0.4f);
                     break;
             }
         }
