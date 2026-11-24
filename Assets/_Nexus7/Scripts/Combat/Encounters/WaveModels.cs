@@ -8,6 +8,7 @@ namespace Nexus7.Combat
     /// <summary>
     /// Oleadas de cada fase (diseño ia-combate-design.md, Normal) y cómo se ajustan (puro, probado):
     ///   · dificultad: ×0,7 Fácil, ×1 Normal, ×1,3 Difícil (redondeando, mínimo 1 por oleada);
+    ///   · la Fase 1 (Sala inicial) no tiene robots, así que no tiene encuentro;
     ///   · director: con tensión ≥ 0,7 la última oleada trae 1 robot más; con ≤ 0,3 la oleada más grande trae 1 menos.
     /// </summary>
     public static class EncounterCatalog
@@ -18,7 +19,7 @@ namespace Nexus7.Combat
         {
             switch (scene)
             {
-                case "SalaInicial":   return new[] { new[] { S, S } };
+                // La Sala inicial no tiene robots (no hay plantillas que copiar): sin encuentro hasta la celda de armería
                 case "AlmacenCarga":  return new[] { new[] { S, S }, new[] { G, S } };
                 case "SalaEnergia":   return new[] { new[] { S, S, R }, new[] { G, G } };
                 case "Laboratorio":   return new[] { new[] { S, S }, new[] { G, G }, new[] { E, S } };
