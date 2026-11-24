@@ -49,6 +49,8 @@ El repositorio es un proyecto de Unity completo (**Unity 6000.6.4f1**, URP), con
 3. Construye las escenas: al abrir el proyecto por primera vez, Unity pregunta si quieres construirlas (pulsa **Construir**). También puedes usar el menú **Nexus-7 → Construir todo el juego (Fases 1–6 y menú)**. Tarda uno o dos minutos y deja abierta la escena `MenuPrincipal`.
 4. Pulsa **Play**.
 
+Los objetos imprescindibles de cada fase (por ejemplo, las baterías de la Fase 2) salen en sitios al azar en cada partida: búscalos por su brillo y el haz de luz vertical de su color. Se recogen con **[E]**.
+
 Si al salir de una fase aparece «Falta … en la lista de escenas» o «FIN DE LA FASE» en lugar de cargar la siguiente, la fase no está en *File → Build Profiles → Scene List*. Unity las registra solo al abrir el proyecto, y también puedes forzarlo con **Nexus-7 → Registrar las fases en Build Settings**. Si la fase siguiente aún no está construida, usa **Nexus-7 → Construir todo el juego**.
 
 El proyecto ya trae TextMeshPro, los ajustes de URP y *Active Input Handling* en **Both** (teclado, ratón y mando).
