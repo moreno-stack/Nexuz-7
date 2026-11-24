@@ -115,6 +115,8 @@ namespace Nexus7.Combat
             if (melee != null) { melee.Cancel(); melee.enabled = false; }
             if (gun == null) gun = GetComponent<EnemyGun>();
             if (gun != null) gun.enabled = false;
+            var tactics = GetComponent<EnemyTactics>();
+            if (tactics != null) tactics.enabled = false;   // suelta su cobertura
             if (patrol != null) patrol.enabled = false;
             var vision = GetComponent<EnemyVision>();
             if (vision != null) vision.enabled = false;

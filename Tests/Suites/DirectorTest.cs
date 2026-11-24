@@ -57,9 +57,9 @@ static class T {
   }
   static void Knobs(){
     var k = DirectorModel.KnobsFor(0.5f);
-    Check(Near(k.EnemySpeed,1f)&&Near(k.Detection,1f)&&Near(k.EnemyDamage,1f)&&Near(k.EnemyHealth,1f)&&Near(k.AmmoDrop,1f)&&Near(k.PatrolWait,1f)&&k.Reinforcements==0&&k.ExtraShooters==0&&Near(k.EnemySpread,1f), "Tensión 0,5 = valores de diseño");
+    Check(Near(k.EnemySpeed,1f)&&Near(k.Detection,1f)&&Near(k.EnemyDamage,1f)&&Near(k.EnemyHealth,1f)&&Near(k.AmmoDrop,1f)&&Near(k.PatrolWait,1f)&&k.Reinforcements==0&&k.ExtraShooters==0&&Near(k.EnemySpread,1f)&&Near(k.TacticTempo,1f), "Tensión 0,5 = valores de diseño");
     var lo = DirectorModel.KnobsFor(0f); var hi = DirectorModel.KnobsFor(1f);
-    Check(lo.EnemyDamage<1f && hi.EnemyDamage>1f && lo.AmmoDrop>1f && hi.AmmoDrop<1f && hi.Reinforcements==2, "Tensión baja ayuda y alta aprieta");
+    Check(lo.EnemyDamage<1f && hi.EnemyDamage>1f && lo.AmmoDrop>1f && hi.AmmoDrop<1f && hi.Reinforcements==2 && lo.TacticTempo>1f && hi.TacticTempo<1f, "Tensión baja ayuda y alta aprieta");
     Check(DirectorModel.BaselineFor(0)<DirectorModel.BaselineFor(1) && DirectorModel.BaselineFor(1)<DirectorModel.BaselineFor(2), "La base depende de la dificultad elegida");
   }
   static void TensionFollows(){

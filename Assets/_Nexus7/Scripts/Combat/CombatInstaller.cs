@@ -9,7 +9,8 @@ namespace Nexus7.Combat
     /// Añade el combate a cualquier fase al cargarla, sin tener que reconstruir las escenas:
     ///   · al jugador: PlayerWeapon y el HUD de combate;
     ///   · al jugador: PlayerTarget (para que le den los disparos de los robots);
-    ///   · a cada robot (EnemyPatrol): EnemyHealth, y EnemyGun si su tipo lleva arma (EnemyGunCatalog.ForRobot).
+    ///   · a cada robot (EnemyPatrol): EnemyHealth, y EnemyGun + EnemyTactics si su tipo lleva arma (EnemyGunCatalog.ForRobot);
+    ///   · a la fase: las coberturas de combate (CoverField).
     /// Es idempotente (si el constructor de la escena ya los puso, no duplica nada). En el menú no hace nada.
     /// </summary>
     public static class CombatInstaller
@@ -37,6 +38,7 @@ namespace Nexus7.Combat
             if (player.GetComponent<Nexus7.UI.CombatHUD>() == null) player.AddComponent<Nexus7.UI.CombatHUD>();
             if (player.GetComponent<PlayerTarget>() == null) player.AddComponent<PlayerTarget>();
             EnemyGun.Tokens.Clear();
+            CoverField.Build();
             foreach (var robot in Object.FindObjectsByType<EnemyPatrol>(FindObjectsSortMode.None)) InstallRobot(robot.gameObject);
             PlayerInstalled?.Invoke(player);
         }
@@ -46,6 +48,7 @@ namespace Nexus7.Combat
         {
             var gunSpec = EnemyGunCatalog.ForRobot(robot.name);
             if (gunSpec != null && robot.GetComponent<EnemyGun>() == null) robot.AddComponent<EnemyGun>().Configure(gunSpec);
+            if (gunSpec != null && robot.GetComponent<EnemyTactics>() == null) robot.AddComponent<EnemyTactics>();
             if (robot.GetComponent<EnemyHealth>() == null) robot.AddComponent<EnemyHealth>();
         }
     }

@@ -32,6 +32,12 @@ namespace Nexus7.Combat
 
         public EnemyGunSpec Spec { get; private set; }
         public bool IsWarningOrFiring => burst != null && burst.IsWarningOrFiring;
+        /// <summary>Ráfagas disparadas enteras (EnemyTactics lo usa para volver a cubrirse).</summary>
+        public int BurstsCompleted { get; private set; }
+        /// <summary>Hay turno de ataque para este robot (libre o ya suyo).</summary>
+        public bool TokenAvailable => Tokens.Has(id) || Tokens.InUse < Tokens.Capacity;
+        /// <summary>Permiso extra para disparar (EnemyTactics: solo asomado o al descubierto). Null = siempre.</summary>
+        public System.Func<bool> FireGate;
 
         private BurstModel burst;
         private readonly StaggerModel stagger = new StaggerModel();
@@ -94,7 +100,10 @@ namespace Nexus7.Combat
 
             switch (burst.Tick(now, canShoot, rng.NextDouble()))
             {
-                case BurstEvent.Fire: Fire(target); break;
+                case BurstEvent.Fire:
+                    Fire(target);
+                    if (burst.Current == BurstModel.Phase.Pause) BurstsCompleted++;
+                    break;
                 case BurstEvent.Cancelled: EndBurst(); break;
                 case BurstEvent.Finished: Tokens.Release(id); break;
             }
@@ -115,6 +124,7 @@ namespace Nexus7.Combat
         private bool CanEngage(Vector3 target, float now)
         {
             if (Spec == null || EnemyPatrol.Paused || stagger.IsStaggered(now)) return false;
+            if (FireGate != null && !FireGate()) return false;
             if (patrol == null || !patrol.enabled || patrol.CurrentState != EnemyPatrol.EnemyState.Chase) return false;
             if (vision == null || !vision.CanSeePlayer) return false;
             if (melee != null && melee.IsAttacking) return false;
