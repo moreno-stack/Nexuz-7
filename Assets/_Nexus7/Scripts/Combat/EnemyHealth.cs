@@ -99,7 +99,16 @@ namespace Nexus7.Combat
         public static void SetHealthMultiplier(float multiplier)
         {
             HealthMultiplier = Mathf.Clamp(multiplier, 0.5f, 2f);
-            foreach (var e in All) if (e != null && e.model != null) e.model.Rescale(e.baseMax * HealthMultiplier);
+            foreach (var e in All) if (e != null && e.model != null) e.model.Rescale(e.baseMax * HealthMultiplier * e.affixHealth);
+        }
+
+        private float affixHealth = 1f;
+
+        /// <summary>Rasgo del director (Blindado ×1,4): cambia la vida máxima conservando el porcentaje.</summary>
+        public void SetAffixHealth(float factor)
+        {
+            affixHealth = factor > 0f ? factor : 1f;
+            if (model != null && IsAlive) model.Rescale(baseMax * HealthMultiplier * affixHealth);
         }
 
         public void TakeDamage(DamageInfo info)

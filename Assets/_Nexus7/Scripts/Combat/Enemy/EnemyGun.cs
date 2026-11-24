@@ -38,6 +38,8 @@ namespace Nexus7.Combat
         public bool TokenAvailable => Tokens.Has(id) || Tokens.InUse < Tokens.Capacity;
         /// <summary>Permiso extra para disparar (EnemyTactics: solo asomado o al descubierto). Null = siempre.</summary>
         public System.Func<bool> FireGate;
+        /// <summary>Rasgo del director (Ojo de águila ×0,8 de dispersión).</summary>
+        public float AffixSpread { get; set; } = 1f;
 
         private BurstModel burst;
         private readonly StaggerModel stagger = new StaggerModel();
@@ -175,7 +177,7 @@ namespace Nexus7.Combat
             float speed = new Vector3(v.x, 0f, v.z).magnitude;
             bool moving = agent != null && agent.enabled && agent.velocity.sqrMagnitude > 0.04f;
             float spread = AimModel.Spread(distance, speed, moving, (vision != null && vision.IsBlinded) || Time.time < dazzledUntil,
-                                           (int)DifficultySettings.Current, DirectorSpreadMultiplier);
+                                           (int)DifficultySettings.Current, DirectorSpreadMultiplier * AffixSpread);
             Vector3 dir = Quaternion.AngleAxis(RandomSigned() * spread, Vector3.up)
                         * Quaternion.AngleAxis(RandomSigned() * spread * 0.5f, transform.right) * aim.normalized;
 

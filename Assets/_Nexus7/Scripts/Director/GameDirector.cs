@@ -222,6 +222,7 @@ namespace Nexus7.Director
             L($"Tiradores extra {k.ExtraShooters}   Dispersión robots ×{k.EnemySpread:0.00}   Turnos {EnemyGun.Tokens.InUse}/{EnemyGun.Tokens.Capacity}");
             L($"Tempo táctico ×{k.TacticTempo:0.00}   {EnemyTactics.Summary()}");
             L(EncounterDirector.Summary());
+            L(RobotAffixDirector.Summary());
             L($"Vidas {LivesSystem.Lives}/{LivesSystem.Max}{(LivesSystem.IsLastLife ? "  <color=#f66>ÚLTIMA: director clemente</color>" : "")}   Reinicios de la fase {LivesSystem.RestartsHere}");
             L($"Blindaje adaptado: {(Model.AdaptedWeapon ?? "no")}");
             cy += 6f;
