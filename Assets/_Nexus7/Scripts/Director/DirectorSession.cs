@@ -13,7 +13,7 @@ namespace Nexus7.Director
         public static float Tension { get; private set; }
 
         public static void Store(float tension) { Tension = tension; HasTension = true; }
-        public static void Clear() { HasTension = false; Tension = 0f; report = null; reportScene = null; }
+        public static void Clear() { HasTension = false; Tension = 0f; report = null; reportScene = null; HeatmapDirector.ClearAll(); }
 
         private static PhaseReportModel report;
         private static string reportScene;

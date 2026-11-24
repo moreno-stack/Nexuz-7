@@ -126,9 +126,21 @@ Séptima entrega (PR #8, rama `feat/accesorios-recompensas`):
 | 41 | `feat(director): módulos de recompensa al despejar encuentros o destruir élites` | `ModRewardDirector`, `ModPickup`, `EncounterDirector.Cleared`, F3 y el informe de la IA |
 | 42 | `docs: guía de accesorios y recompensas` | Esta guía y el README |
 
+Arreglos entre entregas: el PR #9 registra solas las fases en Build Settings y el PR #10 hace localizables los objetos imprescindibles (haz de 6 m y aviso del traje). Ver el README.
+
+Octava entrega (PR #11, rama `feat/mapa-calor-registro`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 43 | `feat(director): mapa de calor de la IA (detecciones, caídas y acampada)` | `HeatmapModel` y `HeatmapTest` |
+| 44 | `feat(director): una unidad vigila tu zona caliente en cada intento` | `HeatmapDirector`, `GameDirector.NearestFreeRobot` (interno), F3, informe y `DirectorSession` |
+| 45 | `feat(director): formato del registro de partida (CSV por fase)` | `TelemetryModel` y `TelemetryTest` |
+| 46 | `feat(director): guardar una línea del registro de partida al salir de cada fase` | `TelemetryLog` y la línea en F3 |
+| 47 | `docs: guía del mapa de calor y del registro de partida` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1093 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1115 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -513,6 +525,58 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 4. En la Fase 5 o la 6, destruye un élite (núcleo cian en la espalda): cae otro módulo, distinto del anterior si nada destaca.
 5. Abre **F3** para ver «Recompensas: 1 en la fase · última …».
 
+### Etapa 17: la IA aprende tus rutas (commits 43 y 44)
+
+**Archivos nuevos:** `Scripts/Director/HeatmapModel.cs` y `HeatmapDirector.cs`. **Modificados:** `GameDirector` (F3), `PhaseReportModel` (cuenta las vigilancias) y `DirectorSession` (borra los mapas en una partida nueva).
+
+**Qué hace:**
+
+- El analizador divide la fase en celdas de 4 × 4 m y apunta **calor** donde pasan cosas:
+
+| Suceso | Calor |
+|---|---|
+| Un robot te detecta (como mucho una vez cada 3 s) | +1 |
+| Te atrapan o caes | +3 |
+| Cada 5 s acampando (acampada ≥ 70 %) | +0,5 |
+
+- **En cada reaparición** el mapa se enfría (×0,6, para que pese lo reciente) y, a los 2,5 s, el director manda al robot libre más cercano a la **celda más caliente**. La celda tiene que cumplir tres condiciones:
+  - tener al menos 2 de calor, porque un solo susto no es una ruta;
+  - estar a 10 m o más de tu punto de reaparición;
+  - no ser la del intento anterior, salvo que no haya otra.
+- Sale el mensaje «IA NEXUS-7: hemos aprendido tu ruta. Una unidad vigila el sector donde más te hemos visto.».
+- **Con la última vida no lo hace** (director clemente).
+- El mapa de cada fase **sobrevive al reinicio por quedarte sin vidas**, así que la fase reiniciada recuerda dónde te pillaron. Una partida nueva lo borra.
+- En **F3**, la línea «Mapa de calor:» dice cuántas zonas hay, el calor donde estás y qué robot vigila qué punto. El informe de la IA cuenta las vigilancias.
+
+**Cómo probarlo:**
+
+1. En Normal, entra en la Fase 2 y abre **F3**.
+2. Deja que un robot te vea en un mismo pasillo, lejos de la entrada, y que te atrape allí. Esa celda suma +1 y +3.
+3. Al reaparecer, a los 2,5 s sale el mensaje y en F3 ves «RobotSeguridad_… vigila (x, z), calor 2.4». Ese robot deja su ruta y va a ese pasillo.
+4. Deja que te atrapen en otro sitio: la próxima vigilancia va a la otra zona caliente, no repite.
+5. Con la última vida, F3 dice «última vida: no vigila».
+
+### Etapa 18: registro de partida (commits 45 y 46)
+
+**Archivos nuevos:** `Scripts/Director/TelemetryModel.cs` y `TelemetryLog.cs`. **Modificado:** `GameDirector` (escribe al salir de la fase y muestra la línea en F3).
+
+**Qué hace:**
+
+- Al salir de cada fase que haya durado 20 s o más, añade una línea a **`nexus7_telemetria.csv`**. Eso pasa al pasar a la siguiente, al reiniciarla sin vidas o al volver al menú.
+- Columnas: fecha, fase, dificultad, reinicios, duración, vidas perdidas, muertes, bajas, disparos, aciertos, precisión, detecciones, daño recibido, arma dominante y su uso, acampada media, tensión media y máxima, acciones de la IA (expulsiones, blindajes, ayudas, eventos de nave, módulos, vigilancias) y estilo.
+- Formato: separador «;», números con punto decimal y UTF-8 con BOM, para que Excel en español lea bien las tildes y las columnas. La precisión −1 significa que no disparaste.
+- Dónde está el archivo:
+  - en Windows, `C:\Users\<tu usuario>\AppData\LocalLow\moreno-stack\Escape Espacial Nexus-7\nexus7_telemetria.csv`;
+  - además, la primera vez que escribe, la consola de Unity muestra la ruta exacta.
+- En **F3**, la línea «Registro:» dice cuántas fases se han guardado en esta sesión.
+
+**Cómo probarlo:**
+
+1. Juega la Fase 2 más de 20 s y pasa a la Fase 3 (o vuelve al menú).
+2. En la consola sale «[Nexus-7] Registro de partida: …ruta…».
+3. Abre el CSV con Excel: hay una fila con la Fase 2, tus disparos, tu precisión y tu estilo. Cada fase que juegues añade otra.
+4. Para equilibrar, compara filas: si la tensión media se queda siempre por encima de 0,8 o por debajo de 0,3, toca `Range` o los objetivos del analizador (ver la tabla de abajo).
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -529,6 +593,8 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 | `ShipEventTest` | 8 | Qué evento según la tensión y las caídas, sin repetir, y elección del sitio (distancia, por delante, sin repetir) |
 | `WeaponModTest` | 29 | Efectos de cada accesorio, huecos y sustitución, munición al montar y quitar, guardado y a qué arma va |
 | `ModRewardTest` | 13 | Qué accesorio según cómo juegas, variedad sin repetir, solo los que caben y el motivo |
+| `HeatmapTest` | 13 | Celdas, enfriamiento, mínimo de calor, distancia a la reaparición, sin repetir y desempate estable |
+| `TelemetryTest` | 9 | Cabecera y fila del CSV, formato de números, escape de textos y precisión sin dato |
 | `PhaseReportTest` | 23 | Recuento de la fase, precisión por disparo, arma dominante, estilos de juego, veredicto y líneas del panel |
 | `DirectorTest` | 42 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
 | `SpawnVariationTest` | 16 | Anti-repetición, justicia, ritmo, refuerzos, cámaras y reproducibilidad |
@@ -589,6 +655,8 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | Se acumulan demasiadas mejoras | `MaxSlots` (2) | `WeaponModModel` |
 | El director acierta poco con el accesorio | `Fit` (40), `RepeatPenalty` (25), `RandomWeight` (15) y los umbrales 0,5 / 0,5 / 30 % / 1,5 | `ModRewardModel` |
 | Salen demasiados módulos | Quitar el módulo del élite (`OnKilled`) o del encuentro (`OnCleared`) | `ModRewardDirector` |
+| La IA te persigue demasiado por tus rutas | `MinHeat` (2), `DeathHeat` (3), `DetectionHeat` (1) y `DecayPerAttempt` (0,6) | `HeatmapModel` |
+| La vigilancia aparece muy cerca de la reaparición | `SafeDistance` (10 m) y `AssignDelay` (2,5 s) | `HeatmapModel`, `HeatmapDirector` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
 Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada a un extremo, el problema está en `Range` o en los objetivos del analizador. Si oscila, sube `DeadZone` o baja `RisePerSecond`.
