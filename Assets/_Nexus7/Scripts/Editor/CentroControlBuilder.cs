@@ -68,10 +68,10 @@ namespace Nexus7.EditorTools
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
             B.CreateFolders();
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);   // antes que los datos: NewScene descarga los assets cargados
             var items = A.EnsureItems();
             var p4 = L4.EnsurePhase4Data(items);
 
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             A.CreateMaterials();
             S3.CreateMaterials();
             L4.CreateMaterials();

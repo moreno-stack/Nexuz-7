@@ -65,12 +65,14 @@ namespace Nexus7.EditorTools
             B.EnsureFolder(Root, "Data");
             B.EnsureFolder(Root + "/Data", "Items");
 
-            // ---------- 1. Datos: tipos de objeto ----------
+            // ---------- 1. Escena (antes que los datos: NewScene descarga los assets cargados y sus referencias se guardarían vacías) ----------
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            // ---------- 2. Datos: tipos de objeto ----------
             var items = EnsureItems();
             var battery = items.Battery; var scrap = items.Scrap; var wrench = items.Wrench; var circuit = items.Circuit;
 
-            // ---------- 2. Escena, materiales e iluminación ----------
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // ---------- 3. Materiales e iluminación ----------
             CreateMaterials();
             S3.CreateMaterials();   // materiales compartidos (pantalla del banco, arco de la trayectoria)
             L4.CreateMaterials();   // materiales compartidos (cuerpo y tablero del banco)

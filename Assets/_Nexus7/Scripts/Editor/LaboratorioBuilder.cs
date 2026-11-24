@@ -59,13 +59,14 @@ namespace Nexus7.EditorTools
 
             B.CreateFolders();
             B.EnsureFolder(Root + "/Data", "Recipes");
+            // ---------- 1. Escena (antes que los datos: NewScene descarga los assets cargados y sus referencias se guardarían vacías) ----------
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var items = A.EnsureItems();
             var p4 = EnsurePhase4Data(items);
             var crystal = p4.Crystal; var keycard = p4.Keycard;
             var decoy = p4.Decoy; var emp = p4.Emp; var camo = p4.Camo; var recipes = p4.Recipes;
 
-            // ---------- 2. Escena ----------
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // ---------- 2. Materiales e iluminación ----------
             A.CreateMaterials();
             S3.CreateMaterials();
             CreateMaterials();
