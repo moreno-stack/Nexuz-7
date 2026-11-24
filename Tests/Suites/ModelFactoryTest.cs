@@ -18,6 +18,17 @@ static class T {
     Check(give >= 0 && pw.IndexOf("RefreshView()", give) > give, "Al instalar un accesorio se ve en el arma");
     Check(fac.Contains("ModelScale.ForUnity") && fac.Contains("ModelMaterials.For("), "El fabricante usa la escala de Unity y los materiales compartidos");
     Check(!Src("Visual/Models/ModelMaterials.cs").Contains("Destroy("), "Los materiales compartidos no se destruyen");
+    // Tarea 5: nada que se recoja o se lleve en la mano sigue siendo una primitiva suelta
+    foreach (var f in new[]{ "Inventory/RoomLootSpawner.cs", "Player/HeldItemView.cs", "Combat/AmmoPickup.cs", "Combat/ModPickup.cs", "Devices/DeviceFactory.cs" }){
+      string src = Src(f);
+      bool primitives = src.Contains("CreatePrimitive(shape)") || src.Contains("CreatePrimitive(PrimitiveType.Cube)") || src.Contains("CreatePrimitive(PrimitiveType.Sphere)");   // el haz de luz (cilindro) sí es una primitiva
+      Check(!primitives && src.Contains("ModelFactory.Build("), f + ": usa su modelo (sin primitivas sueltas)");
+    }
+    string loot = Src("Inventory/RoomLootSpawner.cs");
+    Check(loot.Contains("ItemModels.For(") && loot.Contains("Scaled(KeyItemScale)") && loot.Contains("AddBeacon(") && loot.Contains("MoveToFreeFloor("), "Botín: modelo del objeto; los imprescindibles más grandes, con haz y en suelo libre");
+    Check(Src("Player/HeldItemView.cs").Contains("ItemModels.For(") && !Src("Player/HeldItemView.cs").Contains("Destroy(ownMaterial)"), "En la mano: modelo del objeto y sin destruir materiales compartidos");
+    string dev = Src("Devices/DeviceFactory.cs");
+    Check(dev.Contains("AddComponent<SphereCollider>()") && dev.Contains("ThrownRadius") && dev.Contains("Physics.IgnoreCollision("), "Dispositivo lanzado: esfera de choque en la raíz que ignora al jugador");
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
   }
 }

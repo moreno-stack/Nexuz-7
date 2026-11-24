@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using Nexus7.Core;
 using Nexus7.UI;
+using Nexus7.Visual.Models;
 
 namespace Nexus7.Inventory
 {
@@ -28,7 +29,7 @@ namespace Nexus7.Inventory
         [SerializeField] private bool useFixedSeed;
         [SerializeField] private int fixedSeed = 1234;
 
-        private static Material pickupMaterial, beamMaterial;
+        private static Material beamMaterial;
         private readonly List<PickupItem> keyItems = new List<PickupItem>();
         /// <summary>Brillo y haz de los objetos imprescindibles (para encontrarlos en salas oscuras).</summary>
         public const float BeaconLightRange = 7f, BeaconLightIntensity = 5f, BeaconHeight = 6f, BeaconWidth = 0.2f;
@@ -150,25 +151,12 @@ namespace Nexus7.Inventory
             col.center = new Vector3(0f, 0.25f, 0f);
             col.size = new Vector3(0.5f, 0.5f, 0.5f);
 
-            PrimitiveType shape = p.item.Category == ItemCategory.Battery || p.item.Category == ItemCategory.Device ? PrimitiveType.Cylinder
-                                : p.item.Category == ItemCategory.Tool ? PrimitiveType.Capsule : PrimitiveType.Cube;
-            var visual = GameObject.CreatePrimitive(shape);
+            // Modelo propio del objeto (ModelLibrary): los imprescindibles se ven más grandes
+            var bp = ItemModels.For(p.item);
+            if (p.guaranteed) bp = bp.Scaled(KeyItemScale);
+            var visual = ModelFactory.Build(bp, root.transform, true);
             visual.name = "Visual";
-            var vc = visual.GetComponent<Collider>();
-            if (vc != null) { vc.enabled = false; Destroy(vc); }   // Destroy es diferido: que no choque ese frame
-            visual.transform.SetParent(root.transform, false);
-            visual.transform.localPosition = new Vector3(0f, 0.3f, 0f);
-            visual.transform.localScale = shape == PrimitiveType.Cube ? new Vector3(0.3f, 0.12f, 0.24f) : new Vector3(0.18f, 0.14f, 0.18f);
-            if (p.guaranteed) visual.transform.localScale *= KeyItemScale;
-            var r = visual.GetComponent<Renderer>();
-            if (r != null)
-            {
-                if (pickupMaterial == null) pickupMaterial = new Material(r.sharedMaterial);
-                var m = new Material(pickupMaterial) { color = p.item.UiColor };
-                m.EnableKeyword("_EMISSION");
-                m.SetColor("_EmissionColor", p.item.UiColor * (p.guaranteed ? 3f : 0.4f));
-                r.sharedMaterial = m;
-            }
+            visual.localPosition = new Vector3(0f, 0.3f, 0f);
             if (p.guaranteed)
             {
                 var light = new GameObject("Brillo").AddComponent<Light>();
@@ -185,7 +173,7 @@ namespace Nexus7.Inventory
             var pickup = root.AddComponent<PickupItem>();
             pickup.Setup(p.item, p.amount);
             pickup.SetNoise(PickupNoiseFor(p.item.Category));
-            pickup.SetVisual(visual.transform);
+            pickup.SetVisual(visual);
             if (p.guaranteed)
             {
                 col.enabled = false;   // que no cuente su propio colisionador como obstáculo
