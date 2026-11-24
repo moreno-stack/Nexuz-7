@@ -19,7 +19,7 @@ Esta guía se escribió cuando se creó la fase. Desde entonces el juego ha camb
 - **Imprescindibles:** 3 baterías de iones y la llave hidráulica, en uno de los 12 puntos de botín al azar. El montacargas pide **2 baterías** y las consume; la tercera es de reserva. Las posiciones de «Batería 1», «Batería 2» y «Llave hidráulica» de la tabla del nivel ya no son fijas.
 - **Robots:** los drones A y B son ahora robots armados; la tabla del nivel les llama Robot A y Robot B.
 - **Encuentro:** al cruzar el punto seguro, 2 oleadas (2 de seguridad; después guardia y seguridad). En Normal y Difícil la salida (el montacargas) queda sellada hasta despejarlo o durante 150 s como mucho.
-- **Si no encuentras las baterías:** sigue el haz de luz o el aviso del traje. En el editor, F4 y luego F5.
+- **Si no encuentras las baterías o la llave:** ve al montacargas (o a la rejilla) y pulsa [E]. Si quedan en la sala, el traje te dice a qué distancia y hacia dónde están; si no queda ninguna a tu alcance, te fabrica el repuesto y la puerta se abre. En el editor también sirve F4 y luego F5.
 
 ---
 
