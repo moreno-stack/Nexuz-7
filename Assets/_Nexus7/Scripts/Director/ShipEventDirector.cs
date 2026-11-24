@@ -74,7 +74,19 @@ namespace Nexus7.Director
         {
             yield return new WaitForSeconds(delay);
             pending = null;
-            Roll();
+            Roll(ShipEvent.None);
+        }
+
+        /// <summary>
+        /// Lanza ya el evento 'e' (panel de pruebas [F4]), quitando el que hubiera. Si no hay ningún sitio a 6–25 m, lo
+        /// pone 8 m por delante. Devuelve false si 'e' es None.
+        /// </summary>
+        public bool Force(ShipEvent e)
+        {
+            if (e == ShipEvent.None) return false;
+            if (pending != null) { StopCoroutine(pending); pending = null; }
+            Clear();
+            return Roll(e);
         }
 
         private void Update()
@@ -85,24 +97,24 @@ namespace Nexus7.Director
             Say("IA NEXUS-7: barrido de seguridad en curso. Las unidades cercanas revisan el sector.");
         }
 
-        private void Roll()
+        private bool Roll(ShipEvent forced)
         {
             var rng = new System.Random(GameSession.RunSeed ^ SceneManager.GetActiveScene().name.GetHashCode()
                                         ^ (attempt * 7919) ^ (LivesSystem.RestartsHere * 104729) ^ 0x5EED);
             var director = GameDirector.Instance;
             float tension = director != null ? director.Model.Tension : 0.5f;
             float deaths = director != null ? director.Performance.RecentDeaths : 0f;
-            var next = ShipEventModel.Choose(tension, deaths, previous, rng.NextDouble());
-            if (next == ShipEvent.None) return;
+            var next = forced != ShipEvent.None ? forced : ShipEventModel.Choose(tension, deaths, previous, rng.NextDouble());
+            if (next == ShipEvent.None) return false;
 
             CollectSpots();
             Vector3 p = transform.position, f = transform.forward;
             int i = ShipEventModel.PickSpot(xs, zs, p.x, p.z, f.x, f.z, previousSpot, rng);
-            if (i < 0) return;   // nada a 6–25 m: esta vez no hay evento
-            previousSpot = i;
-            spot = spots[i];
+            if (i < 0 && forced == ShipEvent.None) return false;   // nada a 6–25 m: esta vez no hay evento
+            if (i >= 0) { previousSpot = i; spot = spots[i]; }
+            else spot = p + new Vector3(f.x, 0f, f.z).normalized * 8f;
             Current = previous = next;
-            if (director != null) director.Report.RecordShipEvent();
+            if (director != null && forced == ShipEvent.None) director.Report.RecordShipEvent();   // los forzados en [F4] no cuentan
 
             switch (next)
             {
@@ -119,6 +131,7 @@ namespace Nexus7.Director
                     Say($"IA NEXUS-7: barrido de seguridad programado en {ShipEventModel.SweepDelay:0} s. Muévete.");
                     break;
             }
+            return true;
         }
 
         /// <summary>Candidatos: puntos de cobertura y waypoints de las rutas de patrulla (sitios por los que se pasa).</summary>

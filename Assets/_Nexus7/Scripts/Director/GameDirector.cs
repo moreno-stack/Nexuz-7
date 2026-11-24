@@ -139,6 +139,14 @@ namespace Nexus7.Director
             Handle(action);
         }
 
+        /// <summary>Tensión fijada a mano (panel de pruebas [F4]): las perillas cambian al momento.</summary>
+        public void ForceTension(float value)
+        {
+            Model.SetTension(value);
+            Apply(Model.Knobs);
+            LastAction = $"Tensión fijada a mano: {Model.Tension:0.00}";
+        }
+
         private void Apply(DirectorKnobs k)
         {
             AdaptiveModifiers.Set(k.EnemySpeed, k.Detection, k.EnemyDamage, k.PatrolWait);

@@ -120,7 +120,7 @@ namespace UnityEngine
     }
     public static class Random { public static Vector3 insideUnitSphere; public static float value; public static float Range(float a, float b) { return a; } public static int Range(int a, int b) { return a; } }
     public static class Time { public static float unscaledTime, deltaTime, time, timeScale, unscaledDeltaTime, realtimeSinceStartup; public static int frameCount; }
-    public enum KeyCode { None, KeypadEnter, O, R, M, Space, V, F, H, Mouse0, Mouse1, Alpha4, Alpha5, Alpha6, Alpha7, Alpha8, Alpha9, JoystickButton7, JoystickButton9, E, C, I, G, Q, W, S, A, D, LeftArrow, RightArrow, JoystickButton2, JoystickButton3, Tab, Escape, Return, Backspace, UpArrow, DownArrow, Alpha1, Alpha2, Alpha3, JoystickButton4, JoystickButton5, LeftShift, LeftControl, JoystickButton0, JoystickButton1, JoystickButton6, JoystickButton8, F3, F4 }
+    public enum KeyCode { None, KeypadEnter, O, R, M, Space, V, F, H, Mouse0, Mouse1, Alpha4, Alpha5, Alpha6, Alpha7, Alpha8, Alpha9, JoystickButton7, JoystickButton9, E, C, I, G, Q, W, S, A, D, LeftArrow, RightArrow, JoystickButton2, JoystickButton3, Tab, Escape, Return, Backspace, UpArrow, DownArrow, Alpha1, Alpha2, Alpha3, JoystickButton4, JoystickButton5, LeftShift, LeftControl, JoystickButton0, JoystickButton1, JoystickButton6, JoystickButton8, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12 }
     public static class Input {
         public static float GetAxis(string a) { return 0; } public static float GetAxisRaw(string a) { return 0; }
         public static bool GetKey(KeyCode k) { return false; } public static bool GetKeyDown(KeyCode k) { return false; }
@@ -128,7 +128,7 @@ namespace UnityEngine
     }
     public enum CursorLockMode { None, Locked, Confined }
     public static class Cursor { public static CursorLockMode lockState; public static bool visible; }
-    public static class Debug {
+    public static class Debug { public static bool isDebugBuild;
         public static void Log(object o) {} public static void Log(object o, Object c) {} public static void LogWarning(object o) {} public static void LogWarning(object o, Object c) {}
         public static void LogError(object o, Object c) {} public static void LogError(object o) {} public static void LogException(Exception e) {}
     }
@@ -180,7 +180,7 @@ namespace UnityEngine
     }
     public class AsyncOperation { public bool isDone = true; public float progress = 1f; public bool allowSceneActivation = true; }
     public static class Resources { public static T Load<T>(string path) where T : Object { return null; } }
-    public static class Application { public static string persistentDataPath = System.IO.Path.GetTempPath(); public static bool isPlaying, isBatchMode; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
+    public static class Application { public static string persistentDataPath = System.IO.Path.GetTempPath(); public static bool isPlaying, isBatchMode, isEditor; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
     public enum FogMode { Linear, Exponential, ExponentialSquared }
     public static class RenderSettings {
         public static Material skybox; public static Rendering.AmbientMode ambientMode; public static Color ambientLight, fogColor;
