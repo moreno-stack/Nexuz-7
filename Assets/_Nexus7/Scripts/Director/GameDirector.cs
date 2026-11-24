@@ -1,6 +1,7 @@
 using UnityEngine;
 using Nexus7.Combat;
 using Nexus7.Core;
+using Nexus7.Gameplay;
 using Nexus7.Enemies;
 using Nexus7.Player;
 using Nexus7.UI;
@@ -118,6 +119,7 @@ namespace Nexus7.Director
 
             Performance.SamplePosition(Time.time, transform.position.x, transform.position.z);
             if (health != null) Performance.HealthFraction = health.Normalized;
+            Model.LastLife = LivesSystem.IsLastLife;
             var action = Model.Tick(dt, Performance);
             Apply(Model.Knobs);
             Handle(action);
@@ -220,6 +222,7 @@ namespace Nexus7.Director
             L($"Tiradores extra {k.ExtraShooters}   Dispersión robots ×{k.EnemySpread:0.00}   Turnos {EnemyGun.Tokens.InUse}/{EnemyGun.Tokens.Capacity}");
             L($"Tempo táctico ×{k.TacticTempo:0.00}   {EnemyTactics.Summary()}");
             L(EncounterDirector.Summary());
+            L($"Vidas {LivesSystem.Lives}/{LivesSystem.Max}{(LivesSystem.IsLastLife ? "  <color=#f66>ÚLTIMA: director clemente</color>" : "")}   Reinicios de la fase {LivesSystem.RestartsHere}");
             L($"Blindaje adaptado: {(Model.AdaptedWeapon ?? "no")}");
             cy += 6f;
             L($"Última acción: {LastAction}");

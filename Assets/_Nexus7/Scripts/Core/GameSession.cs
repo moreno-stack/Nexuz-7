@@ -39,6 +39,7 @@ namespace Nexus7.Core
             HotbarSelectedId = null;
             Nexus7.Combat.CombatSession.Clear();   // nueva partida: arsenal inicial
             Nexus7.Director.DirectorSession.Clear();   // y el director vuelve a la base de la dificultad
+            Nexus7.Gameplay.LivesSystem.Clear();       // y las vidas, llenas
             RunSeed = unchecked(System.Environment.TickCount * 7919 + RunSeed);
         }
 
@@ -55,6 +56,7 @@ namespace Nexus7.Core
 
         public static void Clear()
         {
+            Nexus7.Gameplay.LivesSystem.Clear();
             Nexus7.Combat.CombatSession.Clear();
             Nexus7.Director.DirectorSession.Clear();
             HasSuit = false;
