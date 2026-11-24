@@ -53,7 +53,7 @@ Todas las etapas, con sus pasos de prueba y su tabla de balance: [`mejoras/GUIA_
 
 ## Pruebas automáticas
 
-`bash Tests/run_all.sh` compila con mcs y con Roslyn, como Unity, y ejecuta 1196 comprobaciones sin abrir Unity. `BalanceTest` vigila las reglas que unen sistemas, por ejemplo:
+`bash Tests/run_all.sh` compila con mcs y con Roslyn, como Unity, y ejecuta 1204 comprobaciones sin abrir Unity. `BalanceTest` vigila las reglas que unen sistemas, por ejemplo:
 
 - el sello de la salida dura más que cualquier encuentro;
 - con más tensión los robots nunca son más flojos;

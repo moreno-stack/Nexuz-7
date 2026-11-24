@@ -165,9 +165,22 @@ Undécima y última entrega (PR #14, rama `docs/guias-al-dia-cierre`):
 | 58 | `test(balance): reglas de balance que unen director, vidas, encuentros y reapariciones` | `BalanceTest` |
 | 59 | `docs: resumen del juego completo y cierre del plan` | `docs/guias/RESUMEN_JUEGO.md`, esta guía y el README |
 
+Arreglo después del plan (PR #15, rama `fix/rescate-objetos-imprescindibles`): **red de seguridad de los objetos imprescindibles**.
+
+- Al usar una puerta que pide objetos que no tienes (el montacargas o la rejilla de la Fase 2, por ejemplo), la puerta cuenta lo que queda en la escena **al alcance**, es decir, sobre el suelo por el que se puede andar.
+  - Si no basta, el traje te da lo que falta («TRAJE: … Repuesto de emergencia fabricado (+2)») y la puerta se abre.
+  - Si basta, te dice dónde está el más cercano («TRAJE: señal de batería de iones más cercana a 23 m al noreste»).
+- La consola deja la línea `[Botín] Puerta …: necesita 2 Batería de iones, llevas 0, en la escena …` con la posición de cada uno y si es alcanzable. Con esa línea se sabe por qué no los encontrabas.
+- Archivos: `Inventory/KeyItemRescue.cs` (puro, `KeyItemRescueTest`, 8 comprobaciones) y `DoorController`.
+- **Cómo probarlo:**
+  1. En la Fase 2, sin recoger nada, ve al montacargas y pulsa [E].
+  2. Si las baterías están en la sala y al alcance, sale la pista con la distancia y el rumbo.
+  3. Si no lo están, recibes 2 baterías y el montacargas se abre.
+  4. Haz lo mismo con la rejilla del conducto: te da la pista o la llave.
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1196 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1204 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
