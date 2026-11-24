@@ -36,6 +36,8 @@ namespace Nexus7.Combat
         public float LastHitTime { get; private set; } = -999f;
         public bool LastHitCritical { get; private set; }
         public HitZone LastHitZone { get; private set; }
+        /// <summary>Le han destruido el brazo del arma: ya solo ataca cuerpo a cuerpo.</summary>
+        public bool Disarmed => arm.Disarmed;
         /// <summary>Tiene núcleo trasero (solo la élite).</summary>
         public bool HasCore { get; private set; }
         /// <summary>Punto sobre la cabeza para la barra de vida del HUD.</summary>
@@ -46,6 +48,9 @@ namespace Nexus7.Combat
         private HealthModel model;
         private EnemyPatrol patrol;
         private EnemyGun gun;
+        private readonly WeaponArmModel arm = new WeaponArmModel();
+        private Transform rForearm, rHand;
+        private Nexus7.Characters.ProceduralAnimator rig;
         private Transform head;
         private float baseMax;
         private Vector3 baseScale = Vector3.one;
@@ -59,6 +64,9 @@ namespace Nexus7.Combat
             baseMax = maxHealth > 0f ? maxHealth : HealthModel.BaseHealthFor(name);
             model = new HealthModel(baseMax * HealthMultiplier);
             head = Nexus7.Characters.CharacterRigFactory.FindDeep(transform, Nexus7.Characters.RigJoints.Head);
+            rForearm = Nexus7.Characters.CharacterRigFactory.FindDeep(transform, Nexus7.Characters.RigJoints.RForearm);
+            rHand = Nexus7.Characters.CharacterRigFactory.FindDeep(transform, Nexus7.Characters.RigJoints.RHand);
+            rig = GetComponent<Nexus7.Characters.ProceduralAnimator>();
             HasCore = EnemyGunCatalog.ForRobot(name) == EnemyGunCatalog.Elite;
             if (HasCore) BuildCore();
         }
@@ -99,9 +107,11 @@ namespace Nexus7.Combat
             if (!IsAlive) return;
             Vector3 fwd = transform.forward;
             float feet = transform.position.y;
-            info.Zone = WeakPointModel.Classify(HasCore, info.Point.y - feet, head != null ? head.position.y - feet : 0f,
+            bool armed = gun != null && gun.enabled && !arm.Disarmed;
+            info.Zone = WeakPointModel.Classify(HasCore, armed, DistanceToArm(info.Point), info.Point.y - feet,
+                                                head != null ? head.position.y - feet : 0f,
                                                 info.Direction.x, info.Direction.z, fwd.x, fwd.z);
-            info.Critical = info.Zone != HitZone.Body;
+            info.Critical = info.Zone == HitZone.Optic || info.Zone == HitZone.Core;
             float amount = info.Amount * WeakPointModel.Multiplier(info.Zone);
             if (WeaponDamageModifier != null) amount *= WeaponDamageModifier(info.WeaponId);
             info.Amount = amount;
@@ -112,6 +122,8 @@ namespace Nexus7.Combat
             LastHitCritical = info.Critical;
             LastHitZone = info.Zone;
             if (info.Zone == HitZone.Optic && gun != null && result != HealthResult.Killed) gun.Dazzle();
+            if (info.Zone == HitZone.Arm && arm.Apply(amount) && result != HealthResult.Killed) Disarm();
+            if (rig != null && result != HealthResult.Killed) rig.PlayHitRecoil(Nexus7.Characters.HitRecoilModel.StrengthFor(amount));
             CombatSfx.PlayAt(CombatSound.HitMetal, info.Point);
 
             if (result == HealthResult.Killed) Die(info);
@@ -122,6 +134,27 @@ namespace Nexus7.Combat
                 ReactToHit(info);
             }
             CombatEvents.RaiseHit(info, result == HealthResult.Killed);
+        }
+
+        private float DistanceToArm(Vector3 point)
+        {
+            float d = float.MaxValue;
+            if (rHand != null) d = Mathf.Min(d, Vector3.Distance(point, rHand.position));
+            if (rForearm != null) d = Mathf.Min(d, Vector3.Distance(point, rForearm.position));
+            return d;
+        }
+
+        /// <summary>Brazo del arma destruido: chispas, suelta el arma (sin disparos ni coberturas) y pasa al cuerpo a cuerpo.</summary>
+        private void Disarm()
+        {
+            if (gun != null) gun.enabled = false;
+            var tactics = GetComponent<EnemyTactics>();
+            if (tactics != null) tactics.enabled = false;
+            if (rig != null) rig.SetArmDisabled(true);
+            Vector3 at = rHand != null ? rHand.position : transform.position + Vector3.up;
+            Nexus7.Devices.PulseRing.Spawn(at, 0.8f, new Color(1f, 0.75f, 0.3f), 0.35f);
+            CombatSfx.PlayAt(CombatSound.Overheat, at);
+            CombatEvents.RaiseDisarmed(this);
         }
 
         /// <summary>Le han disparado: si no estaba persiguiendo, va a investigar de dónde vino el disparo y queda alerta.</summary>
