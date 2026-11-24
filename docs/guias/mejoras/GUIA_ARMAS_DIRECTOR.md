@@ -148,9 +148,18 @@ Novena entrega (PR #12, rama `feat/panel-pruebas-analisis-caida`):
 | 51 | `feat(director): tarjeta con la causa de la caída y un consejo al reaparecer` | `DeathAnalyzer` y la línea en F3 |
 | 52 | `docs: guía del panel de pruebas y del análisis de la caída` | Esta guía y el README |
 
+Décima entrega (PR #13, rama `feat/encuentros-puertas-recompensas`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 53 | `feat(combate): modelo del sello de la salida durante los encuentros` | `EncounterSealModel` y `EncounterSealTest` |
+| 54 | `feat(combate): modelo de la recompensa del encuentro según lo que te falta` | `EncounterRewardModel` y `EncounterRewardTest` |
+| 55 | `feat(combate): salida sellada durante los encuentros y recompensa según lo que te falta` | `EncounterDirector` (sello, recompensa y F3) y `SceneExitTrigger.SealedReason` |
+| 56 | `docs: guía de la salida sellada y de la recompensa variada` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1159 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1176 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -352,7 +361,7 @@ Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no h
   - en las fases sin esos objetivos, con el primer **punto seguro**;
   - en las fases sin ninguno de los dos (Laboratorio), al **alejarte 20 m** de donde empezaste.
 - Al activarse sale «IA NEXUS-7: intrusión confirmada…». A los 3 s llega la **oleada 1**: copias de los robots de la fase, con un anillo rojo donde aparece cada uno, que van directos a por ti con la detección reforzada.
-- Cuando de la oleada quedan **1 o 0 robots**, o a los **25 s**, sale «¡REFUERZOS! Oleada 2/3 en 3 s». Tras despejar la última: «Zona despejada» y un paquete doble de munición a tus pies.
+- Cuando de la oleada quedan **1 o 0 robots**, o a los **25 s**, sale «¡REFUERZOS! Oleada 2/3 en 3 s». Tras despejar la última: «Zona despejada» y la recompensa (ver la Etapa 22).
 - **Dónde aparecen:** en waypoints de patrulla o puntos de cobertura a 8–35 m de ti (mejor a 12–20 m), fuera de tu vista si hay otra opción y, en cada intento, en puntos distintos del intento anterior.
 - **Cuántos:** las oleadas del diseño (ver la tabla), ×0,7 en Fácil y ×1,3 en Difícil (mínimo 1). El director añade 1 robot a la última oleada con tensión ≥ 0,7 y quita 1 de la mayor con tensión ≤ 0,3.
 - **Si caes a mitad:** los robots de las oleadas se retiran y el encuentro **vuelve a empezar 4 s después de reaparecer**, con otros puntos de aparición. Los robots de la fase destruidos siguen destruidos.
@@ -654,6 +663,53 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 4. En una fase con robots tiradores, deja que te bajen la vida a 0: sale «FUERA DE COMBATE», con el daño recibido.
 5. Toca una barrera eléctrica hasta caer: sale «ACCIDENTE» y el consejo de las descargas.
 
+### Etapa 21: salida sellada durante los encuentros (commits 53 y 55)
+
+**Archivo nuevo:** `Scripts/Combat/Encounters/EncounterSealModel.cs`. **Modificados:** `EncounterDirector` y `SceneExitTrigger`.
+
+**Qué hace:**
+
+- Mientras hay un encuentro (cuenta atrás y oleadas), **la salida de la fase queda sellada**. Al empezar, el aviso termina con «Salida de la fase sellada.».
+- Si llegas a la zona de salida, sale «SALIDA SELLADA: … Acaba con los refuerzos (oleada 2/3); si no, se abre sola en N s.» y no cambias de fase.
+- Se abre:
+  - al despejar el encuentro («… Salida desbloqueada.»);
+  - al caer, porque el encuentro se reinicia; cuando vuelve a empezar, se sella otra vez;
+  - como mucho a los **150 s** de cada intento («Bloqueo sobrecargado: la salida de la fase vuelve a estar abierta.»), para no quedarte atascado.
+- Si estás dentro de la zona de salida cuando se abre, sales sin tener que volver a entrar.
+- **No sella en Fácil ni con la última vida** (director clemente).
+- En **F3**, la línea «Encuentro:» añade «salida sellada N s».
+- **Diferencia con el plan:** se sella la salida de la fase, no las puertas de la sala. Cerrar las puertas cortaría el camino de los robots de la oleada (aparecen a 8–35 m, a menudo fuera de la sala) y el encuentro no se podría acabar.
+
+**Cómo probarlo:**
+
+1. En Normal, Fase 2, abre **F3** y activa el encuentro con su objetivo (la consola o el terminal).
+2. El aviso termina con «Salida de la fase sellada.» y F3 dice «salida sellada 150 s», bajando.
+3. Corre a la salida: sale el mensaje del sello y no cambias de fase.
+4. Destruye a los robots de todas las oleadas: «… Salida desbloqueada.». Ahora la salida funciona.
+5. En Fácil (o con la última vida), repite: no se sella.
+
+### Etapa 22: recompensa según lo que te falta (commits 54 y 55)
+
+**Archivo nuevo:** `Scripts/Combat/Encounters/EncounterRewardModel.cs`. **Modificado:** `EncounterDirector`.
+
+**Qué hace:** al despejar un encuentro, la recompensa se calcula con lo que te falte:
+
+| Qué miras | Recompensa |
+|---|---|
+| Munición total (cargadores y reserva de todas las armas) | 3 paquetes si tienes menos del 30 %, 2 si menos del 60 %, 1 si no |
+| Integridad por debajo del 50 % | Reparación de emergencia +40 al momento (como un kit) |
+| Vidas por debajo del máximo | +1 vida |
+| Vidas al máximo | 1 paquete de munición más en lugar de la vida |
+
+- El mensaje lo dice todo junto, por ejemplo «Zona despejada. Recompensa: 3 paquetes de munición, reparación de emergencia +40, +1 vida.».
+- El accesorio de arma lo sigue soltando el director de recompensas (Etapa 16).
+
+**Cómo probarlo:**
+
+1. Llega al encuentro de la Fase 2 con poca munición (dispara al aire) y con la integridad por debajo de la mitad.
+2. Despéjalo: el mensaje dice 3 paquetes, reparación +40 y +1 vida si habías perdido alguna. La barra de integridad sube 40.
+3. Repite con todo lleno: sale «2 paquetes de munición», es decir, 1 más 1 extra por tener todas las vidas.
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -672,6 +728,8 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 | `ModRewardTest` | 13 | Qué accesorio según cómo juegas, variedad sin repetir, solo los que caben y el motivo |
 | `DebugPanelTest` | 24 | Solo en desarrollo, teclas F5–F12, cuándo está disponible cada acción, tensión con límites, ruedas de eventos y accesorios, fase siguiente |
 | `DeathCauseTest` | 20 | Orden de los consejos, quién te vio y desde dónde, lo que pesó, descargas, fuera de combate y la línea de F3 |
+| `EncounterSealTest` | 9 | Cuándo se sella la salida (dificultad, última vida, estado), tope de 150 s y mensaje |
+| `EncounterRewardTest` | 8 | Munición según lo que queda, reparación, vida o paquete extra, mensaje y fracción de munición |
 | `HeatmapTest` | 13 | Celdas, enfriamiento, mínimo de calor, distancia a la reaparición, sin repetir y desempate estable |
 | `TelemetryTest` | 9 | Cabecera y fila del CSV, formato de números, escape de textos y precisión sin dato |
 | `PhaseReportTest` | 23 | Recuento de la fase, precisión por disparo, arma dominante, estilos de juego, veredicto y líneas del panel |
@@ -739,6 +797,8 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | El panel F4 sube o baja la tensión muy poco | `TensionStep` (0,1) | `DebugPanelModel` |
 | La tarjeta de la caída se equivoca de consejo | `FarSpot` (12 m), `CloseSpot` (5 m), `LoudNoise` (6 m), `Memory` (20 s) y el orden de `ChooseTip` | `DeathCauseModel` |
 | La tarjeta de la caída dura poco o estorba | `CardTime` (9 s) | `DeathCauseModel` |
+| La salida sellada agobia o no se nota | `MaxSeal` (150 s) y `ShouldSeal` (no en Fácil ni con la última vida) | `EncounterSealModel` |
+| La recompensa del encuentro da mucho o poco | `LowAmmo`/`MidAmmo` (30 % / 60 %), `LowHealth` (50 %) y `EmergencyHeal` (40) | `EncounterRewardModel` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
 Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada a un extremo, el problema está en `Range` o en los objetivos del analizador. Si oscila, sube `DeadZone` o baja `RisePerSecond`.
@@ -749,7 +809,7 @@ Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada
 - El HUD de combate y el panel F3 usan IMGUI (`OnGUI`) para no depender de los constructores de escena. Si se quiere el estilo del resto del HUD (TextMeshPro), se pueden pasar a un constructor más adelante.
 - El mando usa ejes de XInput en Windows (ver la Etapa 5). En otras plataformas puede hacer falta cambiar los números de eje.
 - Las coberturas se generan por el nombre de los objetos de la escena. Un objeto con otro nombre no sirve de cobertura hasta que se añada a `CoverField.Names`.
-- Diferencias con el diseño «IA de combate» (`ia-combate-design.md`) en los encuentros: no se bloquean puertas durante el encuentro, no hay caja de recompensa con material (solo munición) y los activadores son los objetivos que ya tiene cada fase, no objetos colocados a mano. Para cambiar el activador de una fase basta con lanzar `ObjectiveEvents.Raise` desde otro objeto.
+- Diferencias con el diseño «IA de combate» (`ia-combate-design.md`) en los encuentros: se sella la salida de la fase en lugar de las puertas de la sala (Etapa 21), la recompensa sale a tus pies sin caja (munición, reparación y vida según lo que falte, Etapa 22) y los activadores son los objetivos que ya tiene cada fase, no objetos colocados a mano. Para cambiar el activador de una fase basta con lanzar `ObjectiveEvents.Raise` desde otro objeto.
 - Un robot desarmado no recupera el arma al reaparecer el jugador, igual que los robots destruidos siguen destruidos.
 - El láser de aviso usa el material `Sprites/Default`. Si una compilación lo elimina del build, el aviso se queda en el pitido: añádelo a *Always Included Shaders*.
 - Las vidas viven en memoria durante la partida: al pulsar Continuar empiezas la fase guardada con las vidas llenas.

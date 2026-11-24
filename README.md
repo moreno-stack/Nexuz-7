@@ -9,7 +9,7 @@ Juego de **sigilo en primera o tercera persona** hecho en **Unity (C#)**. Despie
 ```
 Assets/_Nexus7/Scripts/   ← todo el código del juego (C#)
 docs/guias/fases/         ← guías de las 6 fases originales
-Tests/                    ← pruebas automáticas (1159 comprobaciones, sin Unity)
+Tests/                    ← pruebas automáticas (1176 comprobaciones, sin Unity)
 docs/guias/mejoras/       ← guías de las mejoras (etapas 0 a 8)
 docs/superpowers/         ← diseño (specs) y planes de implementación
 docs/media/               ← vídeo de la maqueta y capturas
@@ -88,7 +88,7 @@ El proyecto ya trae TextMeshPro, los ajustes de URP y *Active Input Handling* en
 | Mando: cruceta ◄ ► / ▼ | Cambiar de arma / recargar |
 | Tab / I | Inventario |
 
-Dificultad (menú principal): **Fácil ×1,0 · Normal ×1,5 · Difícil ×2,0** de daño. Durante la partida, el director adaptativo ajusta la presión según cómo juegas, y al caer los robots no reaparecen en el mismo sitio. Los robots de seguridad, guardia y élite disparan a distancia, siempre con un láser rojo de aviso antes de cada ráfaga. Se cubren tras cajas y consolas, se asoman a disparar, los guardias avanzan y la élite flanquea; apunta a su óptica para deslumbrarlos o a la espalda de la élite (núcleo cian, ×3), y dispárales al brazo del arma para desarmarlos. Cada fase tiene además un encuentro por oleadas que se activa al cumplir su objetivo. Tienes 5/3/2 vidas por fase (Fácil/Normal/Difícil); sin vidas la fase se reinicia con otra colocación, y en cada intento el director marca a algunos robots como blindados, rápidos u ojo de águila. También lanza eventos de nave (apagón, fuga de vapor o barrido de seguridad) según cómo vas, y al empezar cada fase te enseña el informe de la IA sobre la anterior. Las armas aceptan hasta 2 accesorios (supresor, cargador ampliado, estabilizador, disipador), y el director los regala al despejar encuentros o destruir élites según cómo juegas. La IA aprende tus rutas (manda una unidad a vigilar donde más te ha visto) y cada fase deja una línea con tus cifras en `nexus7_telemetria.csv`. Al reaparecer, una tarjeta te dice quién te vio, qué pesó (luz, correr, ruido) y un consejo. Detalles en [`docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md`](docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md).
+Dificultad (menú principal): **Fácil ×1,0 · Normal ×1,5 · Difícil ×2,0** de daño. Durante la partida, el director adaptativo ajusta la presión según cómo juegas, y al caer los robots no reaparecen en el mismo sitio. Los robots de seguridad, guardia y élite disparan a distancia, siempre con un láser rojo de aviso antes de cada ráfaga. Se cubren tras cajas y consolas, se asoman a disparar, los guardias avanzan y la élite flanquea; apunta a su óptica para deslumbrarlos o a la espalda de la élite (núcleo cian, ×3), y dispárales al brazo del arma para desarmarlos. Cada fase tiene además un encuentro por oleadas que se activa al cumplir su objetivo: mientras dura, la salida queda sellada, y al despejarlo la recompensa depende de lo que te falte. Tienes 5/3/2 vidas por fase (Fácil/Normal/Difícil); sin vidas la fase se reinicia con otra colocación, y en cada intento el director marca a algunos robots como blindados, rápidos u ojo de águila. También lanza eventos de nave (apagón, fuga de vapor o barrido de seguridad) según cómo vas, y al empezar cada fase te enseña el informe de la IA sobre la anterior. Las armas aceptan hasta 2 accesorios (supresor, cargador ampliado, estabilizador, disipador), y el director los regala al despejar encuentros o destruir élites según cómo juegas. La IA aprende tus rutas (manda una unidad a vigilar donde más te ha visto) y cada fase deja una línea con tus cifras en `nexus7_telemetria.csv`. Al reaparecer, una tarjeta te dice quién te vio, qué pesó (luz, correr, ruido) y un consejo. Detalles en [`docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md`](docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md).
 
 ## Menú y pantalla final
 
@@ -104,4 +104,4 @@ Capturas de previsualización generadas desde el código del proyecto (en Unity 
 bash Tests/run_all.sh
 ```
 
-Compila todo el código, incluidos los constructores de escena, y ejecuta las 1159 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).
+Compila todo el código, incluidos los constructores de escena, y ejecuta las 1176 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).
