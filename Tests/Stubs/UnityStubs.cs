@@ -191,6 +191,8 @@ namespace UnityEngine
     public enum TextAnchor { LowerRight, MiddleCenter, MiddleRight, MiddleLeft, UpperLeft }
     public class YieldInstruction {} public class Coroutine : YieldInstruction {}
     public class WaitForSeconds : YieldInstruction { public WaitForSeconds(float s) {} }
+    public class WaitForSecondsRealtime : CustomYieldInstruction { public WaitForSecondsRealtime(float s) {} public override bool keepWaiting { get { return false; } } }
+    public abstract class CustomYieldInstruction : System.Collections.IEnumerator { public abstract bool keepWaiting { get; } public object Current { get { return null; } } public bool MoveNext() { return keepWaiting; } public void Reset() {} }
 
     public class SerializeField : Attribute {}
     public class HeaderAttribute : Attribute { public HeaderAttribute(string h) {} }

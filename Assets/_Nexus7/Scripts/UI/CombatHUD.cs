@@ -92,6 +92,7 @@ namespace Nexus7.UI
             DrawEnemyBars(k);
             DrawDamageIndicators(k);
             DrawWeaponPanel(w, k);
+            DrawLives(k);
         }
 
         private void DrawCrosshair(float k)
@@ -208,6 +209,28 @@ namespace Nexus7.UI
             small = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold };
             center = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
             zoneStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 14 };
+        }
+
+        /// <summary>Vidas encima del panel del arma: cuadrados llenos (vidas) y vacíos; rojos con la última.</summary>
+        private void DrawLives(float k)
+        {
+            int max = Nexus7.Gameplay.LivesSystem.Max, lives = Nexus7.Gameplay.LivesSystem.Lives;
+            if (max <= 0) return;
+            float size = 14f * k, gap = 6f * k;
+            float right = Screen.width - 24f * k, y = Screen.height - 132f * k - 24f * k - size - 12f * k;
+            bool last = lives == 1;
+            for (int i = 0; i < max; i++)
+            {
+                float x = right - (max - i) * (size + gap) + gap;
+                bool full = i < lives;
+                var c = full ? (last ? new Color(1f, 0.3f, 0.25f) : new Color(0.4f, 0.95f, 1f)) : new Color(1f, 1f, 1f, 0.18f);
+                Rect(x, y, size, size, c);
+            }
+            small.fontSize = Mathf.RoundToInt(15 * k);
+            var old = GUI.color;
+            GUI.color = last ? new Color(1f, 0.4f, 0.35f) : new Color(1f, 1f, 1f, 0.8f);
+            GUI.Label(new Rect(right - max * (size + gap) - 150f * k, y - 4f * k, 140f * k, 24f * k), last ? "ÚLTIMA VIDA" : "VIDAS", center);
+            GUI.color = old;
         }
 
         /// <summary>Arco de 7 puntos alrededor de la mira en la dirección del atacante (arriba = delante, abajo = detrás).</summary>

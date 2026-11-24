@@ -155,7 +155,9 @@ namespace Nexus7.Enemies
         private float spinDuration;    // en SEARCH: segundos de giro que quedaban al terminar de avanzar
 
         /// <summary>Velocidad base afectada por el nivel de alerta de la nave y por el director adaptativo.</summary>
-        private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed * AdaptiveModifiers.EnemySpeed * speedVariation;
+        private float Speed(float baseSpeed) => baseSpeed * AlertSystem.Profile.speed * AdaptiveModifiers.EnemySpeed * speedVariation * AffixSpeed;
+        /// <summary>Rasgo del director para este intento (Rápido ×1,2). No se serializa: las copias empiezan en 1.</summary>
+        public float AffixSpeed { get; set; } = 1f;
 
         private Nexus7.Characters.ProceduralAnimator rig;
 

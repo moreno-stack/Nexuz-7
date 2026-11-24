@@ -45,6 +45,9 @@ namespace Nexus7.Director
         public float AssistDeaths = 1.6f, AssistCooldown = 120f;
 
         public float Tension { get; private set; }
+        /// <summary>El jugador está en su última vida: el objetivo de tensión no pasa de la base − LastLifeMargin.</summary>
+        public bool LastLife { get; set; }
+        public float LastLifeMargin = 0.1f;
         public float Baseline { get; private set; }
         public float Target { get; private set; }
         public bool InRelief => reliefLeft > 0f;
@@ -85,6 +88,7 @@ namespace Nexus7.Director
             assistCooldownLeft = Math.Max(0f, assistCooldownLeft - dt);
 
             Target = Clamp(Baseline + perf.Performance * Range, MinTension, MaxTension);
+            if (LastLife) Target = Math.Max(MinTension, Math.Min(Target, Baseline - LastLifeMargin));   // la última vida es más clemente
             float diff = Target - Tension;
             if (Math.Abs(diff) > DeadZone)
             {

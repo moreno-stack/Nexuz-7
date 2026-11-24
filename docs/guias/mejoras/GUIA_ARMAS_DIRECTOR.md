@@ -95,9 +95,19 @@ Cuarta entrega (PR #4, rama `feat/combate-oleadas-desarme`):
 | 25 | `feat(combate): encuentros por oleadas activados por los objetivos de cada fase` | `EncounterDirector`, `CombatInstaller` y la línea del encuentro en F3 |
 | 26 | `docs: guía de oleadas, desarme y retroceso` | Esta guía y el README |
 
+Quinta entrega (PR #6, rama `feat/vidas-variantes-robot`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 27 | `feat(vidas): modelo de vidas por fase y director clemente en la última vida` | `LivesModel`, `DirectorModel.LastLife` y `LivesTest` |
+| 28 | `feat(vidas): vidas en juego, reinicio de fase sin repetir y vidas en el HUD` | `LivesSystem`, semillas de `RespawnVariator` y `EncounterDirector`, `GameSession`, HUD y F3 |
+| 29 | `feat(director): modelo de variantes de robot (blindado, rápido, ojo de águila)` | `RobotAffixModel` y `AffixTest` |
+| 30 | `feat(director): el director reparte variantes de robot en cada intento` | `RobotAffixDirector`, `RobotAffixState` y los enganches en `EnemyHealth`, `EnemyPatrol`, `EnemyVision` y `EnemyGun` |
+| 31 | `docs: guía de vidas y variantes de robot` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 986 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1008 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -324,6 +334,53 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 4. Deja que te atrapen a mitad: los robots de la oleada desaparecen y, 4 s después de reaparecer, el encuentro vuelve a empezar. Los anillos rojos salen en otros sitios.
 5. En Difícil la primera oleada de la Fase 5 trae 4 robots en vez de 3.
 
+### Etapa 11: vidas (commits 27 y 28)
+
+**Archivos nuevos:** `Scripts/Gameplay/LivesModel.cs` y `LivesSystem.cs`. **Modificados:** `DirectorModel` (`LastLife`), `GameDirector`, `RespawnVariator`, `EncounterDirector`, `GameSession`, `CombatInstaller` y `CombatHUD`.
+
+**Qué hace:**
+
+- Tienes **5 vidas en Fácil, 3 en Normal y 2 en Difícil**. Se rellenan al entrar en cada fase nueva.
+- Cada vez que te atrapan o caes (vida a 0, descarga, robot que te alcanza) **pierdes una vida**. El aviso dice «Vidas: 2/3», y con la última «¡ÚLTIMA VIDA!» en rojo.
+- **Despejar un encuentro de oleadas** devuelve una vida («+1 vida»), sin pasar del máximo.
+- **Sin vidas:** «SIN VIDAS. Reiniciando la fase…», y la fase se recarga desde su inicio con las vidas llenas y el inventario con el que entraste. El reinicio cambia la semilla de las patrullas, los refuerzos, las oleadas y las variantes: la fase no se juega igual que antes.
+- **Director clemente:** con la última vida, la tensión objetivo no pasa de la base − 0,1. Aunque vayas bien, no aprieta hasta que recuperes una vida.
+- En el HUD, encima del panel del arma, hay un cuadrado por vida: cian, o rojos con la última. En **F3** aparecen las vidas y los reinicios de la fase.
+
+**Cómo probarlo:**
+
+1. En Normal, entra en la Fase 2: encima del panel del arma ves «VIDAS» con 3 cuadrados cian.
+2. Deja que te atrape un robot: «Vidas: 2/3» y un cuadrado vacío. Otra vez: «¡ÚLTIMA VIDA!» y el cuadrado que queda en rojo. En F3 sale «ÚLTIMA: director clemente» y la tensión deja de subir.
+3. Despeja el encuentro de oleadas de la fase: «+1 vida (2/3)».
+4. Pierde todas: «SIN VIDAS» y la fase vuelve a empezar desde su entrada con 3 vidas. En F3, «Reinicios de la fase 1». Fíjate en que los robots no patrullan donde la primera vez.
+5. Al pasar a la Fase 3 las vidas vuelven a estar llenas.
+
+### Etapa 12: variantes de robot (commits 29 y 30)
+
+**Archivos nuevos:** `Scripts/Director/RobotAffixModel.cs`, `RobotAffixState.cs` y `RobotAffixDirector.cs`. **Modificados:** `EnemyHealth` (`SetAffixHealth`), `EnemyPatrol` (`AffixSpeed`), `EnemyVision` (`AffixDetection`), `EnemyGun` (`AffixSpread`) y `GameDirector`.
+
+**Qué hace:**
+
+- Al empezar cada fase y **en cada reaparición**, el director marca a algunos robots vivos con un **rasgo**, visible como una esfera brillante sobre la cabeza:
+
+| Rasgo | Color | Efecto |
+|---|---|---|
+| Blindado | Dorado | Vida ×1,4 |
+| Rápido | Verde | Velocidad de patrulla y persecución ×1,2 |
+| Ojo de águila | Magenta | Te detecta ×1,3 más rápido y apunta mejor (dispersión ×0,8) |
+
+- **Cuántos** depende de la tensión: ninguno por debajo de 0,4, 1 hasta 0,6, 2 hasta 0,8 y 3 desde 0,8. Nunca más de la mitad de los robots de la fase.
+- **Anti-repetición:** en cada intento prefiere robots que no tenían rasgo; si tiene que repetir robot, le cambia el rasgo. Al reaparecer, el mensaje dice qué unidades se han mejorado.
+- Los refuerzos y los robots de las oleadas aparecen sin rasgo.
+- En **F3**, la línea «Variantes:» dice qué robot tiene cada rasgo.
+
+**Cómo probarlo:**
+
+1. En Difícil (tensión de base 0,62 → 2 variantes), entra en la Fase 3: como solo hay 2 guardias, a los 0,6 s uno de ellos lleva una esfera de color (como mucho la mitad). **F3** dice cuál («RobotGuardia_Reactor Blindado», por ejemplo).
+2. Si es el blindado, dispárale: su barra de vida baja más despacio que la del otro guardia.
+3. Deja que te atrapen: sale el mensaje «IA NEXUS-7: unidades mejoradas en este intento: …» y la esfera pasa al **otro** guardia.
+4. En Fácil (base 0,38) no deberías ver ninguna esfera al empezar, salvo que juegues muy bien y la tensión pase de 0,4.
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -335,7 +392,9 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 | `TacticalCoverTest` | 37 | Estilos, puntuación de coberturas, mejor punto, reservas, ciclo cubrirse/asomarse, asomadas fallidas, relojes de avance y flanqueo, tempo del director |
 | `WeakPointTest` | 26 | Óptica, núcleo trasero, brazo del arma y desarme, prioridades, multiplicadores y curva del retroceso |
 | `EncounterTest` | 29 | Oleadas por fase, escalado por dificultad y director, activadores, secuencia, reinicio y puntos de aparición justos y variados |
-| `DirectorTest` | 40 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
+| `LivesTest` | 10 | Vidas por dificultad, perder y ganar, máximo, reinicio de fase y relleno al cambiar de fase |
+| `AffixTest` | 10 | Cuántas variantes según la tensión, efectos de cada rasgo y reparto sin repetir |
+| `DirectorTest` | 42 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
 | `SpawnVariationTest` | 16 | Anti-repetición, justicia, ritmo, refuerzos, cámaras y reproducibilidad |
 
 Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). El comportamiento en Unity hay que verlo con los pasos de arriba.
@@ -378,6 +437,10 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | Las oleadas llegan demasiado seguidas | `AdvanceWhenAlive` (1), `MaxWaveTime` (25 s) y `CountdownTime` (3 s) | `WaveModel` |
 | Aparecen demasiado cerca o a la vista | `MinDistance` (8 m), `ViewDistance` (18 m) y `ViewHalfAngle` (35°) | `EncounterSpawnPicker` |
 | El encuentro tarda en volver tras caer | `RestartDelay` (4 s) | `EncounterDirector` |
+| Las vidas se acaban muy rápido o no importan | `MaxFor` (5 / 3 / 2) y la vida extra al despejar un encuentro | `LivesModel`, `EncounterDirector` |
+| La última vida es demasiado fácil o igual de dura | `LastLifeMargin` (0,1) | `DirectorModel` |
+| Demasiadas o pocas variantes | Umbrales 0,4 / 0,6 / 0,8 de `CountFor` y el tope de la mitad de los robots | `RobotAffixModel` |
+| Una variante es injusta | `ArmoredHealth` (1,4), `SwiftSpeed` (1,2), `HawkeyeDetection` (1,3) y `HawkeyeSpread` (0,8) | `RobotAffixModel` |
 | Los gatillos del mando se disparan solos | Umbrales 0,5 / 0,3 de `TriggerLatch` y `dead` (0,1) de los ejes | `CombatInput`, `InputManager.asset` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
@@ -392,4 +455,5 @@ Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada
 - Diferencias con el diseño «IA de combate» (`ia-combate-design.md`) en los encuentros: no se bloquean puertas durante el encuentro, no hay caja de recompensa con material (solo munición) y los activadores son los objetivos que ya tiene cada fase, no objetos colocados a mano. Para cambiar el activador de una fase basta con lanzar `ObjectiveEvents.Raise` desde otro objeto.
 - Un robot desarmado no recupera el arma al reaparecer el jugador, igual que los robots destruidos siguen destruidos.
 - El láser de aviso usa el material `Sprites/Default`. Si una compilación lo elimina del build, el aviso se queda en el pitido: añádelo a *Always Included Shaders*.
-- No hay vidas limitadas: el director usa las caídas recientes como medida de «vidas perdidas».
+- Las vidas viven en memoria durante la partida: al pulsar Continuar empiezas la fase guardada con las vidas llenas.
+- Al reiniciar una fase sin vidas se vuelve a cargar la escena, así que su introducción (si la tiene) se vuelve a ver.

@@ -59,7 +59,8 @@ namespace Nexus7.Director
         {
             respawn = GetComponent<PlayerRespawn>();
             int sceneHash = SpawnVariationModel.Hash(0, 0, SceneManager.GetActiveScene().name);
-            Model = new SpawnVariationModel(GameSession.RunSeed ^ sceneHash);
+            // Tras un reinicio de fase por quedarse sin vidas, otra semilla: la fase no se repite igual
+            Model = new SpawnVariationModel(GameSession.RunSeed ^ sceneHash ^ (LivesSystem.RestartsHere * 15485863));
         }
 
         private void OnEnable()

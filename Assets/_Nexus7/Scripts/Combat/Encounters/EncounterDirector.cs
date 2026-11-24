@@ -135,6 +135,7 @@ namespace Nexus7.Combat
                     lastEvent = "Zona despejada";
                     Say("Zona despejada. Los refuerzos han caído: munición de recompensa disponible.");
                     AmmoPickup.Spawn(player.position + player.forward * 1.5f + Vector3.up * 0.4f, 2f);
+                    LivesSystem.GainLife();
                     break;
             }
         }
@@ -286,7 +287,7 @@ namespace Nexus7.Combat
             return best;
         }
 
-        private int Seed(int wave) => SceneManager.GetActiveScene().name.GetHashCode() ^ (attempt * 7919) ^ (wave * 104729) ^ (int)(Time.time * 10f);
+        private int Seed(int wave) => SceneManager.GetActiveScene().name.GetHashCode() ^ (attempt * 7919) ^ (LivesSystem.RestartsHere * 15485863) ^ (wave * 104729) ^ (int)(Time.time * 10f);
 
         private static void Say(string text)
         {

@@ -53,6 +53,8 @@ namespace Nexus7.Enemies
 
         public float Awareness { get; private set; }
         public bool CanSeePlayer { get; private set; }
+        /// <summary>Rasgo del director para este intento (Ojo de águila ×1,3). No se serializa: las copias empiezan en 1.</summary>
+        public float AffixDetection { get; set; } = 1f;
         /// <summary>Dónde vio al jugador por última vez (no cambia mientras no lo vea).</summary>
         public Vector3 LastSeenPosition { get; private set; }
         /// <summary>Velocidad con la que se movía el jugador la última vez que lo vio (para buscar hacia donde huía).</summary>
@@ -129,7 +131,7 @@ namespace Nexus7.Enemies
                 float rays = PerceptionModel.DetectionFactor(VisibleRays, PerceptionModel.SamplePointCount);
                 float wary = IsWary ? boostMultiplier : 1f;
                 float alert = Nexus7.Core.AlertSystem.Profile.detection * Nexus7.Core.DifficultySettings.DetectionMultiplier
-                              * Nexus7.Core.AdaptiveModifiers.Detection;   // director adaptativo (1 sin director)
+                              * Nexus7.Core.AdaptiveModifiers.Detection * AffixDetection;   // director adaptativo y rasgo (1 sin director)
                 Awareness += detectionSpeed * visibility * distanceFactor * rays * wary * alert * Time.deltaTime;
             }
             else

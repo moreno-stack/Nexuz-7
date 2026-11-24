@@ -8,7 +8,7 @@ namespace Nexus7.Combat
     /// <summary>
     /// Añade el combate a cualquier fase al cargarla, sin tener que reconstruir las escenas:
     ///   · al jugador: PlayerWeapon y el HUD de combate;
-    ///   · al jugador: PlayerTarget (para que le den los disparos de los robots);
+    ///   · al jugador: PlayerTarget (para que le den los disparos de los robots) y LivesSystem (vidas);
     ///   · a cada robot (EnemyPatrol): EnemyHealth, y EnemyGun + EnemyTactics si su tipo lleva arma (EnemyGunCatalog.ForRobot);
     ///   · a la fase: las coberturas de combate (CoverField) y el encuentro por oleadas (EncounterDirector).
     /// Es idempotente (si el constructor de la escena ya los puso, no duplica nada). En el menú no hace nada.
@@ -37,6 +37,7 @@ namespace Nexus7.Combat
             if (player.GetComponent<PlayerWeapon>() == null) player.AddComponent<PlayerWeapon>();
             if (player.GetComponent<Nexus7.UI.CombatHUD>() == null) player.AddComponent<Nexus7.UI.CombatHUD>();
             if (player.GetComponent<PlayerTarget>() == null) player.AddComponent<PlayerTarget>();
+            if (player.GetComponent<Nexus7.Gameplay.LivesSystem>() == null) player.AddComponent<Nexus7.Gameplay.LivesSystem>();
             EnemyGun.Tokens.Clear();
             CoverField.Build();
             EncounterDirector.EnsureForScene();
