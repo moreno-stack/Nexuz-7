@@ -32,6 +32,9 @@ namespace Nexus7.Inventory
         /// <summary>Brillo y haz de los objetos imprescindibles (para encontrarlos en salas oscuras).</summary>
         public const float BeaconLightRange = 4f, BeaconLightIntensity = 2f, BeaconHeight = 6f, BeaconWidth = 0.06f;
 
+        /// <summary>Los objetos imprescindibles de esta sala (el panel de pruebas [F4] los da directamente).</summary>
+        public IReadOnlyList<ItemStack> Guaranteed => guaranteed;
+
         private void Start()
         {
             if (points == null || points.Length == 0) points = GetComponentsInChildren<LootSpawnPoint>();

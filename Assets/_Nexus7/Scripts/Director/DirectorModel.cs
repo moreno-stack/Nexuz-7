@@ -78,6 +78,16 @@ namespace Nexus7.Director
         }
 
         /// <summary>
+        /// Fija la tensión a mano (panel de pruebas [F4]). Se queda dentro de [MinTension, MaxTension] y, si está lejos
+        /// del objetivo, el director vuelve a acercarla poco a poco como siempre.
+        /// </summary>
+        public void SetTension(float value)
+        {
+            Tension = Clamp(value, MinTension, MaxTension);
+            Knobs = KnobsFor(Tension);
+        }
+
+        /// <summary>
         /// Avanza 'dt' segundos con las métricas del analizador. Devuelve la acción especial que toque (o None).
         /// </summary>
         public DirectorAction Tick(float dt, PlayerPerformanceModel perf)
