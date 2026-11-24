@@ -116,9 +116,19 @@ Sexta entrega (PR #7, rama `feat/eventos-nave-informe-ia`):
 | 36 | `feat(director): el panel F3 cuenta las luces atenuadas por el apagón` | `ShipEventDirector.Summary` |
 | 37 | `docs: guía de eventos de nave e informe de la IA` | Esta guía y el README |
 
+Séptima entrega (PR #8, rama `feat/accesorios-recompensas`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 38 | `feat(armas): accesorios modulares (supresor, cargador ampliado, estabilizador, disipador)` | `WeaponModModel`, `PlayerWeaponSpec.Clone`, accesorios en `WeaponModel` y `WeaponModTest` |
+| 39 | `feat(armas): accesorios en el arsenal, la partida guardada y el HUD` | `ArsenalModel.ModTarget`, `PlayerWeapon.GiveMod`, `CombatSession`, `SavedWeapon.mods` y `CombatHUD` |
+| 40 | `feat(director): modelo de recompensas, el accesorio según cómo juegas` | `ModRewardModel` y `ModRewardTest` |
+| 41 | `feat(director): módulos de recompensa al despejar encuentros o destruir élites` | `ModRewardDirector`, `ModPickup`, `EncounterDirector.Cleared`, F3 y el informe de la IA |
+| 42 | `docs: guía de accesorios y recompensas` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1039 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1081 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -449,6 +459,60 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 4. Pasa la Fase 3 sin disparar ni ser visto: en la Fase 4 el estilo es «Fantasma».
 5. Pierde todas las vidas en una fase: al reiniciarse, el panel dice «intento anterior» y el estilo «En apuros».
 
+### Etapa 15: accesorios de arma (commits 38 y 39)
+
+**Archivos nuevos:** `Scripts/Combat/WeaponModModel.cs`. **Modificados:** `PlayerWeaponCatalog` (`Clone`), `WeaponModel` (`BaseSpec`, `Mods`, `InstallMod`), `ArsenalModel` (`ModTarget`), `PlayerWeapon` (`GiveMod`), `CombatSession`, `SaveData` y `CombatHUD`.
+
+**Qué hace:**
+
+- El arsenal pasa a ser modular: **cada arma lleva hasta 2 accesorios**. El arma con accesorios es una copia del arma del catálogo con los valores cambiados, así que el disparo, el ruido, el HUD y el director usan los valores nuevos sin tocar nada más.
+
+| Accesorio | Etiqueta | Efecto | Dónde sirve |
+|---|---|---|---|
+| Supresor | SUP | Ruido ×0,45, daño ×0,9 | Todas |
+| Cargador ampliado | CAR | Cargador ×1,5 (pistola 12 → 18), recarga ×1,15 | Todas |
+| Estabilizador | EST | Dispersión ×0,7, apertura por disparo y retroceso ×0,6 | Todas |
+| Disipador | DIS | Calor por disparo ×0,6 | Pistola, rifle y cañón (las que se calientan) |
+
+- Un módulo recogido va al **arma de la mano** si le sirve y no lo lleva; si no, a otra con hueco libre. Con los 2 huecos llenos, el nuevo **sustituye al más antiguo**, y el aviso lo dice. Si quitas un cargador ampliado, las balas que sobran vuelven a la reserva.
+- En el HUD, a la derecha de la munición, salen en morado las etiquetas de los accesorios del arma de la mano («SUP · EST»).
+- Los accesorios pasan de fase y se guardan con la partida (Continuar).
+
+**Cómo probarlo** (los módulos los da la Etapa 16, así que se prueban juntas):
+
+1. Recoge un módulo: sale el aviso morado «Supresor en Pistola de plasma: menos ruido, algo menos de daño» y en el HUD aparece «SUP».
+2. Con el supresor en la pistola, dispara a unos 6 m de un robot de espaldas: sin supresor (10 m de ruido) suele oírte y girarse; con él (4,5 m), no.
+3. Con el cargador ampliado en la pistola, el contador muestra «18 / …» tras recargar.
+4. Pasa de fase o guarda, sal al menú y pulsa Continuar: el arma conserva sus etiquetas.
+
+### Etapa 16: recompensas del director (commits 40 y 41)
+
+**Archivos nuevos:** `Scripts/Director/ModRewardModel.cs`, `ModRewardDirector.cs` y `Scripts/Combat/ModPickup.cs`. **Modificados:** `EncounterDirector` (evento `Cleared`), `GameDirector` (línea en F3) y `PhaseReportModel` (cuenta los módulos).
+
+**Qué hace:**
+
+- Al **despejar un encuentro de oleadas** y al **destruir un élite** de la fase (no los de refuerzo ni los de las oleadas), cae un **módulo de arma**: un rombo morado brillante que flota. Se recoge pasando por encima.
+- El director elige el accesorio según lo que el analizador ve en los últimos 60 s:
+
+| Si… | Da |
+|---|---|
+| Te ven poco (≤ 0,5 detecciones/min) o disparas desde el mismo sitio (acampada ≥ 50 %) | Supresor |
+| Fallas mucho (precisión < 30 % con 8 disparos o más) | Estabilizador |
+| Llevas un ritmo agresivo (≥ 1,5 bajas/min) | Cargador ampliado |
+| Usas sobre todo un arma que se calienta (≥ 60 % de los disparos) | Disipador |
+
+- Solo elige accesorios que alguna de tus armas pueda montar. Si nada destaca, sale cualquiera, pero no el de la última vez. Si todas las armas ya llevan todo lo posible, no cae nada.
+- El mensaje dice por qué: «TRAJE: zona despejada. Módulo de arma recuperado: estabilizador (fallas muchos disparos). Recógelo.»
+- En **F3**, la línea «Recompensas:» cuenta los módulos de la fase y el último. El informe de la IA de la Etapa 14 también los cuenta.
+
+**Cómo probarlo:**
+
+1. En la Fase 2, cumple el objetivo para activar el encuentro de oleadas y dispara mucho fallando a propósito (más de 8 disparos, menos del 30 % de aciertos).
+2. Al despejarlo, junto a la munición de recompensa cae un rombo morado y el mensaje dice «estabilizador (fallas muchos disparos)». Recógelo: en el HUD sale «EST».
+3. Repite en la Fase 3 sin que te vean antes del encuentro: lo normal es el supresor.
+4. En la Fase 5 o la 6, destruye un élite (núcleo cian en la espalda): cae otro módulo, distinto del anterior si nada destaca.
+5. Abre **F3** para ver «Recompensas: 1 en la fase · última …».
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
@@ -463,6 +527,8 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 | `LivesTest` | 10 | Vidas por dificultad, perder y ganar, máximo, reinicio de fase y relleno al cambiar de fase |
 | `AffixTest` | 10 | Cuántas variantes según la tensión, efectos de cada rasgo y reparto sin repetir |
 | `ShipEventTest` | 8 | Qué evento según la tensión y las caídas, sin repetir, y elección del sitio (distancia, por delante, sin repetir) |
+| `WeaponModTest` | 29 | Efectos de cada accesorio, huecos y sustitución, munición al montar y quitar, guardado y a qué arma va |
+| `ModRewardTest` | 13 | Qué accesorio según cómo juegas, variedad sin repetir, solo los que caben y el motivo |
 | `PhaseReportTest` | 23 | Recuento de la fase, precisión por disparo, arma dominante, estilos de juego, veredicto y líneas del panel |
 | `DirectorTest` | 42 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
 | `SpawnVariationTest` | 16 | Anti-repetición, justicia, ritmo, refuerzos, cámaras y reproducibilidad |
@@ -519,6 +585,10 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | Los eventos salen muy lejos o a la espalda | `MinDistance`/`MaxDistance` (6–25 m) y `AheadAngle` (60°) | `ShipEventModel` |
 | El informe se equivoca de estilo | `StruggleDeaths` (2), `EntrenchedCamp` (0,5), `SharpKills` (3), `SharpAccuracy` (0,45), `AggressiveKpm` (2) y `OneWeaponShare` (0,7) | `PhaseReportModel` |
 | El informe dura poco o estorba | `ShowDelay` (1,5 s), `ShowTime` (9 s) y `MinDuration` (20 s) | `PhaseReportPanel`, `PhaseReportModel` |
+| Un accesorio es obligatorio o inútil | `SuppressorNoise`/`SuppressorDamage` (0,45 / 0,9), `MagFactor`/`MagReload` (1,5 / 1,15), `StabSpread`/`StabBloom`/`StabRecoil` (0,7 / 0,6 / 0,6) y `HeatsinkHeat` (0,6) | `WeaponModModel` |
+| Se acumulan demasiadas mejoras | `MaxSlots` (2) | `WeaponModModel` |
+| El director acierta poco con el accesorio | `Fit` (40), `RepeatPenalty` (25), `RandomWeight` (15) y los umbrales 0,5 / 0,5 / 30 % / 1,5 | `ModRewardModel` |
+| Salen demasiados módulos | Quitar el módulo del élite (`OnKilled`) o del encuentro (`OnCleared`) | `ModRewardDirector` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
 Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada a un extremo, el problema está en `Range` o en los objetivos del analizador. Si oscila, sube `DeadZone` o baja `RisePerSecond`.
@@ -535,4 +605,5 @@ Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada
 - Las vidas viven en memoria durante la partida: al pulsar Continuar empiezas la fase guardada con las vidas llenas.
 - Al reiniciar una fase sin vidas se vuelve a cargar la escena, así que su introducción (si la tiene) se vuelve a ver.
 - El apagón solo atenúa lámparas puntuales y focos (no la luz direccional). Si cerca del punto no hay lámparas, la zona sigue contando como sombra pero no se ve más oscura.
+- Los accesorios no se ven en el modelo del arma (solo en el HUD), y no se pueden quitar a mano: solo se sustituyen al recoger otro.
 - El informe de la IA vive en memoria: si vuelves al menú y pulsas Continuar en la misma fase, verás el informe del intento que dejaste.
