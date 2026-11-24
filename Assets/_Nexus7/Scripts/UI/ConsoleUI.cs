@@ -161,6 +161,8 @@ namespace Nexus7.UI
                     return;
             }
             action.used = true;
+            if (action.type == ConsoleActionType.DisableSector || action.type == ConsoleActionType.UnlockDoor)
+                Nexus7.Core.ObjectiveEvents.Raise("consola", console != null ? console.transform.position : Vector3.zero);
         }
 
         private IEnumerator CompleteRoutine(ConsoleAction action)

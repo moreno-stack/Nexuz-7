@@ -89,6 +89,7 @@ namespace Nexus7.Gameplay
                 m.SetColor("_EmissionColor", new Color(0.2f, 1f, 0.4f) * 3f);
             }
             if (sequence != null) sequence.NotifyStepCompleted(this);
+            Nexus7.Core.ObjectiveEvents.Raise("lanzamiento", transform.position);
         }
     }
 }
