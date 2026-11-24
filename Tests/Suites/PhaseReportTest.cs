@@ -45,14 +45,14 @@ static class T {
   }
 
   static void Text(){
-    var r = Played(95f); for(int i=0;i<12;i++) r.RecordShot("pistola"); r.RecordHit(0); r.RecordFlush(); r.RecordAssist(); r.RecordShipEvent(); r.RecordModReward(); r.RecordModReward();
+    var r = Played(95f); for(int i=0;i<12;i++) r.RecordShot("pistola"); r.RecordHit(0); r.RecordFlush(); r.RecordAssist(); r.RecordShipEvent(); r.RecordModReward(); r.RecordModReward(); r.RecordHeatGuard();
     Check(r.Verdict().Contains("misma arma"), "Si usa casi siempre la misma arma (≥ 70 %), el veredicto lo avisa");
     var few = Played(95f); few.RecordShot("pistola"); few.RecordKill();
     Check(!few.Verdict().Contains("misma arma"), "Con pocos disparos no saca conclusiones del arma");
     var lines = r.Lines(id => id=="pistola" ? "Pistola" : null);
     Check(lines[0].StartsWith("Tiempo 1:35"), "Tiempo en minutos y segundos");
     Check(lines[2].Contains("Pistola 100%"), "Usa el nombre visible del arma");
-    Check(lines[5].Contains("1 expulsiones") && lines[5].Contains("1 ayudas") && lines[5].Contains("1 eventos") && lines[5].Contains("2 módulos"), "Cuenta las acciones de la IA (también los módulos regalados)");
+    Check(lines[5].Contains("1 expulsiones") && lines[5].Contains("1 ayudas") && lines[5].Contains("1 eventos") && lines[5].Contains("2 módulos") && lines[5].Contains("1 vigilancias"), "Cuenta las acciones de la IA (también módulos y vigilancias)");
     Check(new PhaseReportModel("x").Lines()[1].Contains("Sin disparos"), "Sin disparos lo dice en lugar de 0 %");
   }
 
