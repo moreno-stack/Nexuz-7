@@ -35,6 +35,8 @@ namespace Nexus7.Core
         public string id;
         public int ammo;
         public int reserve;
+        /// <summary>Accesorios montados ("Suppressor,Stabilizer"); vacío en guardados antiguos.</summary>
+        public string mods;
     }
 
     [Serializable]

@@ -158,6 +158,14 @@ namespace Nexus7.UI
             GUI.Label(new Rect(x + 16 * k, y + 8 * k, pw, 24 * k), w.Spec.DisplayName.ToUpperInvariant(), small);
             GUI.color = w.Ammo == 0 ? new Color(1f, 0.4f, 0.35f) : Color.white;
             GUI.Label(new Rect(x + 16 * k, y + 30 * k, pw, 46 * k), $"{w.Ammo} / {w.Reserve}", big);
+            if (w.Mods.Count > 0)
+            {
+                // Accesorios montados (morado): «SUP · EST»
+                var sb = new System.Text.StringBuilder();
+                foreach (var m in w.Mods) sb.Append(sb.Length > 0 ? " · " : "").Append(WeaponModModel.Tag(m));
+                GUI.color = new Color(0.75f, 0.6f, 1f);
+                GUI.Label(new Rect(x + 200 * k, y + 46 * k, pw - 210 * k, 24 * k), sb.ToString(), small);
+            }
 
             // Barra de calor (azul → naranja → rojo) o progreso de la recarga
             float barY = y + 82 * k, barW = pw - 32 * k, barH = 8 * k;

@@ -71,6 +71,20 @@ namespace Nexus7.Combat
         }
 
         /// <summary>
+        /// Arma a la que va un accesorio: la de la mano si le sirve y no lo lleva; si no, la primera que tenga hueco libre;
+        /// si no, la primera a la que le sirva (sustituirá su accesorio más antiguo). Null si ninguna lo admite.
+        /// </summary>
+        public WeaponModel ModTarget(WeaponMod mod)
+        {
+            if (Wants(Current, mod)) return Current;
+            foreach (var w in weapons) if (Wants(w, mod) && w.Mods.Count < WeaponModModel.MaxSlots) return w;
+            foreach (var w in weapons) if (Wants(w, mod)) return w;
+            return null;
+        }
+
+        private static bool Wants(WeaponModel w, WeaponMod mod) => w != null && WeaponModModel.Fits(mod, w.BaseSpec) && !w.HasMod(mod);
+
+        /// <summary>
         /// Arma a la que va un paquete de munición: la que tiene menor fracción de munición
         /// (así el botín empuja a usar todo el arsenal); en empate, la que está en la mano.
         /// </summary>

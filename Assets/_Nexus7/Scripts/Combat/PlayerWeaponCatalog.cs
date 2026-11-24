@@ -50,6 +50,9 @@ namespace Nexus7.Combat
 
         public float FireInterval => FireRate > 0f ? 1f / FireRate : 0.25f;
 
+        /// <summary>Copia independiente (los accesorios cambian la copia, no el catálogo).</summary>
+        public PlayerWeaponSpec Clone() => (PlayerWeaponSpec)MemberwiseClone();
+
         /// <summary>Factor de daño a 'distance' metros (1 hasta FalloffStart, MinDamageFactor al alcance).</summary>
         public float DamageFactorAt(float distance)
         {
