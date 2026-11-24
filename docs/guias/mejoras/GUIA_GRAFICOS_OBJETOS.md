@@ -51,13 +51,16 @@ El arma se vuelve a montar al cambiar de arma o al recoger un accesorio.
 
 - **Imprescindibles:** se siguen viendo 2,2 veces más grandes y conservan el brillo, el haz de luz y el marcador del traje.
 - **En la mano:** el objeto de la barra rápida se ve con su modelo.
+- **Objetos sueltos de la Fase 1** (las chatarras): también usan su modelo; lo montan al empezar la partida.
 - **Lanzados:** el señuelo y el PEM se ven con su modelo. Al apagarse, el altavoz del señuelo se vuelve gris.
 
 ## Iconos
 
 Cada icono se dibuja una sola vez a partir del modelo del objeto, en vista 3/4, con luz y contorno.
 - **Barra rápida:** una fila de iconos encima del texto. La casilla elegida tiene marco blanco y se ve algo mayor.
-- **Inventario [Tab]:** una rejilla de 4 columnas a la derecha, con la cantidad de cada objeto. Los objetos clave llevan marco naranja.
+- **Inventario [Tab]:** una rejilla de 4 columnas a la derecha, con la cantidad de cada objeto. Los objetos clave llevan marco naranja. El panel es 180 px más ancho para que quepan el texto y la rejilla.
+- Para hacer sitio a la fila de iconos, el aviso del banco de trabajo sube a 150 px y los mensajes a 190 px (hace falta reconstruir).
+- Un icono tarda poco más de 1 ms en dibujarse: no hay tirón al empezar una fase.
 
 ## Añadir el modelo de un objeto nuevo
 
@@ -73,7 +76,7 @@ Si no añades nada, el objeto usa la forma genérica de su categoría.
 
 ## Pruebas
 
-`bash Tests/run_all.sh` (1358 comprobaciones, también con Roslyn):
+`bash Tests/run_all.sh` (1366 comprobaciones, también con Roslyn):
 
 | Suite | Qué comprueba |
 |---|---|
@@ -82,3 +85,4 @@ Si no añades nada, el objeto usa la forma genérica de su categoría.
 | `ModelFactoryTest` | La escala de las primitivas de Unity y que nada se cree con primitivas sueltas |
 | `ItemIconTest` | La caché de iconos y la interfaz |
 | `BuilderItemRefsTest` | El orden escena → objetos en los constructores |
+| `ReviewFixGfxTest` | Arreglos de la revisión: orden de dibujo y posición de los iconos, chatarras de la Fase 1, velocidad de los iconos y ancho del inventario |
