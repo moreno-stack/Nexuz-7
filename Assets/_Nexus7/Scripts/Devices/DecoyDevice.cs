@@ -1,4 +1,5 @@
 using UnityEngine;
+using Nexus7.Visual.Models;
 using Nexus7.Core;
 
 namespace Nexus7.Devices
@@ -15,7 +16,6 @@ namespace Nexus7.Devices
         private DeviceItemData data;
         private Vector3 origin;
         private Light beacon;
-        private Renderer body;
         private float spawnTime, stillTime, pulseTimer, endTime;
         private Vector3 lastPos;
         private bool landed, active, neutralized;
@@ -29,7 +29,6 @@ namespace Nexus7.Devices
             data = device;
             origin = throwOrigin;
             beacon = light;
-            body = GetComponent<Renderer>();
             spawnTime = Time.time;
             lastPos = transform.position;
         }
@@ -83,7 +82,10 @@ namespace Nexus7.Devices
         {
             active = false;
             if (beacon != null) { beacon.color = Color.red; beacon.intensity = 0.3f; }
-            if (body != null) body.material.color = Color.gray;
+            // El altavoz se apaga (material compartido gris: no se crea un material por señuelo)
+            var off = ModelMaterials.For(MaterialRole.Body, new MColor(0.35f, 0.35f, 0.37f));
+            foreach (var r in GetComponentsInChildren<Renderer>())
+                if (r.gameObject.name == nameof(MaterialRole.Glow) && off != null) r.sharedMaterial = off;
             Destroy(gameObject, destroyDelay);
         }
     }

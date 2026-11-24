@@ -133,6 +133,7 @@ namespace UnityEngine
         public static void LogError(object o, Object c) {} public static void LogError(object o) {} public static void LogException(Exception e) {}
     }
     public class Collider : Component { public bool isTrigger; public bool enabled; public Bounds bounds; }
+    public class SphereCollider : Collider { public float radius; public Vector3 center; }
     public class BoxCollider : Collider { public Vector3 center, size; }
     public class CapsuleCollider : Collider { public Vector3 center; public float height, radius; }
     [System.Flags] public enum CollisionFlags { None = 0, Sides = 1, Above = 2, Below = 4 }

@@ -53,8 +53,7 @@ namespace Nexus7.Devices
                                         hit > 0 ? data.DeviceColor : new Color(0.7f, 0.7f, 0.7f));
 
             if (glow != null) { glow.intensity = 8f; glow.range = data.Radius; }
-            var r = GetComponent<Renderer>();
-            if (r != null) r.enabled = false;
+            foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = false;   // el modelo desaparece con el estallido
             Destroy(gameObject, 0.15f);
         }
     }
