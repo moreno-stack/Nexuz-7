@@ -89,6 +89,8 @@ namespace Nexus7.Director
             EnemyHealth.WeaponDamageModifier = null;
             AmmoPickup.DropMultiplier = 1f;
             PlayerWeapon.RespawnLossMultiplier = 1f;
+            EnemyGun.DirectorExtraShooters = 0;
+            EnemyGun.DirectorSpreadMultiplier = 1f;
         }
 
         private void OnShot(int shotId, string weaponId, int pellets) => Performance.RecordShot(Time.time, shotId, weaponId);
@@ -126,6 +128,8 @@ namespace Nexus7.Director
             if (Mathf.Abs(k.EnemyHealth - EnemyHealth.HealthMultiplier) > 0.03f) EnemyHealth.SetHealthMultiplier(k.EnemyHealth);
             AmmoPickup.DropMultiplier = k.AmmoDrop;
             PlayerWeapon.RespawnLossMultiplier = k.RespawnAmmoLoss;
+            EnemyGun.DirectorExtraShooters = k.ExtraShooters;
+            EnemyGun.DirectorSpreadMultiplier = k.EnemySpread;
         }
 
         private void Handle(DirectorAction action)
@@ -211,6 +215,7 @@ namespace Nexus7.Director
             L($"Daño robots ×{k.EnemyDamage:0.00}   Vida robots ×{k.EnemyHealth:0.00}");
             L($"Munición paquetes ×{k.AmmoDrop:0.00}   Pérdida al caer ×{k.RespawnAmmoLoss:0.00}");
             L($"Espera en waypoints ×{k.PatrolWait:0.00}   Refuerzos {k.Reinforcements}");
+            L($"Tiradores extra {k.ExtraShooters}   Dispersión robots ×{k.EnemySpread:0.00}   Turnos {EnemyGun.Tokens.InUse}/{EnemyGun.Tokens.Capacity}");
             L($"Blindaje adaptado: {(Model.AdaptedWeapon ?? "no")}");
             cy += 6f;
             L($"Última acción: {LastAction}");

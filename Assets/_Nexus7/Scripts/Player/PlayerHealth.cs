@@ -74,7 +74,10 @@ namespace Nexus7.Player
         /// <summary>Golpe de un enemigo desde 'origin': escala por dificultad, escudo, vida, empujón y aviso a la alerta.</summary>
         public void TakeDamage(float amount, Vector3 origin) => ApplyDamage(amount, origin, true);
 
-        private void ApplyDamage(float amount, Vector3 origin, bool fromEnemy)
+        /// <summary>Disparo de un robot desde 'origin': como un golpe pero con un empujón pequeño (no te saca de la cobertura).</summary>
+        public void TakeRangedDamage(float amount, Vector3 origin) => ApplyDamage(amount, origin, true, 0.25f);
+
+        private void ApplyDamage(float amount, Vector3 origin, bool fromEnemy, float knockbackScale = 1f)
         {
             if (amount <= 0f || Current <= 0f || (respawn != null && respawn.IsRespawning)) return;
 
@@ -86,7 +89,7 @@ namespace Nexus7.Player
             {
                 Vector3 away = transform.position - origin;
                 away.y = 0f;
-                if (controller != null && away.sqrMagnitude > 0.0001f) controller.AddImpulse(away.normalized * knockback);
+                if (controller != null && away.sqrMagnitude > 0.0001f) controller.AddImpulse(away.normalized * knockback * knockbackScale);
                 PlayerHit?.Invoke(origin);
             }
             if (rest <= 0f) return;

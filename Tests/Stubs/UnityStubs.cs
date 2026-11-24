@@ -123,7 +123,7 @@ namespace UnityEngine
     public static class Input {
         public static float GetAxis(string a) { return 0; } public static float GetAxisRaw(string a) { return 0; }
         public static bool GetKey(KeyCode k) { return false; } public static bool GetKeyDown(KeyCode k) { return false; }
-        public static bool GetMouseButtonDown(int b) { return false; }
+        public static bool GetMouseButtonDown(int b) { return false; } public static string[] GetJoystickNames() { return new string[0]; }
     }
     public enum CursorLockMode { None, Locked, Confined }
     public static class Cursor { public static CursorLockMode lockState; public static bool visible; }
@@ -245,7 +245,7 @@ namespace UnityEngine.AI {
     public class NavMeshAgent : Behaviour {
         public float speed, radius, height, angularSpeed, acceleration, stoppingDistance, remainingDistance;
         public bool isOnNavMesh, pathPending, isStopped;
-        public Vector3 destination; public int destinationsSet; public bool Warp(Vector3 p) { return true; } public bool SetDestination(Vector3 p) { destination = p; destinationsSet++; return true; } public void ResetPath() {}
+        public Vector3 destination, velocity; public int destinationsSet; public bool Warp(Vector3 p) { return true; } public bool SetDestination(Vector3 p) { destination = p; destinationsSet++; return true; } public void ResetPath() {}
     }
     public struct NavMeshHit { public Vector3 position; }
     public struct NavMeshBuildSettings {}

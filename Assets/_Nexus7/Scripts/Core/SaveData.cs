@@ -21,6 +21,20 @@ namespace Nexus7.Core
         public string hotbarId;
         public int difficulty;
         public RunStatsSnapshot stats = new RunStatsSnapshot();
+        /// <summary>Armas y munición (vacío en guardados anteriores a las armas → arsenal inicial).</summary>
+        public List<SavedWeapon> weapons = new List<SavedWeapon>();
+        public int weaponIndex;
+        /// <summary>Tensión del director adaptativo al entrar en la fase. Sin dato (guardado antiguo) → base de la dificultad.</summary>
+        public bool hasDirectorTension;
+        public float directorTension;
+    }
+
+    [Serializable]
+    public class SavedWeapon
+    {
+        public string id;
+        public int ammo;
+        public int reserve;
     }
 
     [Serializable]

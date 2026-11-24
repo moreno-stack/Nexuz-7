@@ -103,7 +103,36 @@ static class T {
     var b=CombatSession.Load(); Check(b.CurrentIndex==2 && b.Weapons[0].Ammo==a.Weapons[0].Ammo && b.Weapons[0].Reserve==a.Weapons[0].Reserve, "Entre fases se conservan el arma en mano, el cargador y la reserva");
     CombatSession.Clear(); Check(!CombatSession.HasSaved, "Nueva partida: se borra el arsenal guardado");
   }
+  static void DiskSave(){
+    var a = CombatSession.Load(); a.Current.TryFire(0f,true); a.Select(3,0f); int idx;
+    var list = CombatSession.ToSaved(a, out idx);
+    Check(list.Count==a.Weapons.Count && idx==3 && list[0].ammo==a.Weapons[0].Ammo, "Arsenal → partida guardada (armas, munición y arma en mano)");
+    list.Add(new Nexus7.Core.SavedWeapon{ id="arma_borrada", ammo=5, reserve=5 });
+    CombatSession.RestoreSaved(list, idx); var b = CombatSession.Load();
+    Check(b.Weapons.Count==a.Weapons.Count && b.CurrentIndex==3 && b.Weapons[0].Ammo==a.Weapons[0].Ammo, "Partida guardada → arsenal; un arma que ya no existe se omite");
+    CombatSession.RestoreSaved(new System.Collections.Generic.List<Nexus7.Core.SavedWeapon>(), 0);
+    Check(!CombatSession.HasSaved && CombatSession.Load().Weapons.Count==PlayerWeaponCatalog.All.Count, "Guardado antiguo sin armas → arsenal inicial");
+    var huge = new System.Collections.Generic.List<Nexus7.Core.SavedWeapon>{ new Nexus7.Core.SavedWeapon{ id=PlayerWeaponCatalog.Pistol, ammo=999, reserve=9999 } };
+    CombatSession.RestoreSaved(huge, 7); var c = CombatSession.Load();
+    Check(c.Current.Ammo==P().MagazineSize && c.Current.Reserve==P().MaxReserve, "Valores manipulados se limitan al cargador y la reserva máximos");
+    var json = "{\"version\":1,\"scene\":\"SalaEnergia\",\"savedAtUtcTicks\":1}";
+    var old = Nexus7.Core.SaveSlot.Parse(json);
+    Check(old!=null && (old.weapons==null || old.weapons.Count==0) && !old.hasDirectorTension, "Un guardado de antes de las armas se sigue leyendo");
+    CombatSession.Clear();
+  }
+  static void Gamepad(){
+    var t = new TriggerLatch();
+    Check(!t.Update(0.4f) && t.Update(0.6f), "Gatillo: se pulsa al pasar de 0,5");
+    Check(t.Update(0.4f) && !t.Update(0.2f), "Histéresis: sigue pulsado hasta bajar de 0,3");
+    Check(t.Update(-0.8f), "Mandos que dan −1..1 también valen");
+    var d = new DpadEdges(); d.Update(1f,0f); Check(d.Right && !d.Left, "Cruceta derecha: pulsación");
+    d.Update(1f,0f); Check(!d.Right, "Mantenerla no repite (no cambia de arma cada fotograma)");
+    d.Update(0f,0f); d.Update(0f,-1f); Check(d.Down && !d.Up, "Cruceta abajo (recargar)");
+    d.Update(-1f,0f); Check(d.Left && !d.Down, "Cruceta izquierda (arma anterior)");
+    Check(Nexus7.Core.GamepadAxes.Read("")==0f, "Un eje vacío o inexistente se lee como 0, sin excepción");
+  }
   static void Main(){
+    Gamepad(); DiskSave();
     Sounds(); Session();
     Catalog(); FireRateAndSemi(); MagazineAndReload(); Heat(); BloomAndSpread(); Falloff(); Health(); Arsenal();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);

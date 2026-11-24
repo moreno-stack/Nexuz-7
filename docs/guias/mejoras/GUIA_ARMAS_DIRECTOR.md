@@ -64,9 +64,19 @@ Principios:
 | 9 | `fix(combate): la tecla que cierra un panel no cambia de arma ni dispara` | `PlayerController.InputReleasedThisFrame` |
 | 10 | `docs: guía de armas, director adaptativo y respawn dinámico` | Esta guía y el README |
 
+Segunda entrega (PR #2, rama `feat/combate-mando-guardado-robots-tiradores`):
+
+| # | Commit | Qué contiene |
+|---|---|---|
+| 11 | `feat(guardado): armas, munición y tensión del director en la partida guardada` | `SaveData` (`weapons`, `weaponIndex`, tensión), `SaveSystem`, `CombatSession.ToSaved`/`RestoreSaved` |
+| 12 | `feat(mando): armas y mira con mando (gatillos, cruceta y stick derecho)` | Ejes nuevos en `InputManager.asset`, `GamepadAxes`, `CombatInput` (`TriggerLatch`, `DpadEdges`) y los enganches en `PlayerWeapon`, `PlayerLook` y `CombatHUD` |
+| 13 | `feat(combate): modelos de disparo de los robots (armas, puntería, turnos, ráfagas, tambaleo)` | `EnemyGunCatalog`, `AimModel`, `AttackTokens`, `BurstModel`, `StaggerModel`, `DamageIndicatorMath` y `EnemyFireTest` |
+| 14 | `feat(combate): robots de seguridad, guardia y élite disparan a distancia` | `EnemyGun`, `PlayerTarget`, `PlasmaBolt` hostil, `PlayerHealth.TakeRangedDamage`, indicador de daño, perillas nuevas del director |
+| 15 | `docs: guía de mando, robots tiradores y guardado de armas` | Esta guía y el README |
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 852 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 894 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -132,14 +142,78 @@ Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.
 4. En la Fase 4 o la 5, con cámaras, comprueba que cada intento empiezan su barrido en otra posición.
 5. Para ver refuerzos, sube la tensión jugando bien (o pon «Difícil», con base 0,62). Al caer con tensión ≥ 0,6 el mensaje dice «Refuerzos desplegados: 1» y aparece un anillo rojo donde entra el robot extra. El panel muestra «refuerzos vivos 1». En el intento siguiente el refuerzo cambia de tipo o de ruta.
 
+### Etapa 4: armas y munición en la partida guardada (commit 11)
+
+**Modificados:** `Core/SaveData.cs` (lista `weapons` con `id`, `ammo` y `reserve`, `weaponIndex`, `hasDirectorTension` y `directorTension`), `Core/SaveSystem.cs`, `Combat/CombatSession.cs` y `Core/GameSession.cs`.
+
+**Qué hace:** al entrar en cada fase (autoguardado) se escriben en disco las armas que llevas, la munición del cargador y de la reserva, el arma en mano y la tensión del director. Al pulsar **Continuar** vuelves con ese mismo arsenal y el director retoma la presión donde la dejaste. **Nueva partida** borra las dos cosas. Una partida guardada antes de este cambio se carga igual, con el arsenal inicial.
+
+**Cómo probarlo:**
+
+1. Empieza una partida, gasta munición del rifle en la Fase 1 y quédate con la escopeta en mano. Cruza a la Fase 2 (se autoguarda).
+2. Abre el panel **F3** y apunta la tensión. Sal al menú y pulsa **Continuar**.
+3. Debes ver en el HUD **la escopeta en mano** y los mismos números «cargador / reserva» de cada arma. En F3, la tensión es la que tenías (±0,01).
+4. Pulsa **Nueva partida**: vuelves a la pistola con la munición inicial y la tensión de base.
+
+### Etapa 5: armas con mando (commit 12)
+
+**Archivos nuevos:** `Core/GamepadAxes.cs` y `Combat/CombatInput.cs`. **Modificados:** `ProjectSettings/InputManager.asset` (ejes nuevos), `PlayerWeapon`, `PlayerLook` y `CombatHUD`.
+
+Todos los botones del mando ya tenían uso, así que las armas van en los **ejes** que estaban libres:
+
+| Mando (Xbox) | Acción |
+|---|---|
+| Gatillo derecho (RT) | Disparar (mantener con el rifle) |
+| Gatillo izquierdo (LT) | Apuntar |
+| Stick derecho | Mirar |
+| Cruceta abajo | Recargar |
+| Cruceta izquierda / derecha | Arma anterior / siguiente |
+
+Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no hay disparos fantasma con el gatillo a medias). Si un eje no existe en el proyecto, el juego no falla: lo ignora y avisa una sola vez en la consola.
+
+**Cómo probarlo:**
+
+1. Conecta un mando de Xbox (o compatible XInput) **antes** de pulsar Play.
+2. En el HUD de combate aparecen las pistas «[RT] disparar · [LT] apuntar · cruceta abajo recargar · izq./der. arma».
+3. Con el stick derecho mueves la cámara. Con RT disparas y con LT la mira se cierra. Cruceta izquierda/derecha cambia de arma y abajo recarga.
+4. Desconecta el mando: en un segundo vuelven las pistas de teclado y ratón.
+
+> **Aviso de plataforma:** los ejes usados (en el Input Manager: stick derecho «4th/5th axis», gatillo izquierdo «9th axis», gatillo derecho «10th axis», cruceta «6th/7th axis») son los de XInput en **Windows**. En macOS y Linux los mandos usan otros números: si allí no responde, cambia los ejes `Nexus7 Gatillo Der/Izq` y `Nexus7 Cruceta X/Y` en *Project Settings → Input Manager*.
+
+### Etapa 6: robots que disparan (commits 13 y 14)
+
+**Archivos nuevos:** `Scripts/Combat/Enemy/EnemyGunCatalog.cs`, `EnemyFireModels.cs`, `EnemyGun.cs` y `Scripts/Combat/PlayerTarget.cs`. **Modificados:** `PlasmaBolt` (proyectiles hostiles, sin fuego amigo), `EnemyHealth` (tambaleo y apagar el arma al morir), `PlayerHealth` (`TakeRangedDamage`), `CombatHUD` (indicador de daño), `CombatInstaller`, `CombatSoundSynth`, `DirectorModel` y `GameDirector`.
+
+**Qué hace:**
+
+- Los robots de **seguridad** (pistola, ráfagas de 3), **guardia** (carabina, ráfagas de 4) y **élite** (rifle de pulsos, ráfagas de 5 con pausas más cortas) disparan cuando te persiguen, te ven y estás **entre 3,5 y 24 m**. Más cerca siguen con el cuerpo a cuerpo. Los de **investigación** no llevan arma.
+- **Siempre avisan:** antes de cada ráfaga sale un **láser rojo** de su mano hacia ti durante 0,4 s con un pitido. Mientras disparan se quedan quietos y se giran hacia ti.
+- **Turnos de ataque:** como mucho disparan a la vez **1 robot en Fácil, 2 en Normal y 3 en Difícil** (+1 si el director aprieta). Los demás siguen persiguiéndote.
+- **Puntería justa:** los proyectiles van a 35 m/s y se pueden esquivar. Fallan más de lejos, si corres o caminas, y si el robot está cegado; apuntan un poco por delante de hacia donde vas (50 %).
+- **Tambaleo:** si le metes 15 de daño en 0,3 s, el robot corta la ráfaga y no vuelve a disparar en 0,6 s. Concentrar el fuego compensa.
+- **Línea de tiro:** no disparan a través de paredes ni de otros robots. Sus disparos atraviesan a los demás robots (no hay fuego amigo).
+- Cada impacto que recibes muestra un **arco rojo alrededor de la mira** que señala de dónde vino (arriba = delante, abajo = detrás) y te empuja un poco (×0,25 del golpe cuerpo a cuerpo).
+- El panel **F3** muestra las perillas nuevas: «Tiradores extra», «Dispersión robots» y los turnos en uso.
+
+**Cómo probarlo:**
+
+1. En la Fase 1 deja que un robot de seguridad te vea desde unos 10 m. Verás el **láser rojo**, oirás el pitido y te llegará una ráfaga de 3 proyectiles naranjas.
+2. Corre en lateral: la mayoría deben fallar. Quédate quieto: aciertan casi todos.
+3. Ponte detrás de una columna: deja de disparar (no hay línea de tiro). Acércate a menos de 3,5 m: pasa al cuerpo a cuerpo.
+4. Con el rifle, dispárale una ráfaga larga mientras ve el láser: el aviso se corta (tambaleo).
+5. Deja que te den desde un lado y desde atrás: el arco rojo señala la dirección correcta y se apaga en algo más de un segundo.
+6. En la Fase 5 o 6, con varios robots persiguiéndote en Normal, abre **F3**: «Turnos» nunca pasa de 2/2 (3/3 con tensión ≥ 0,75).
+7. Los robots de **investigación** (Fase 4) solo atacan cuerpo a cuerpo.
+
 ## 4. Pruebas finales y balance
 
 ### Pruebas automáticas
 
 | Suite | Comprobaciones | Qué cubre |
 |---|---|---|
-| `WeaponTest` | 50 | Cadencia, semiautomática, cargador, recarga, calor, dispersión, caída de daño, vida, arsenal, sonidos y sesión |
-| `DirectorTest` | 40 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro y patrones |
+| `WeaponTest` | 63 | Cadencia, semiautomática, cargador, recarga, calor, dispersión, caída de daño, vida, arsenal, sonidos, sesión, guardado en disco y mando (gatillos y cruceta) |
+| `EnemyFireTest` | 29 | Armas por tipo de robot, dispersión y anticipación, turnos de ataque, ráfagas con aviso, tambaleo e indicador de daño |
+| `DirectorTest` | 40 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
 | `SpawnVariationTest` | 16 | Anti-repetición, justicia, ritmo, refuerzos, cámaras y reproducibilidad |
 
 Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). El comportamiento en Unity hay que verlo con los pasos de arriba.
@@ -162,6 +236,14 @@ Fuera de Unity solo se comprueban la lógica y la compilación (mcs y Roslyn). E
 | El blindaje adaptativo es injusto | `DominanceThreshold` (0,75), `DominanceRelease` (0,55) y los factores 0,8 / 1,15 de `WeaponDamageFactor` | `DirectorModel` |
 | Los robots aparecen demasiado cerca | `MinSafeDistance` (8 m), `ViewDistance` (18 m) y `ViewHalfAngle` (35°) | `SpawnVariationModel` |
 | Los intentos se parecen demasiado | `HistoryLength` (2), `RandomWeight` (25) y los rangos `MinWait`/`MaxWait` y `MinSpeed`/`MaxSpeed` | `SpawnVariationModel` |
+| Los robots hacen demasiado daño a distancia | `Damage` (4 / 4 / 5 por impacto en Normal) y la perilla `EnemyDamage` | `EnemyGunCatalog` |
+| Te disparan demasiados a la vez | `CapacityFor` (1 / 2 / 3) y el umbral 0,75 de `ExtraShooters` | `AttackTokens`, `DirectorModel.KnobsFor` |
+| Aciertan demasiado o muy poco | `Base` (1,5°), `PerMeter` (0,15°/m), `Running` (+2°), `Walking` (+1°), multiplicadores de dificultad ×1,5 / ×0,6 y la perilla `EnemySpread` (1,35 → 0,75) | `AimModel`, `DirectorModel.KnobsFor` |
+| No da tiempo a reaccionar | `WarnTime` (0,4 s), la velocidad del proyectil (35 m/s) y `LeadFactor` (0,5) | `BurstModel`, `EnemyGunCatalog`, `AimModel` |
+| Disparan sin parar o casi nunca | `BurstCount`, `BurstRate`, `PauseMin`/`PauseMax` (1,2–2 s; élite 0,9–1,5 s) | `EnemyGunCatalog` |
+| Disparan desde muy lejos o muy cerca | `MinRange` (3,5 m) y `MaxRange` (24 m) | `EnemyGunCatalog` |
+| Cuesta interrumpirlos | `Threshold` (15), `Window` (0,3 s) y `Duration` (0,6 s) | `StaggerModel` |
+| Los gatillos del mando se disparan solos | Umbrales 0,5 / 0,3 de `TriggerLatch` y `dead` (0,1) de los ejes | `CombatInput`, `InputManager.asset` |
 | Demasiados o pocos refuerzos | Umbrales 0,6 / 0,8 de `Reinforcements` en `KnobsFor` y `maxReinforcements` (2) | `DirectorModel`, `RespawnVariator` |
 
 Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada a un extremo, el problema está en `Range` o en los objetivos del analizador. Si oscila, sube `DeadZone` o baja `RisePerSecond`.
@@ -170,7 +252,7 @@ Para ajustar con datos, juega con **F3** abierto: si la tensión se queda pegada
 
 - Esta implementación se ha comprobado con las pruebas automáticas y con la compilación como la de Unity (Roslyn), **no dentro del editor de Unity**. La primera partida en Unity es la prueba de integración.
 - El HUD de combate y el panel F3 usan IMGUI (`OnGUI`) para no depender de los constructores de escena. Si se quiere el estilo del resto del HUD (TextMeshPro), se pueden pasar a un constructor más adelante.
-- Sin mando: las armas usan teclado y ratón, porque todos los botones del mando ya tienen uso.
-- Los robots siguen atacando cuerpo a cuerpo. Los robots que disparan son el subproyecto «IA de combate» (`ia-combate-design.md`), y el director ya está preparado para sus oleadas: cuántos refuerzos y por dónde.
-- Las armas y la munición pasan entre fases en memoria (`CombatSession`), pero todavía no se escriben en la partida guardada. Al pulsar Continuar se empieza con el arsenal inicial.
+- El mando usa ejes de XInput en Windows (ver la Etapa 5). En otras plataformas puede hacer falta cambiar los números de eje.
+- Los robots tiradores no buscan cobertura ni flanquean: persiguen como antes y se paran a disparar. La cobertura y el flanqueo del diseño «IA de combate» (`ia-combate-design.md`) quedan para otra entrega.
+- El láser de aviso usa el material `Sprites/Default`. Si una compilación lo elimina del build, el aviso se queda en el pitido: añádelo a *Always Included Shaders*.
 - No hay vidas limitadas: el director usa las caídas recientes como medida de «vidas perdidas».

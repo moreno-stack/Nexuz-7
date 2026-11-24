@@ -11,6 +11,8 @@ namespace Nexus7.Combat
     /// Armas del jugador: lee la entrada, pregunta al WeaponModel si puede disparar y lanza proyectiles del pool.
     ///   Clic izquierdo  disparar (mantener con el rifle)     Clic derecho  apuntar (zoom y menos dispersión)
     ///   R               recargar                             Q                cambiar de arma (en ciclo)
+    /// Mando (tipo Xbox): RT disparar · LT apuntar · cruceta ↓ recargar · cruceta ←/→ arma anterior/siguiente.
+    /// Los ejes del mando están en el Input Manager (GamepadAxes); si faltan, el mando simplemente no dispara.
     /// El punto de mira es el centro de la cámara (rayo hasta el alcance); el proyectil sale del cañón hacia ese punto
     /// con la dispersión del arma. Cada disparo hace ruido (los robots lo oyen y van a investigar).
     /// No dispara con la entrada bloqueada (hackeos, consolas, cinemáticas, reaparición), con un menú abierto
@@ -61,6 +63,9 @@ namespace Nexus7.Combat
         private float lastEmptyClick = -999f;
         private Vector3 lastPosition;
         private int selfMask = ~(1 << 2);
+        private readonly TriggerLatch fireTrigger = new TriggerLatch();
+        private readonly TriggerLatch aimTrigger = new TriggerLatch();
+        private readonly DpadEdges dpad = new DpadEdges();
 
         private void Awake()
         {
@@ -114,6 +119,11 @@ namespace Nexus7.Combat
             lastPosition = transform.position;
             if (muzzleFlash != null && muzzleFlash.enabled && t > flashUntil) muzzleFlash.enabled = false;
 
+            // El mando se lee siempre, para que las pulsaciones y los gatillos no se queden «a medias» tras un menú
+            bool padFire = fireTrigger.Update(GamepadAxes.Read(GamepadAxes.RightTrigger));
+            bool padAim = aimTrigger.Update(GamepadAxes.Read(GamepadAxes.LeftTrigger));
+            dpad.Update(GamepadAxes.Read(GamepadAxes.DpadX), GamepadAxes.Read(GamepadAxes.DpadY));
+
             bool canAct = controller.InputEnabled && !controller.InputReleasedThisFrame && !EnemyPatrol.Paused && !GameHud.Hidden
                           && Cursor.lockState == CursorLockMode.Locked && Time.timeScale > 0f;
             if (!canAct)
@@ -124,11 +134,12 @@ namespace Nexus7.Combat
                 return;
             }
 
-            if (Input.GetKeyDown(nextWeaponKey)) Arsenal.Cycle(1, t);
-            if (Input.GetKeyDown(reloadKey)) w.StartReload(t);
+            if (Input.GetKeyDown(nextWeaponKey) || dpad.Right) Arsenal.Cycle(1, t);
+            else if (dpad.Left) Arsenal.Cycle(-1, t);
+            if (Input.GetKeyDown(reloadKey) || dpad.Down) w.StartReload(t);
             w = Arsenal.Current;
 
-            SetAim(Input.GetKey(aimKey), dt);
+            SetAim(Input.GetKey(aimKey) || padAim, dt);
             CurrentSpread = SpreadModel.Current(w.Spec, IsAiming, moving, w.Bloom);
 
             if (w.State == WeaponState.Reloading && lastState != WeaponState.Reloading) CombatSfx.Play(CombatSound.Reload, 0.6f);
@@ -137,7 +148,7 @@ namespace Nexus7.Combat
 
             if (Arsenal.IsSwitching(t)) { w.TryFire(t, false); return; }
 
-            bool trigger = Input.GetKey(fireKey);
+            bool trigger = Input.GetKey(fireKey) || padFire;
             var result = w.TryFire(t, trigger);
             if (result == FireResult.Fired) Shoot(w, moving);
             else if (result == FireResult.Empty && t - lastEmptyClick > 0.3f)

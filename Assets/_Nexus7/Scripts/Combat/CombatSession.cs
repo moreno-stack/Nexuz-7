@@ -41,6 +41,33 @@ namespace Nexus7.Combat
             return a;
         }
 
+        /// <summary>Arsenal → lista para la partida guardada en disco.</summary>
+        public static List<Nexus7.Core.SavedWeapon> ToSaved(ArsenalModel arsenal, out int currentIndex)
+        {
+            var list = new List<Nexus7.Core.SavedWeapon>();
+            currentIndex = 0;
+            if (arsenal == null) return list;
+            foreach (var w in arsenal.Weapons) list.Add(new Nexus7.Core.SavedWeapon { id = w.Spec.Id, ammo = w.Ammo, reserve = w.Reserve });
+            currentIndex = System.Math.Max(0, arsenal.CurrentIndex);
+            return list;
+        }
+
+        /// <summary>
+        /// Partida guardada → sesión. Sin armas guardadas (guardado antiguo) se queda vacío y la fase empieza con el arsenal
+        /// inicial. Los Id que ya no existen en el catálogo se omiten; la munición se limita al cargador y la reserva máximos.
+        /// </summary>
+        public static void RestoreSaved(List<Nexus7.Core.SavedWeapon> weapons, int currentIndex)
+        {
+            Clear();
+            if (weapons == null) return;
+            foreach (var w in weapons)
+                if (w != null && PlayerWeaponCatalog.Get(w.id) != null)
+                    saved.Add(new Entry { id = w.id, ammo = System.Math.Max(0, w.ammo), reserve = System.Math.Max(0, w.reserve) });
+            if (saved.Count == 0) return;
+            savedIndex = System.Math.Min(System.Math.Max(0, currentIndex), saved.Count - 1);
+            HasSaved = true;
+        }
+
         public static void Clear()
         {
             saved.Clear();

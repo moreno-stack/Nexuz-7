@@ -9,7 +9,7 @@ Juego de **sigilo en primera o tercera persona** hecho en **Unity (C#)**. Despie
 ```
 Assets/_Nexus7/Scripts/   ← todo el código del juego (C#)
 docs/guias/fases/         ← guías de las 6 fases originales
-Tests/                    ← pruebas automáticas (852 comprobaciones, sin Unity)
+Tests/                    ← pruebas automáticas (894 comprobaciones, sin Unity)
 docs/guias/mejoras/       ← guías de las mejoras (etapas 0 a 8)
 docs/superpowers/         ← diseño (specs) y planes de implementación
 docs/media/               ← vídeo de la maqueta y capturas
@@ -79,9 +79,11 @@ El proyecto ya trae TextMeshPro, los ajustes de URP y *Active Input Handling* en
 | Q | Cambiar de arma |
 | G | Usar o lanzar el dispositivo |
 | F3 | Panel del director adaptativo (métricas en vivo) |
+| Mando: RT / LT | Disparar / apuntar |
+| Mando: cruceta ◄ ► / ▼ | Cambiar de arma / recargar |
 | Tab / I | Inventario |
 
-Dificultad (menú principal): **Fácil ×1,0 · Normal ×1,5 · Difícil ×2,0** de daño. Durante la partida, el director adaptativo ajusta la presión según cómo juegas, y al caer los robots no reaparecen en el mismo sitio. Detalles en [`docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md`](docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md).
+Dificultad (menú principal): **Fácil ×1,0 · Normal ×1,5 · Difícil ×2,0** de daño. Durante la partida, el director adaptativo ajusta la presión según cómo juegas, y al caer los robots no reaparecen en el mismo sitio. Los robots de seguridad, guardia y élite disparan a distancia, siempre con un láser rojo de aviso antes de cada ráfaga. Detalles en [`docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md`](docs/guias/mejoras/GUIA_ARMAS_DIRECTOR.md).
 
 ## Menú y pantalla final
 
@@ -97,4 +99,4 @@ Capturas de previsualización generadas desde el código del proyecto (en Unity 
 bash Tests/run_all.sh
 ```
 
-Compila todo el código, incluidos los constructores de escena, y ejecuta las 852 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).
+Compila todo el código, incluidos los constructores de escena, y ejecuta las 894 comprobaciones con Mono, sin abrir Unity. Los detalles están en [`Tests/README.md`](Tests/README.md).

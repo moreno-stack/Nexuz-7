@@ -9,6 +9,7 @@ namespace Nexus7.Combat
     ///   · Ignora a quien disparó y los activadores.
     ///   · Contra un IDamageable aplica el daño (con la caída por distancia del arma) y, si el arma atraviesa (Pierce),
     ///     sigue hacia el siguiente. Contra una pared se detiene con un destello.
+    ///   · Los disparos de los robots (hostile) atraviesan a los demás robots: no hay fuego amigo.
     ///   · Desaparece al recorrer el alcance del arma o a los 2 s.
     /// Lo gestiona ProjectilePool (no se crea ni se destruye a mano).
     /// </summary>
@@ -26,13 +27,16 @@ namespace Nexus7.Combat
         private Vector3 position, direction;
         private float traveled, age, trailLength;
         private int pierceLeft;
+        private bool hostile;
         private readonly HashSet<IDamageable> alreadyHit = new HashSet<IDamageable>();
         private int mask = ~(1 << 2);   // todo menos "Ignore Raycast" (activadores de los checkpoints)
 
         internal void Init(ProjectilePool owner, LineRenderer renderer) { pool = owner; line = renderer; }
 
-        public void Launch(Vector3 from, Vector3 dir, PlayerWeaponSpec weapon, DamageInfo info, Transform shooter)
+        /// <param name="fromEnemy">true = lo dispara un robot: solo daña al jugador.</param>
+        public void Launch(Vector3 from, Vector3 dir, PlayerWeaponSpec weapon, DamageInfo info, Transform shooter, bool fromEnemy = false)
         {
+            hostile = fromEnemy;
             spec = weapon;
             template = info;
             ignoreRoot = shooter;
@@ -84,6 +88,8 @@ namespace Nexus7.Combat
                 var target = h.collider.GetComponentInParent<IDamageable>();
                 if (target != null)
                 {
+                    if (hostile && target is EnemyHealth) continue;
+                    if (!hostile && target is PlayerTarget) continue;
                     if (alreadyHit.Contains(target) || !target.IsAlive) continue;
                     alreadyHit.Add(target);
                     var info = template;

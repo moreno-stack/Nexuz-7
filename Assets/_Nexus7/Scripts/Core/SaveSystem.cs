@@ -59,6 +59,10 @@ namespace Nexus7.Core
                 difficulty = (int)DifficultySettings.Current,
                 stats = RunStats.Snapshot(),
             };
+            if (Nexus7.Director.GameDirector.Instance != null) { d.hasDirectorTension = true; d.directorTension = Nexus7.Director.GameDirector.Instance.Model.Tension; }
+            else if (Nexus7.Director.DirectorSession.HasTension) { d.hasDirectorTension = true; d.directorTension = Nexus7.Director.DirectorSession.Tension; }
+            var arsenal = Nexus7.Combat.PlayerWeapon.Instance != null ? Nexus7.Combat.PlayerWeapon.Instance.Arsenal : Nexus7.Combat.CombatSession.Load();
+            d.weapons = Nexus7.Combat.CombatSession.ToSaved(arsenal, out d.weaponIndex);
             try
             {
                 // Se escribe en un archivo temporal y luego se reemplaza: nunca queda un guardado a medias
@@ -88,6 +92,9 @@ namespace Nexus7.Core
             if (unknown > 0 && catalog != null) Debug.LogWarning($"[Nexus-7] {unknown} objeto(s) de la partida guardada ya no existen y se han omitido.");
             GameSession.Restore(items, d.hasSuit, d.runSeed, d.hotbarId);
             RunStats.Restore(d.stats);
+            Nexus7.Combat.CombatSession.RestoreSaved(d.weapons, d.weaponIndex);
+            if (d.hasDirectorTension) Nexus7.Director.DirectorSession.Store(d.directorTension);
+            else Nexus7.Director.DirectorSession.Clear();
             scene = d.scene;
             return true;
         }

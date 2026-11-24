@@ -55,6 +55,8 @@ namespace Nexus7.Core
 
         public static void Clear()
         {
+            Nexus7.Combat.CombatSession.Clear();
+            Nexus7.Director.DirectorSession.Clear();
             HasSuit = false;
             HotbarSelectedId = null;
             savedInventory.Clear();
