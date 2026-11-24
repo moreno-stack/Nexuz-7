@@ -12,7 +12,8 @@ namespace Nexus7.Inventory
     /// Botín aleatorio de una sala: en cada PARTIDA cambian los objetos y su sitio (semilla de GameSession),
     /// pero los objetos imprescindibles ('Guaranteed') aparecen siempre. Al reaparecer tras una captura no se
     /// vuelve a tirar (la escena no se recarga), así que lo recogido no reaparece.
-    /// Los imprescindibles brillan más y llevan un haz de luz vertical de 6 m (se ve por encima de las estanterías).
+    /// Los imprescindibles son más grandes, brillan más, llevan un haz de luz vertical de 6 m y el traje los marca en
+    /// pantalla con un cuadro de su color, su nombre y los metros, también a través de las paredes (KeyItemMarkerModel).
     /// Si su punto está tapado por algo, se mueven al suelo libre más cercano. La consola dice dónde salió cada uno, y el
     /// traje avisa de vez en cuando de la distancia y la dirección al más cercano que siga en el suelo (KeyItemSignal).
     ///
@@ -30,7 +31,11 @@ namespace Nexus7.Inventory
         private static Material pickupMaterial, beamMaterial;
         private readonly List<PickupItem> keyItems = new List<PickupItem>();
         /// <summary>Brillo y haz de los objetos imprescindibles (para encontrarlos en salas oscuras).</summary>
-        public const float BeaconLightRange = 4f, BeaconLightIntensity = 2f, BeaconHeight = 6f, BeaconWidth = 0.06f;
+        public const float BeaconLightRange = 7f, BeaconLightIntensity = 5f, BeaconHeight = 6f, BeaconWidth = 0.2f;
+        /// <summary>Los imprescindibles se ven más grandes que el botín normal (las salas son muy oscuras).</summary>
+        public const float KeyItemScale = 2.2f;
+        private static GUIStyle markerStyle;
+        private static Texture2D markerTex;
 
         /// <summary>Los objetos imprescindibles de esta sala (el panel de pruebas [F4] los da directamente).</summary>
         public IReadOnlyList<ItemStack> Guaranteed => guaranteed;
@@ -64,6 +69,35 @@ namespace Nexus7.Inventory
             }
             if (log.Length > 0) Debug.Log($"[Botín] {gameObject.scene.name}/{name}: imprescindibles → {log}", this);
             if (keyItems.Count > 0) StartCoroutine(SignalRoutine());
+        }
+
+        /// <summary>Marcadores del traje: un cuadro de su color con el nombre y los metros sobre cada imprescindible que siga en el suelo.</summary>
+        private void OnGUI()
+        {
+            if (keyItems.Count == 0 || Nexus7.Cinematics.CinematicDirector.IsPlaying) return;
+            var cam = Camera.main;
+            if (cam == null) return;
+            if (markerTex == null) { markerTex = new Texture2D(1, 1, TextureFormat.RGBA32, false); markerTex.SetPixel(0, 0, Color.white); markerTex.Apply(); }
+            if (markerStyle == null)
+                markerStyle = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperCenter, richText = false };
+            foreach (var k in keyItems)
+            {
+                if (k == null || k.Item == null) continue;
+                Vector3 world = k.transform.position + Vector3.up * 0.6f;
+                Vector3 sp = cam.WorldToScreenPoint(world);
+                bool onScreen = KeyItemMarkerModel.Place(sp.x, Screen.height - sp.y, sp.z, Screen.width, Screen.height, out float x, out float y);
+                float dist = Vector3.Distance(cam.transform.position, k.transform.position);
+                Color c = k.Item.UiColor;
+                GUI.color = new Color(0f, 0f, 0f, 0.8f);
+                GUI.DrawTexture(new Rect(x - 9f, y - 9f, 18f, 18f), markerTex);   // marco
+                GUI.color = new Color(c.r, c.g, c.b, onScreen ? 1f : 0.8f);
+                GUI.DrawTexture(new Rect(x - 7f, y - 7f, 14f, 14f), markerTex);
+                GUI.color = new Color(0f, 0f, 0f, 0.8f);
+                var label = KeyItemMarkerModel.Label(k.Item.DisplayName, dist);
+                GUI.Label(new Rect(x - 119f, y + 11f, 240f, 22f), label, markerStyle);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(x - 120f, y + 10f, 240f, 22f), label, markerStyle);
+            }
         }
 
         /// <summary>El traje avisa de la distancia y la dirección al imprescindible más cercano que siga en el suelo.</summary>
@@ -125,13 +159,14 @@ namespace Nexus7.Inventory
             visual.transform.SetParent(root.transform, false);
             visual.transform.localPosition = new Vector3(0f, 0.3f, 0f);
             visual.transform.localScale = shape == PrimitiveType.Cube ? new Vector3(0.3f, 0.12f, 0.24f) : new Vector3(0.18f, 0.14f, 0.18f);
+            if (p.guaranteed) visual.transform.localScale *= KeyItemScale;
             var r = visual.GetComponent<Renderer>();
             if (r != null)
             {
                 if (pickupMaterial == null) pickupMaterial = new Material(r.sharedMaterial);
                 var m = new Material(pickupMaterial) { color = p.item.UiColor };
                 m.EnableKeyword("_EMISSION");
-                m.SetColor("_EmissionColor", p.item.UiColor * (p.guaranteed ? 0.9f : 0.4f));
+                m.SetColor("_EmissionColor", p.item.UiColor * (p.guaranteed ? 3f : 0.4f));
                 r.sharedMaterial = m;
             }
             if (p.guaranteed)
@@ -143,6 +178,8 @@ namespace Nexus7.Inventory
                 light.color = p.item.UiColor;
                 light.range = BeaconLightRange;
                 light.intensity = BeaconLightIntensity;
+                light.shadows = LightShadows.None;   // no gasta mapa de sombras (la sala ya tiene muchas luces)
+                light.renderMode = LightRenderMode.ForcePixel;   // que URP no la descarte por el límite de luces por objeto
                 AddBeacon(root.transform, p.item.UiColor);
             }
             var pickup = root.AddComponent<PickupItem>();

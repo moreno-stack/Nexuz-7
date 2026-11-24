@@ -157,7 +157,8 @@ namespace UnityEngine
     }
     public enum LightType { Spot, Directional, Point }
     public enum LightShadows { None, Hard, Soft }
-    public class Light : Behaviour { public LightType type; public Color color; public float range, intensity, spotAngle, shadowStrength, shadowBias, shadowNormalBias; public LightShadows shadows; }
+    public enum LightRenderMode { Auto, ForcePixel, ForceVertex }
+    public class Light : Behaviour { public LightType type; public Color color; public float range, intensity, spotAngle, shadowStrength, shadowBias, shadowNormalBias; public LightShadows shadows; public LightRenderMode renderMode; }
     public enum CameraClearFlags { Skybox, SolidColor }
     public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; public Vector3 WorldToScreenPoint(Vector3 p) { return p; } }
     public class AudioListener : Behaviour { public static float volume = 1f; }
@@ -189,7 +190,7 @@ namespace UnityEngine
     public class Sprite : Object { public Texture2D texture; public static Sprite Create(Texture2D t, Rect r, Vector2 pivot, float ppu) { return new Sprite { texture = t }; } }
     public enum RenderMode { ScreenSpaceOverlay }
     public class Canvas : Behaviour { public RenderMode renderMode; public int sortingOrder; }
-    public enum TextAnchor { LowerRight, MiddleCenter, MiddleRight, MiddleLeft, UpperLeft }
+    public enum TextAnchor { LowerRight, MiddleCenter, MiddleRight, MiddleLeft, UpperLeft, UpperCenter }
     public class YieldInstruction {} public class Coroutine : YieldInstruction {}
     public class WaitForSeconds : YieldInstruction { public WaitForSeconds(float s) {} }
     public class WaitForSecondsRealtime : CustomYieldInstruction { public WaitForSecondsRealtime(float s) {} public override bool keepWaiting { get { return false; } } }
