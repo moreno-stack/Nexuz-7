@@ -80,7 +80,7 @@ namespace UnityEngine
     public struct Color {
         public float r, g, b, a; public Color(float r, float g, float b) { this.r = r; this.g = g; this.b = b; a = 1; }
         public Color(float r, float g, float b, float a) { this.r = r; this.g = g; this.b = b; this.a = a; }
-        public static Color white, black, red, cyan, green, yellow, gray;
+        public static Color white, black, red, cyan, green, yellow, gray, clear;
         public static Color Lerp(Color a, Color b, float t) { return a; }
         public static Color operator *(Color a, float f) { return a; }
     }
@@ -282,7 +282,7 @@ namespace UnityEngine.UI {
     public class VerticalLayoutGroup : Behaviour { public TextAnchor childAlignment; public float spacing; public bool childControlWidth, childControlHeight, childForceExpandWidth, childForceExpandHeight; }
 }
 namespace TMPro {
-    public enum TextAlignmentOptions { Center, TopLeft, Right, Left, Top }
+    public enum TextAlignmentOptions { Center, TopLeft, Right, Left, Top, BottomRight }
     public enum FontStyles { Normal, Bold, Italic }
     public class TMP_TextInfo { public int characterCount; }
     public class TextMeshPro : UnityEngine.MonoBehaviour { public string text; public float fontSize; public TextAlignmentOptions alignment; public UnityEngine.Color color; public UnityEngine.RectTransform rectTransform; }
