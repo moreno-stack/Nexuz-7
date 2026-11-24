@@ -91,6 +91,14 @@ static class T {
     var f = new DirectorModel(1, 0.6f); var dying = new PlayerPerformanceModel(); dying.RecordDeath(1f); dying.RecordDeath(2f);
     Check(f.Tick(0.1f,dying)==DirectorAction.Assist && f.Tension<0.5f, "Caer dos veces seguidas → ayuda y baja la tensión");
   }
+  static void LastLife(){
+    var d = new DirectorModel(1); var good = Good();
+    d.LastLife = true;
+    for(int i=0;i<200;i++) d.Tick(0.5f, good);
+    Check(d.Target<=d.Baseline-0.1f+1e-4f && d.Tension<=d.Baseline-0.05f, "Última vida: aunque juegues bien, la tensión no pasa de la base − 0,1 ("+d.Tension.ToString("0.00")+")");
+    d.LastLife = false; d.Tick(0.5f, good);
+    Check(d.Target>d.Baseline, "Al recuperar vidas vuelve a subir");
+  }
   static PlayerPerformanceModel Good(){ var p=new PlayerPerformanceModel(); for(int i=0;i<30;i++){ p.RecordShot(i,i,i%2==0?"a":"b"); p.RecordHit(i,i);} for(int i=0;i<4;i++) p.RecordKill(10f+i); p.Advance(250f); for(int i=0;i<30;i++){ p.RecordShot(200f+i,100+i,i%2==0?"a":"b"); p.RecordHit(200f+i,100+i);} for(int i=0;i<4;i++) p.RecordKill(240f+i); return p; }
   static void Modifiers(){
     Nexus7.Core.AdaptiveModifiers.Reset();
@@ -104,7 +112,7 @@ static class T {
   }
   static void Main(){
     Modifiers();
-    Accuracy(); Rates(); Deaths(); Camping(); Dominance(); PerformanceSign(); Knobs(); TensionFollows(); Relief(); Patterns();
+    Accuracy(); Rates(); Deaths(); Camping(); Dominance(); PerformanceSign(); Knobs(); TensionFollows(); Relief(); Patterns(); LastLife();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
   }
 }
