@@ -1,6 +1,27 @@
 # Escape Espacial: Nexus-7 — Fase 2 (Almacén de Carga)
 
-> **Nota:** desde las mejoras (etapas 0–7) los enemigos son **robots armados**, el **botín es aleatorio** (con los objetos imprescindibles garantizados) y cada sala tiene **banco de trabajo** y **cinemática**. Lo que esta guía diga de drones o de objetos en sitios fijos ya no aplica: consulta [`docs/guias/mejoras/`](../mejoras/).
+## Estado actual (léelo primero)
+
+Esta guía se escribió cuando se creó la fase. Desde entonces el juego ha cambiado. Lo que diga más abajo y contradiga esta sección **ya no aplica**:
+
+- **Motor:** Unity 6 (6000.6) con URP.
+- **Cómo construir y jugar:** menú **Nexus-7 → Construir todo el juego (Fases 1–6 y menú)** y Play desde el menú principal. Las fases se registran solas en *Build Settings*. Ya no hace falta copiar carpetas ni construir cada fase por separado.
+- **Objetos imprescindibles:** salen en un **punto aleatorio** en cada partida, nunca en un sitio fijo. Brillan, tienen un haz de luz de 6 m y, si no los recoges, el traje te dice hacia dónde están a los 40 s (y luego cada 60 s). La consola de Unity muestra la línea `[Botín] … imprescindibles → …` con dónde han salido.
+- **Enemigos:** son **robots armados**, no drones. Los de seguridad, guardia y élite disparan a distancia (con un láser rojo de aviso antes de cada ráfaga), se cubren y flanquean.
+- **Vidas:** 5 / 3 / 2 por fase (Fácil / Normal / Difícil). Sin vidas la fase se reinicia con otra colocación.
+- **Director adaptativo:** ajusta la presión según cómo juegas, lanza eventos de nave, aprende tus rutas y regala accesorios de arma. **F3** muestra todo en vivo.
+- **Al caer**, una tarjeta te dice quién te vio y te da un consejo.
+- **Panel de pruebas F4** (solo editor y *Development Build*): F5 da los objetos imprescindibles que falten, F12 salta a la fase siguiente.
+- Detalles y pasos de prueba de cada sistema: [`GUIA_ARMAS_DIRECTOR.md`](../mejoras/GUIA_ARMAS_DIRECTOR.md).
+
+**En esta fase:**
+
+- **Imprescindibles:** 3 baterías de iones y la llave hidráulica, en uno de los 12 puntos de botín al azar. El montacargas pide **2 baterías** y las consume; la tercera es de reserva. Las posiciones de «Batería 1», «Batería 2» y «Llave hidráulica» de la tabla del nivel ya no son fijas.
+- **Robots:** los drones A y B son ahora robots armados; la tabla del nivel les llama Robot A y Robot B.
+- **Encuentro:** al cruzar el punto seguro, 2 oleadas (2 de seguridad; después guardia y seguridad). En Normal y Difícil la salida (el montacargas) queda sellada hasta despejarlo o durante 150 s como mucho.
+- **Si no encuentras las baterías:** sigue el haz de luz o el aviso del traje. En el editor, F4 y luego F5.
+
+---
 
 Requisitos: el proyecto de la Fase 1 funcionando (Active Input Handling = *Both*, TMP Essentials importado).
 No hace falta instalar ningún paquete nuevo: el NavMesh se genera con la API integrada de Unity.
@@ -168,12 +189,12 @@ posición inicial. **El inventario se conserva.**
 |---|---|---|
 | Vestíbulo (inicio) | Sur | Zona segura para leer la situación; registro de seguridad con pistas |
 | Estanterías | 6 bloques de 3.6 m de alto | Tapan la visión. Las centrales tienen un hueco de paso a media altura (z≈15) |
-| **Dron A** | Bucle por los pasillos x=±6 | Gira a vigilar en las esquinas; línea amarilla en el suelo marca su ruta |
-| **Dron B** | Vaivén por el pasillo norte | Se detiene 3 s mirando hacia los pasillos oeste y este |
-| Batería 1 | Pasillo central (suelo) | Al descubierto; hay que cronometrar los movimientos |
-| Llave hidráulica | Contenedor del pasillo este | Pasillo este sin salida por el norte (**derrumbe = ruta bloqueada**) |
+| **Robot A** (antes «Dron A») | Bucle por los pasillos x=±6 | Gira a vigilar en las esquinas; línea amarilla en el suelo marca su ruta |
+| **Robot B** (antes «Dron B») | Vaivén por el pasillo norte | Se detiene 3 s mirando hacia los pasillos oeste y este |
+| Baterías (3) y llave hidráulica | **Aleatoria**: uno de los 12 puntos de botín | Brillan y tienen un haz de 6 m; el traje avisa de la dirección |
+| Pasillo este | Sin salida por el norte | **Derrumbe = ruta bloqueada** |
 | **Conducto de ventilación** | Lateral oeste, 1.2 m de alto | **Ruta alternativa**: rejilla + llave → avanzas agachado, invisible para los drones (no caben) |
-| Batería 2 | Contenedor oeste, salida del conducto | Vigilado por el Dron B desde el norte; punto de control al lado |
+| Punto de control | Contenedor oeste, salida del conducto | Vigilado por el Robot B desde el norte. **Al cruzarlo empieza el encuentro** |
 | Montacargas | Muro norte (baliza naranja) | Requiere 2 baterías → **FIN DE LA FASE 2** |
 | Zonas de sombra | Tras grupos de cajas | Agachado dentro = OCULTO |
 
