@@ -130,6 +130,12 @@ namespace Nexus7.Interaction
             {
                 if (Time.time - lastDeniedTime < lockedMessageCooldown) return; // evita llenar la cola de mensajes
                 lastDeniedTime = Time.time;
+                if (HasItemRequirement)
+                {
+                    // Red de seguridad (KeyItemRescue): si en la sala no queda lo que falta, el traje lo fabrica
+                    var inv = interactor.GetComponentInParent<InventorySystem>();
+                    if (inv != null && RescueMissingItems(inv) && TryUnlockWithItems(inv)) return;
+                }
                 var hud = HUDManager.Instance;
                 if (hud != null)
                 {
@@ -160,6 +166,62 @@ namespace Nexus7.Interaction
             if (!string.IsNullOrEmpty(unlockedWithItemsMessage) && HUDManager.Instance != null)
                 HUDManager.Instance.QueueMessage(unlockedWithItemsMessage);
             return true;
+        }
+
+        /// <summary>
+        /// Para cada objeto que falta: cuenta lo que queda en la escena al alcance (PickupItem sobre el NavMesh). Si no
+        /// basta, añade el repuesto al inventario; si basta, da una pista hacia el más cercano. Deja el diagnóstico en la
+        /// consola. Devuelve true si ha añadido algo.
+        /// </summary>
+        private bool RescueMissingItems(InventorySystem inventory)
+        {
+            bool added = false;
+            var pickups = FindObjectsByType<PickupItem>(FindObjectsSortMode.None);
+            Vector3 me = inventory.transform.position;
+            foreach (var r in requiredItems)
+            {
+                if (!r.IsValid) continue;
+                int have = inventory.GetCount(r.item);
+                if (have >= r.amount) continue;
+                int reachable = 0, total = 0;
+                PickupItem nearest = null;
+                float best = float.MaxValue;
+                var diag = new System.Text.StringBuilder();
+                foreach (var p in pickups)
+                {
+                    if (p == null || p.Item != r.item || p.Amount <= 0) continue;
+                    Vector3 at = p.transform.position;
+                    bool ok = UnityEngine.AI.NavMesh.SamplePosition(at, out UnityEngine.AI.NavMeshHit hit, 1.5f, UnityEngine.AI.NavMesh.AllAreas)
+                              && Mathf.Abs(hit.position.y - at.y) < 1.2f;
+                    total += p.Amount;
+                    diag.Append($" ×{p.Amount} en ({at.x:0.0}, {at.y:0.0}, {at.z:0.0}){(ok ? "" : " INALCANZABLE")}");
+                    if (!ok) continue;
+                    reachable += p.Amount;
+                    float d = (at - me).sqrMagnitude;
+                    if (d < best) { best = d; nearest = p; }
+                }
+                Debug.Log($"[Botín] Puerta {name}: necesita {r.amount} {r.item.DisplayName}, llevas {have}, en la escena {total}"
+                          + (total > 0 ? ":" + diag : " (ninguno: ¿recogidos o sin aparecer?)"), this);
+
+                int missing = KeyItemRescue.Shortfall(r.amount, have, reachable);
+                if (missing > 0)
+                {
+                    int got = inventory.Add(r.item, missing);
+                    if (got > 0)
+                    {
+                        added = true;
+                        if (HUDManager.Instance != null) HUDManager.Instance.QueueMessage(KeyItemRescue.RescueMessage(r.item.DisplayName, got), 4f);
+                        Debug.LogWarning($"[Botín] Puerta {name}: repuesto de emergencia de {got} {r.item.DisplayName}.", this);
+                    }
+                    else PickupNotificationUI.Notify("Inventario lleno: suelta algo para recibir el repuesto", new Color(1f, 0.4f, 0.3f));
+                }
+                else if (nearest != null && HUDManager.Instance != null)
+                {
+                    Vector3 delta = nearest.transform.position - me;
+                    HUDManager.Instance.QueueMessage(KeyItemRescue.HintMessage(r.item.DisplayName, delta.x, delta.z), 4f);
+                }
+            }
+            return added;
         }
 
         /// <summary>Texto tipo "Batería de iones 1/2, Llave hidráulica 0/1".</summary>
