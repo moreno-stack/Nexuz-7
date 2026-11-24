@@ -9,7 +9,8 @@ namespace Nexus7.Core
 {
     /// <summary>
     /// Zona de salida de nivel: al entrar el jugador, espera, funde a negro y carga la escena indicada.
-    /// Si la escena no existe o no está en Build Settings, muestra un mensaje de fin de fase.
+    /// Si la escena no existe o no está en Build Settings, muestra un mensaje de fin de fase; si es una fase del juego
+    /// (falta registrarla), explica cómo arreglarlo.
     ///
     /// Colocar en: GameObject vacío con BoxCollider "Is Trigger" (capa "Ignore Raycast").
     /// </summary>
@@ -35,7 +36,12 @@ namespace Nexus7.Core
             if (!string.IsNullOrEmpty(sceneName) && Application.CanStreamedLevelBeLoaded(sceneName))
                 StartCoroutine(LoadRoutine(other.GetComponent<PlayerController>()));
             else if (HUDManager.Instance != null)
-                HUDManager.Instance.QueueMessage(fallbackMessage, 5f);
+            {
+                // Una fase del juego que no está en la lista de escenas: decirlo en vez de dar la partida por acabada
+                bool missingPhase = GameFlow.IsPhaseScene(sceneName);
+                HUDManager.Instance.QueueMessage(missingPhase ? SceneListModel.MissingSceneMessage(sceneName) : fallbackMessage, missingPhase ? 8f : 5f);
+                if (missingPhase) Debug.LogWarning("[Nexus-7] " + SceneListModel.MissingSceneMessage(sceneName));
+            }
         }
 
         private IEnumerator LoadRoutine(PlayerController player)

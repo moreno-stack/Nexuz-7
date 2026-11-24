@@ -8,6 +8,7 @@ namespace Nexus7.Inventory
     /// Botín aleatorio de una sala: en cada PARTIDA cambian los objetos y su sitio (semilla de GameSession),
     /// pero los objetos imprescindibles ('Guaranteed') aparecen siempre. Al reaparecer tras una captura no se
     /// vuelve a tirar (la escena no se recarga), así que lo recogido no reaparece.
+    /// Los imprescindibles brillan más y llevan un haz de luz vertical de 3 m para verlos desde lejos.
     ///
     /// Colocar en: un objeto "Botin" de la sala, con LootSpawnPoint como hijos (o asignados en 'Points').
     /// </summary>
@@ -20,7 +21,9 @@ namespace Nexus7.Inventory
         [SerializeField] private bool useFixedSeed;
         [SerializeField] private int fixedSeed = 1234;
 
-        private static Material pickupMaterial;
+        private static Material pickupMaterial, beamMaterial;
+        /// <summary>Brillo y haz de los objetos imprescindibles (para encontrarlos en salas oscuras).</summary>
+        public const float BeaconLightRange = 4f, BeaconLightIntensity = 2f, BeaconHeight = 3f, BeaconWidth = 0.06f;
 
         private void Start()
         {
@@ -76,13 +79,39 @@ namespace Nexus7.Inventory
                 light.transform.localPosition = new Vector3(0f, 0.6f, 0f);
                 light.type = LightType.Point;
                 light.color = p.item.UiColor;
-                light.range = 2f;
-                light.intensity = 0.8f;
+                light.range = BeaconLightRange;
+                light.intensity = BeaconLightIntensity;
+                AddBeacon(root.transform, p.item.UiColor);
             }
             var pickup = root.AddComponent<PickupItem>();
             pickup.Setup(p.item, p.amount);
             pickup.SetNoise(PickupNoiseFor(p.item.Category));
             pickup.SetVisual(visual.transform);
+        }
+
+        /// <summary>
+        /// Haz de luz vertical sobre un objeto imprescindible (baterías, llaves...): en las salas oscuras se ve desde lejos.
+        /// Sin colisionador; desaparece con el objeto al recogerlo.
+        /// </summary>
+        private static void AddBeacon(Transform parent, Color color)
+        {
+            var beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            beam.name = "Haz";
+            var c = beam.GetComponent<Collider>();
+            if (c != null) { c.enabled = false; Destroy(c); }
+            beam.transform.SetParent(parent, false);
+            beam.transform.localPosition = new Vector3(0f, 0.3f + BeaconHeight * 0.5f, 0f);
+            beam.transform.localScale = new Vector3(BeaconWidth, BeaconHeight * 0.5f, BeaconWidth);   // el cilindro mide 2 de alto
+            var r = beam.GetComponent<Renderer>();
+            if (r == null) return;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (beamMaterial == null)
+            {
+                var shader = Shader.Find("Sprites/Default");
+                if (shader == null) { r.enabled = false; return; }
+                beamMaterial = new Material(shader);
+            }
+            r.sharedMaterial = new Material(beamMaterial) { color = new Color(color.r, color.g, color.b, 0.35f) };
         }
 
         /// <summary>Ruido al recoger: la chatarra suena (3 m), lo demás no.</summary>
