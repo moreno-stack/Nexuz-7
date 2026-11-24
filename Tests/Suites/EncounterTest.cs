@@ -6,7 +6,8 @@ static class T {
   static int Total(List<List<RobotKind>> w){ int n=0; foreach(var x in w) n+=x.Count; return n; }
 
   static void Catalog(){
-    Check(EncounterCatalog.ForScene("SalaInicial").Length==1 && EncounterCatalog.ForScene("Laboratorio").Length==3 && EncounterCatalog.ForScene("CentroControl").Length==3, "Oleadas por fase como en el diseño (1, 3 y 3)");
+    Check(EncounterCatalog.ForScene("AlmacenCarga").Length==2 && EncounterCatalog.ForScene("Laboratorio").Length==3 && EncounterCatalog.ForScene("CentroControl").Length==3, "Oleadas por fase como en el diseño (2, 3 y 3)");
+    Check(EncounterCatalog.ForScene("SalaInicial").Length==0, "La Sala inicial no tiene robots: sin encuentro");
     Check(EncounterCatalog.ForScene("MenuPrincipal").Length==0, "Fuera de las fases no hay encuentros");
     Check(Array.IndexOf(EncounterCatalog.ForScene("Evacuacion")[1], RobotKind.Elite)>=0, "La evacuación acaba con élites");
     var normal = EncounterCatalog.Scale(EncounterCatalog.ForScene("CentroControl"), 1, 0.5f);

@@ -97,7 +97,7 @@ Cuarta entrega (PR #4, rama `feat/combate-oleadas-desarme`):
 
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 985 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 986 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
@@ -218,7 +218,7 @@ Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no h
 
 **Cómo probarlo:**
 
-1. En la Fase 1 deja que un robot de seguridad te vea desde unos 10 m. Verás el **láser rojo**, oirás el pitido y te llegará una ráfaga de 3 proyectiles naranjas.
+1. En la Fase 2 (la Fase 1 no tiene robots) deja que un robot de seguridad te vea desde unos 10 m. Verás el **láser rojo**, oirás el pitido y te llegará una ráfaga de 3 proyectiles naranjas.
 2. Corre en lateral: la mayoría deben fallar. Quédate quieto: aciertan casi todos.
 3. Ponte detrás de una columna: deja de disparar (no hay línea de tiro). Acércate a menos de 3,5 m: pasa al cuerpo a cuerpo.
 4. Con el rifle, dispárale una ráfaga larga mientras ve el láser: el aviso se corta (tambaleo).
@@ -294,7 +294,7 @@ Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no h
 
 **Qué hace:**
 
-- Cada fase tiene **un encuentro** que se activa una vez:
+- Cada fase con robots (de la 2 a la 6) tiene **un encuentro** que se activa una vez:
   - al cumplir un objetivo: hackeo con éxito, terminal de acceso, consola de energía, desactivar un sector o desbloquear una compuerta desde la consola de mando, o un paso de la secuencia de lanzamiento;
   - en las fases sin esos objetivos, con el primer **punto seguro**;
   - en las fases sin ninguno de los dos (Laboratorio), al **alejarte 20 m** de donde empezaste.
@@ -307,7 +307,7 @@ Los gatillos se activan al pasar del 50 % y se sueltan por debajo del 30 % (no h
 
 | Fase | Se activa con | Oleadas en Normal |
 |---|---|---|
-| 1 · Sala inicial | Terminal de acceso | 2 seguridad |
+| 1 · Sala inicial | — (no tiene robots) | — |
 | 2 · Almacén de carga | Primer punto seguro | 2 seguridad · 1 guardia + 1 seguridad |
 | 3 · Sala de energía | Hackeo o consola de energía (lo primero que hagas) | 2 seguridad + 1 investigación · 2 guardias |
 | 4 · Laboratorio | Alejarse 20 m del inicio | 2 seguridad · 2 guardias · 1 élite + 1 seguridad |
@@ -318,8 +318,8 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 
 **Cómo probarlo:**
 
-1. En la Fase 1 usa la terminal de acceso con **F3** abierto. «Encuentro» pasa a «cuenta atrás» y, a los 3 s, aparecen 2 robots de seguridad con un anillo rojo, lejos de ti y fuera de tu vista.
-2. Destruye uno: con 1 vivo en la última oleada no pasa nada más. Destruye el otro: «Zona despejada» y munición a tus pies.
+1. En la Fase 2 cruza el primer punto seguro con **F3** abierto. «Encuentro» pasa a «cuenta atrás» y, a los 3 s, aparecen 2 robots de seguridad con un anillo rojo, lejos de ti y fuera de tu vista.
+2. Destruye uno: con 1 vivo sale «¡REFUERZOS! Oleada 2/2 en 3 s» y llegan 2 más (la Fase 2 no tiene guardias, así que el guardia de la oleada es otro robot de seguridad). Destruye a todos los de la última oleada: «Zona despejada» y munición a tus pies.
 3. En la Fase 3, hackea la terminal o activa la consola de energía. Deja vivo solo a uno de la primera oleada: aparece «¡REFUERZOS! Oleada 2/2 en 3 s».
 4. Deja que te atrapen a mitad: los robots de la oleada desaparecen y, 4 s después de reaparecer, el encuentro vuelve a empezar. Los anillos rojos salen en otros sitios.
 5. En Difícil la primera oleada de la Fase 5 trae 4 robots en vez de 3.
@@ -334,7 +334,7 @@ Si en una fase no hay robots de un tipo, se usa otro: seguridad en lugar del que
 | `EnemyFireTest` | 29 | Armas por tipo de robot, dispersión y anticipación, turnos de ataque, ráfagas con aviso, tambaleo e indicador de daño |
 | `TacticalCoverTest` | 37 | Estilos, puntuación de coberturas, mejor punto, reservas, ciclo cubrirse/asomarse, asomadas fallidas, relojes de avance y flanqueo, tempo del director |
 | `WeakPointTest` | 26 | Óptica, núcleo trasero, brazo del arma y desarme, prioridades, multiplicadores y curva del retroceso |
-| `EncounterTest` | 28 | Oleadas por fase, escalado por dificultad y director, activadores, secuencia, reinicio y puntos de aparición justos y variados |
+| `EncounterTest` | 29 | Oleadas por fase, escalado por dificultad y director, activadores, secuencia, reinicio y puntos de aparición justos y variados |
 | `DirectorTest` | 40 | Métricas, ventanas, olvido, acampada, abuso de arma, rendimiento, tensión, respiro, patrones y perillas nuevas |
 | `SpawnVariationTest` | 16 | Anti-repetición, justicia, ritmo, refuerzos, cámaras y reproducibilidad |
 
