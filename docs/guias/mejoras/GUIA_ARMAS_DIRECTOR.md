@@ -178,9 +178,22 @@ Arreglo después del plan (PR #15, rama `fix/rescate-objetos-imprescindibles`): 
   3. Si no lo están, recibes 2 baterías y el montacargas se abre.
   4. Haz lo mismo con la rejilla del conducto: te da la pista o la llave.
 
+Segundo arreglo (PR #16, rama `fix/marcadores-objetos-imprescindibles`): **marcadores del traje**.
+
+- El jugador no encontraba los objetos imprescindibles en ninguna fase: las salas son muy oscuras y el objeto era pequeño.
+- Ahora cada objeto imprescindible que siga en el suelo tiene en pantalla un **cuadro de su color con su nombre y los metros** («Batería de iones · 23 m»). Se ve también a través de las paredes.
+- Si está fuera de la vista o a tu espalda, el cuadro se queda en el **borde de la pantalla**, del lado hacia el que tienes que girarte. Desaparece al recogerlo y durante las cinemáticas.
+- Además, el objeto es **2,2 veces más grande**, brilla más y su luz es más fuerte (7 m, sin sombras, siempre por píxel para que URP no la descarte). El haz de luz es más grueso (0,2 m).
+- Archivos: `Inventory/KeyItemMarkerModel.cs` (puro, `KeyItemMarkerTest`, 8 comprobaciones) y `RoomLootSpawner`.
+- **Cómo probarlo:**
+  1. Entra en la Fase 2. Nada más empezar ves dos marcadores: «Batería de iones · N m» y «Llave hidráulica · N m».
+  2. Gira sobre ti mismo: el marcador va por el borde de la pantalla hasta que el objeto queda delante.
+  3. Ve hacia él y recógelo con [E]: su marcador desaparece.
+  4. Si al empezar una fase no ves ningún marcador, el botín no ha aparecido. Busca en la Console las líneas rojas y las que empiezan por `[Botín]`.
+
 ## 3. Etapas: cómo probar cada una
 
-Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1204 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
+Antes de cada etapa, ejecuta las pruebas desde la raíz con `bash Tests/run_all.sh`. El resultado esperado es `TOTAL: 1212 comprobaciones, 0 fallos` y `ROSLYN: compilación OK`.
 
 ### Etapa 1: sistema de armas (commits 1 a 4)
 
