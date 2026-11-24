@@ -31,6 +31,8 @@ namespace Nexus7.UI
         // Rejilla de iconos a la derecha del panel (se crea por código al empezar)
         public const int GridColumns = 4;
         public const float TileSize = 56f, TileGap = 6f;
+        /// <summary>El panel se ensancha para que el texto no se parta junto a la rejilla.</summary>
+        public const float PanelExtraWidth = 180f, TextWidth = 560f;
         private RectTransform grid;
         private readonly List<IconSlot> tiles = new List<IconSlot>();
 
@@ -101,10 +103,14 @@ namespace Nexus7.UI
         private void BuildGrid()
         {
             if (panel == null || grid != null) return;
+            var panelRect = panel.GetComponent<RectTransform>();
+            if (panelRect != null) panelRect.sizeDelta = new Vector2(panelRect.sizeDelta.x + PanelExtraWidth, panelRect.sizeDelta.y);
             if (listText != null && listText.rectTransform != null)
             {
-                listText.rectTransform.sizeDelta = new Vector2(400f, listText.rectTransform.sizeDelta.y);
-                listText.rectTransform.anchoredPosition = new Vector2(-120f, listText.rectTransform.anchoredPosition.y);
+                // 720 + 180 = 900 px de panel: texto a la izquierda (560 px) y rejilla a la derecha (248 px)
+                listText.rectTransform.sizeDelta = new Vector2(TextWidth, listText.rectTransform.sizeDelta.y);
+                listText.rectTransform.anchoredPosition = new Vector2(-150f, listText.rectTransform.anchoredPosition.y);
+                listText.fontSize = Mathf.Min(listText.fontSize, 24f);
             }
             var go = new GameObject("RejillaIconos", typeof(RectTransform));
             go.transform.SetParent(panel.transform, false);
