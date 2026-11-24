@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Nexus7.Combat
 {
@@ -12,6 +13,7 @@ namespace Nexus7.Combat
     ///   · Cadencia: no dispara antes de 1/FireRate s. Semiautomática: hay que soltar el gatillo entre disparos.
     ///   · Calor: sube con cada disparo y baja a 40/s tras 0,25 s sin disparar. A 100 → sobrecalentada 1,5 s y vuelve a 50.
     ///   · Recarga: con [R] o sola al vaciar el cargador si hay reserva. Cambiar de arma la cancela sin perder munición.
+    ///   · Accesorios (WeaponModModel): 'Spec' es el arma con sus accesorios aplicados; 'BaseSpec', la del catálogo.
     /// </summary>
     public sealed class WeaponModel
     {
@@ -22,7 +24,12 @@ namespace Nexus7.Combat
         public const float HeatAfterOverheat = 50f;
         public const float BloomRecovery = 4f;
 
-        public PlayerWeaponSpec Spec { get; }
+        /// <summary>El arma con sus accesorios aplicados (es lo que usan el disparo, el HUD y el director).</summary>
+        public PlayerWeaponSpec Spec { get; private set; }
+        /// <summary>El arma tal como está en el catálogo.</summary>
+        public PlayerWeaponSpec BaseSpec { get; }
+        public IReadOnlyList<WeaponMod> Mods => mods;
+        private readonly List<WeaponMod> mods = new List<WeaponMod>();
         public int Ammo { get; private set; }
         public int Reserve { get; private set; }
         public float Heat { get; private set; }
@@ -39,11 +46,14 @@ namespace Nexus7.Combat
         private float reloadEnd, overheatEnd;
         private bool triggerWasDown;
 
-        public WeaponModel(PlayerWeaponSpec spec, int ammo, int reserve)
+        public WeaponModel(PlayerWeaponSpec spec, int ammo, int reserve, IList<WeaponMod> installed = null)
         {
-            Spec = spec ?? throw new ArgumentNullException(nameof(spec));
-            Ammo = Math.Max(0, Math.Min(spec.MagazineSize, ammo));
-            Reserve = Math.Max(0, Math.Min(spec.MaxReserve, reserve));
+            BaseSpec = spec ?? throw new ArgumentNullException(nameof(spec));
+            if (installed != null)
+                foreach (var m in installed) WeaponModModel.Install(mods, m, spec, out _);
+            Spec = mods.Count > 0 ? WeaponModModel.Apply(spec, mods) : spec;
+            Ammo = Math.Max(0, Math.Min(Spec.MagazineSize, ammo));
+            Reserve = Math.Max(0, Math.Min(Spec.MaxReserve, reserve));
         }
 
         /// <summary>Arma nueva: cargador lleno y la reserva inicial del catálogo.</summary>
@@ -130,6 +140,26 @@ namespace Nexus7.Combat
             Reserve += added;
             return added;
         }
+
+        /// <summary>
+        /// Monta un accesorio. Cambia los valores del arma al momento; la munición que ya tiene se conserva
+        /// (si el cargador encoge al quitar un cargador ampliado, lo que sobra vuelve a la reserva).
+        /// </summary>
+        public ModInstall InstallMod(WeaponMod mod, out WeaponMod replaced)
+        {
+            var result = WeaponModModel.Install(mods, mod, BaseSpec, out replaced);
+            if (result != ModInstall.Installed && result != ModInstall.Replaced) return result;
+            Spec = WeaponModModel.Apply(BaseSpec, mods);
+            if (Ammo > Spec.MagazineSize)
+            {
+                int extra = Ammo - Spec.MagazineSize;
+                Ammo = Spec.MagazineSize;
+                Reserve = Math.Min(Spec.MaxReserve, Reserve + extra);
+            }
+            return result;
+        }
+
+        public bool HasMod(WeaponMod mod) => mods.Contains(mod);
 
         /// <summary>Quita munición de la reserva (penalización al caer). Devuelve cuánta se quitó.</summary>
         public int RemoveReserve(int amount)
