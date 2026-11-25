@@ -41,11 +41,12 @@ namespace Nexus7.Controls
             new Def("crouch",   "AGACH.", KeyCode.C,      1f, 0f, -330f, 400f, 55f),
             new Def("reload",   "R",      KeyCode.R,      1f, 0f, -70f,  90f,  45f),
             new Def("use",      "USAR",   KeyCode.E,      1f, 0f, -560f, 300f, 62f),
+            // dispositivo encima de Saltar: al mantenerlo se ve la trayectoria y arrastrar apunta el lanzamiento
+            new Def("device",   "DISP.",  KeyCode.G,      1f, 0f, -110f, 610f, 58f, true),
             // arriba a la derecha
             new Def("weapon",   "ARMA",   KeyCode.Q,      1f, 1f, -90f,  -200f, 50f),
-            new Def("device",   "DISP.",  KeyCode.G,      1f, 1f, -220f, -200f, 50f),
-            new Def("inventory","INV.",   KeyCode.Tab,    1f, 1f, -350f, -200f, 50f),
-            new Def("camera",   "CÁM.",   KeyCode.V,      1f, 1f, -480f, -200f, 50f),
+            new Def("inventory","INV.",   KeyCode.Tab,    1f, 1f, -220f, -200f, 50f),
+            new Def("camera",   "CÁM.",   KeyCode.V,      1f, 1f, -350f, -200f, 50f),
             // a los lados de la fila de iconos de la barra rápida (84–128 px), por encima de su texto
             new Def("prev",     "◄",      KeyCode.JoystickButton4, 0.5f, 0f, -430f, 120f, 40f),
             new Def("next",     "►",      KeyCode.JoystickButton5, 0.5f, 0f, 430f,  120f, 40f),
@@ -69,11 +70,8 @@ namespace Nexus7.Controls
             new Def("back",    "VOLVER", KeyCode.Q, 1f, 1f, -90f, -120f, 50f),
         };
 
-        private static readonly Def[] Ending =
-        {
-            new Def("retry", "REINTENTAR", KeyCode.R, 0.5f, 0f, -180f, 130f, 75f),
-            new Def("menu",  "MENÚ",       KeyCode.M, 0.5f, 0f, 180f,  130f, 75f),
-        };
+        // Pantalla final: sin botones táctiles; sus botones REINTENTAR y MENÚ se tocan directamente (EventSystem)
+        private static readonly Def[] Ending = new Def[0];
 
         private static readonly Def[] Cinematic = { new Def("skip", "SALTAR ►►", KeyCode.Space, 1f, 0f, -150f, 150f, 70f) };
         private static readonly Def[] Inventory = { new Def("close", "CERRAR", KeyCode.Tab, 1f, 1f, -90f, -120f, 55f) };
