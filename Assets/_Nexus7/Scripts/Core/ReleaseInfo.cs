@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Nexus7.Core
@@ -28,6 +30,22 @@ namespace Nexus7.Core
             if (!m.Success) return 1;
             int code = int.Parse(m.Groups[1].Value) * 10000 + int.Parse(m.Groups[2].Value) * 100 + int.Parse(m.Groups[3].Value);
             return code < 1 ? 1 : code;
+        }
+
+        /// <summary>Escenas sin las que no se publica: el menú y las 6 fases.</summary>
+        public static readonly string[] RequiredScenes =
+        {
+            "Assets/_Nexus7/Scenes/MenuPrincipal.unity", "Assets/_Nexus7/Scenes/SalaInicial.unity",
+            "Assets/_Nexus7/Scenes/AlmacenCarga.unity", "Assets/_Nexus7/Scenes/SalaEnergia.unity",
+            "Assets/_Nexus7/Scenes/Laboratorio.unity", "Assets/_Nexus7/Scenes/CentroControl.unity",
+            "Assets/_Nexus7/Scenes/Evacuacion.unity",
+        };
+
+        /// <summary>Escenas obligatorias que no están en la lista dada (p. ej. una fase que no se llegó a construir).</summary>
+        public static string[] MissingScenes(IEnumerable<string> scenes)
+        {
+            var have = new HashSet<string>(scenes ?? Enumerable.Empty<string>());
+            return RequiredScenes.Where(s => !have.Contains(s)).ToArray();
         }
 
         public static string ArtifactName(ReleasePlatform p)

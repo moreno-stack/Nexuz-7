@@ -77,7 +77,9 @@ namespace Nexus7.EditorTools
             Apply(target, version, keystore);
 
             string[] scenes = EditorBuildSettings.scenes.Where(s => s.enabled && File.Exists(s.path)).Select(s => s.path).ToArray();
-            if (scenes.Length == 0) { Debug.LogError("[Nexus-7] No hay escenas en Build Settings."); return false; }
+            // Un constructor puede saltarse una fase sin lanzar error: sin el menú y las 6 fases no se publica
+            string[] missing = ReleaseInfo.MissingScenes(scenes);
+            if (missing.Length > 0) { Debug.LogError("[Nexus-7] Faltan escenas en Build Settings: " + string.Join(", ", missing)); return false; }
 
             string dir = Path.GetDirectoryName(Path.GetFullPath(path));
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
