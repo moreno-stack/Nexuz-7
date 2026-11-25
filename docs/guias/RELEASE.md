@@ -83,20 +83,20 @@ Minutos de GitHub Actions: en repositorios **públicos** son gratis. En privados
 
 | Zona | Qué hace |
 |---|---|
-| Mitad izquierda | Joystick: aparece donde pones el dedo. A fondo, corres |
+| Mitad izquierda | Joystick: aparece donde pones el dedo. Dentro del círculo caminas; arrastra **más allá del borde** para correr (correr hace ruido) |
 | Mitad derecha | Arrastrar para mirar |
 | **FUEGO** | Disparar (mientras lo mantienes, arrastrar también apunta). **MIRA** hace zoom |
 | SALTO · AGACH. · USAR · R | Saltar, agacharse, interactuar y recargar |
-| Arriba a la derecha | ARMA, DISP. (dispositivo), INV. (inventario) y CÁM. (1.ª/3.ª persona) |
+| **DISP.** (encima de SALTO) | Usar o lanzar el dispositivo: mantenlo para ver la trayectoria, arrastra para apuntar y suelta para lanzar |
+| Arriba a la derecha | ARMA, INV. (inventario) y CÁM. (1.ª/3.ª persona) |
 | ◄ ► junto a la barra rápida | Cambiar de objeto |
 
 Los botones cambian solos según lo que estés haciendo:
 - **Hackeo:** las 4 direcciones, ¡INTERF.! y SALIR.
 - **Consola y banco de trabajo:** ▲, ▼, ACEPTAR y VOLVER.
-- **Pantalla final:** REINTENTAR y MENÚ.
 - **Cinemáticas:** SALTAR.
 
-En el menú principal se tocan directamente sus botones.
+En el menú principal y en la pantalla final se tocan directamente sus botones.
 
 En el móvil la calidad gráfica empieza en **Media**, para ir a 60 fps. Se puede cambiar en Configuración.
 
