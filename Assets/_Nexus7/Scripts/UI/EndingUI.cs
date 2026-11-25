@@ -27,6 +27,7 @@ namespace Nexus7.UI
         public static EndingUI Instance { get; private set; }
 
         [SerializeField] private GameObject panel;
+        public bool IsOpen => panel != null && panel.activeSelf;
         [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private TextMeshProUGUI storyText;
         [SerializeField] private TextMeshProUGUI breakdownText;

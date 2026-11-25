@@ -125,8 +125,11 @@ namespace UnityEngine
         public static float GetAxis(string a) { return 0; } public static float GetAxisRaw(string a) { return 0; }
         public static bool GetKey(KeyCode k) { return false; } public static bool GetKeyDown(KeyCode k) { return false; } public static bool GetKeyUp(KeyCode k) { return false; }
         public static bool GetMouseButtonDown(int b) { return false; } public static string[] GetJoystickNames() { return new string[0]; }
+        public static bool simulateMouseWithTouches = true, multiTouchEnabled = true; public static int touchCount; public static Touch GetTouch(int i) { return new Touch(); }
     }
     public enum CursorLockMode { None, Locked, Confined }
+    public enum TouchPhase { Began, Moved, Stationary, Ended, Canceled }
+    public struct Touch { public int fingerId; public Vector2 position; public TouchPhase phase; }
     public static class Cursor { public static CursorLockMode lockState; public static bool visible; }
     public static class Debug { public static bool isDebugBuild;
         public static void Log(object o) {} public static void Log(object o, Object c) {} public static void LogWarning(object o) {} public static void LogWarning(object o, Object c) {}
@@ -164,7 +167,7 @@ namespace UnityEngine
     public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; public Vector3 WorldToScreenPoint(Vector3 p) { return p; } }
     public class AudioListener : Behaviour { public static float volume = 1f; }
     public enum FullScreenMode { ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed }
-    public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; }
+    public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; public static Rect safeArea = new Rect(0, 0, 1920, 1080); }
     // Existe en Unity (obsoleto): cualquier enum propio con este nombre choca con él
     public enum QualityLevel { Fastest, Fast, Simple, Good, Beautiful, Fantastic }
     public static class QualitySettings { public static string[] names = { "Mobile", "PC" }; static int level = 1; public static int GetQualityLevel() { return level; } public static void SetQualityLevel(int i, bool e) { level = i; } }
@@ -182,7 +185,7 @@ namespace UnityEngine
     }
     public class AsyncOperation { public bool isDone = true; public float progress = 1f; public bool allowSceneActivation = true; }
     public static class Resources { public static T Load<T>(string path) where T : Object { return null; } }
-    public static class Application { public static string persistentDataPath = System.IO.Path.GetTempPath(); public static bool isPlaying, isBatchMode, isEditor; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
+    public static class Application { public static string persistentDataPath = System.IO.Path.GetTempPath(); public static bool isPlaying, isBatchMode, isEditor, isMobilePlatform; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
     public enum FogMode { Linear, Exponential, ExponentialSquared }
     public static class RenderSettings {
         public static Material skybox; public static Rendering.AmbientMode ambientMode; public static Color ambientLight, fogColor;

@@ -28,6 +28,7 @@ namespace Nexus7.UI
         public static HackMinigameUI Instance { get; private set; }
 
         [SerializeField] private GameObject panel;
+        public bool IsOpen => panel != null && panel.activeSelf;
         [SerializeField] private TextMeshProUGUI title;
         [SerializeField] private TextMeshProUGUI sequenceText;
         [SerializeField] private TextMeshProUGUI statusText;
