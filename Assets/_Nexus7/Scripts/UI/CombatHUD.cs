@@ -1,5 +1,6 @@
 using UnityEngine;
 using Nexus7.Combat;
+using Nexus7.Controls;
 
 namespace Nexus7.UI
 {
@@ -147,7 +148,8 @@ namespace Nexus7.UI
         private void DrawWeaponPanel(WeaponModel w, float k)
         {
             float pw = 330f * k, ph = 132f * k;
-            float x = Screen.width - pw - 24f * k, y = Screen.height - ph - 24f * k;
+            // En el móvil, arriba a la derecha (debajo de los botones táctiles); abajo quedaría tapado por Disparar
+            float x = Screen.width - pw - 24f * k, y = TouchInput.Enabled ? 270f * k : Screen.height - ph - 24f * k;
             Rect(x, y, pw, ph, new Color(0.03f, 0.06f, 0.09f, 0.6f));
             var accent = new Color(w.Spec.ColorR, w.Spec.ColorG, w.Spec.ColorB);
             Rect(x, y, 4f * k, ph, accent);
