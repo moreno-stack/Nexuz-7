@@ -43,7 +43,7 @@ static class T {
   static void LayoutTests(){
     var sizes = new[]{ new[]{1920f,1080f}, new[]{2400f,1080f}, new[]{1440f,1080f}, new[]{1280f,720f} };
     foreach (TouchContext ctx in Enum.GetValues(typeof(TouchContext))){
-      if (ctx == TouchContext.None) { Check(TouchLayout.For(ctx, 1920, 1080).Length == 0, "Sin contexto no hay botones"); continue; }
+      if (ctx == TouchContext.None || ctx == TouchContext.Ending) { Check(TouchLayout.For(ctx, 1920, 1080).Length == 0, ctx + ": sin botones táctiles (en la pantalla final se tocan sus propios botones)"); continue; }
       foreach (var s in sizes){
         var b = TouchLayout.For(ctx, s[0], s[1]);
         bool inside = b.All(x => x.X - x.Radius >= 0 && x.X + x.Radius <= s[0] && x.Y - x.Radius >= 0 && x.Y + x.Radius <= s[1]);
@@ -58,7 +58,9 @@ static class T {
     var g = TouchLayout.For(TouchContext.Gameplay, 1920, 1080);
     var keys = new[]{ KeyCode.Mouse0, KeyCode.Mouse1, KeyCode.Space, KeyCode.C, KeyCode.E, KeyCode.R, KeyCode.Q, KeyCode.G, KeyCode.Tab, KeyCode.V, KeyCode.JoystickButton4, KeyCode.JoystickButton5 };
     Check(keys.All(k => g.Any(x => x.Key == k)), "Juego: disparar, apuntar, saltar, agacharse, usar, recargar, arma, dispositivo, inventario, cámara y objeto ←/→");
-    Check(g.Where(x => x.LooksWhileHeld).Select(x => x.Key).OrderBy(k => k).SequenceEqual(new[]{ KeyCode.Mouse0, KeyCode.Mouse1 }.OrderBy(k => k)), "Disparar y apuntar dejan mirar mientras se mantienen");
+    Check(g.Where(x => x.LooksWhileHeld).Select(x => x.Key).OrderBy(k => k).SequenceEqual(new[]{ KeyCode.Mouse0, KeyCode.Mouse1, KeyCode.G }.OrderBy(k => k)), "Disparar, apuntar y el dispositivo dejan mirar mientras se mantienen (para apuntar el lanzamiento)");
+    var dev = g.First(x => x.Key == KeyCode.G);
+    Check(dev.X > 1920 * 0.75f && dev.Y < 1080 * 0.65f, "El dispositivo está con los botones de la mano derecha, no arriba");
     var fire = g.First(x => x.Key == KeyCode.Mouse0);
     Check(fire.Radius >= g.Max(x => x.Radius) && fire.X > 960 && fire.Y < 540, "Disparar es el más grande, abajo a la derecha");
     Check(TouchLayout.HasStick(TouchContext.Gameplay) && TouchLayout.HasLook(TouchContext.Gameplay) && !TouchLayout.HasStick(TouchContext.Hack) && !TouchLayout.HasLook(TouchContext.Ending), "Solo el juego tiene joystick y mirada");
@@ -66,8 +68,6 @@ static class T {
     Check(new[]{ KeyCode.W, KeyCode.A, KeyCode.S, KeyCode.D, KeyCode.Space, KeyCode.Q }.All(hack.Contains), "Hackeo: 4 direcciones, interferencia y cancelar");
     var menu = TouchLayout.For(TouchContext.Menu, 1920, 1080).Select(x => x.Key).ToList();
     Check(new[]{ KeyCode.W, KeyCode.S, KeyCode.E, KeyCode.Q }.All(menu.Contains), "Consola y banco: arriba, abajo, aceptar y volver");
-    var end = TouchLayout.For(TouchContext.Ending, 1920, 1080).Select(x => x.Key).ToList();
-    Check(end.Contains(KeyCode.R) && end.Contains(KeyCode.M), "Pantalla final: reintentar y menú");
     Check(TouchLayout.For(TouchContext.Cinematic, 1920, 1080).Single().Key == KeyCode.Space, "Cinemática: un botón para saltarla (Espacio mantenido)");
     Check(TouchLayout.For(TouchContext.Inventory, 1920, 1080).Any(x => x.Key == KeyCode.Tab), "Inventario abierto: botón para cerrarlo");
     Check(TouchLayout.Pick(true, true, true, true, true, true) == TouchContext.Cinematic, "Prioridad: cinemática");
@@ -95,8 +95,10 @@ static class T {
     Next(); r.Update(TouchContext.Gameplay, new[]{ Tch(1, 300 + 55, 300, TouchPhaseLite.Moved) }, W, H);
     float half = TouchInput.Axis("Horizontal");
     Check(half > 0.35f && half < 0.55f && !TouchInput.GetKey(KeyCode.LeftShift), "A media distancia: algo menos de la mitad y sin correr (" + half.ToString("0.00") + ")");
+    Next(); r.Update(TouchContext.Gameplay, new[]{ Tch(1, 300, 300 + 110, TouchPhaseLite.Moved) }, W, H);
+    Check(Near(TouchInput.Axis("Vertical"), 1f) && !TouchInput.GetKey(KeyCode.LeftShift), "Joystick al borde: avanza al máximo pero no corre (sigilo: correr hace ruido y levanta al agachado)");
     Next(); r.Update(TouchContext.Gameplay, new[]{ Tch(1, 300, 300 + 400, TouchPhaseLite.Moved) }, W, H);
-    Check(Near(TouchInput.Axis("Vertical"), 1f) && Near(TouchInput.Axis("Horizontal"), 0f) && TouchInput.GetKey(KeyCode.LeftShift), "A fondo hacia arriba: avanzar al máximo y correr");
+    Check(Near(TouchInput.Axis("Vertical"), 1f) && Near(TouchInput.Axis("Horizontal"), 0f) && TouchInput.GetKey(KeyCode.LeftShift), "Arrastrar más allá del borde: corre");
     Next(); r.Update(TouchContext.Gameplay, new[]{ Tch(1, 1500, 700, TouchPhaseLite.Moved) }, W, H);
     Check(r.StickActive && TouchInput.Axis("Mouse X") == 0f, "El dedo del joystick sigue siéndolo aunque cruce a la mitad derecha");
     Next(); r.Update(TouchContext.Gameplay, new[]{ Tch(1, 1500, 700, TouchPhaseLite.Ended) }, W, H);

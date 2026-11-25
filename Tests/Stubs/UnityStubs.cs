@@ -295,6 +295,10 @@ namespace TMPro {
         public void ForceMeshUpdate() {}
     }
 }
+namespace UnityEngine.Device {
+    public static class Application { public static bool isMobilePlatform; }
+    public static class Screen { public static UnityEngine.Rect safeArea = new UnityEngine.Rect(0, 0, 1920, 1080); public static int width = 1920, height = 1080; }
+}
 namespace UnityEditor {
     using UnityEngine;
     public class MenuItem : Attribute { public MenuItem(string p) {} public MenuItem(string p, bool v) {} public MenuItem(string p, bool v, int prio) {} }

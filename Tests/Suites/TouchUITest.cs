@@ -10,7 +10,8 @@ static class T {
     Check(ui.Contains("[DefaultExecutionOrder(-1000)]"), "Lee los toques antes que el resto de scripts (los 'Down' llegan en el mismo fotograma)");
     Check(ui.Contains("OnApplicationPause") && ui.Contains("OnApplicationFocus") && ui.Contains("TouchInput.ReleaseAll()"), "Al perder el foco se suelta todo (nada se queda pegado)");
     Check(ui.Contains("TouchLayout.Pick(") && ui.Contains("CinematicDirector.IsPlaying") && ui.Contains("HackMinigameUI.Instance") && ui.Contains("EndingUI.Instance") && ui.Contains("ConsoleUI.Instance") && ui.Contains("CraftingUI.Instance"), "Elige los botones según lo que esté abierto");
-    Check(ui.Contains("Screen.safeArea"), "Respeta la zona segura (muesca de la cámara)");
+    Check(ui.Contains("UnityEngine.Device.Screen.safeArea") && ui.Contains("UnityEngine.Device.Application.isMobilePlatform"), "Respeta la zona segura y funciona en el Device Simulator (UnityEngine.Device)");
+    Check(Src("Core/GameSettings.cs").Contains("UnityEngine.Device.Application.isMobilePlatform"), "La calidad del móvil también se prueba en el Device Simulator");
     Check(ui.Contains("sortingOrder = 900"), "Por encima del HUD (10) y por debajo de los fundidos (1000)");
     Check(Src("UI/HackMinigameUI.cs").Contains("public bool IsOpen") && Src("UI/EndingUI.cs").Contains("public bool IsOpen"), "El hackeo y la pantalla final dicen si están abiertos");
     Check(Src("UI/CombatHUD.cs").Contains("TouchInput.Enabled ?"), "En el móvil el panel del arma sube para no quedar debajo de Disparar");

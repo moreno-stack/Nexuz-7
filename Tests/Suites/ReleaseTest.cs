@@ -14,9 +14,12 @@ static class T {
     Check(ReleaseInfo.AndroidPackage == "com.morenostack.nexus7", "Paquete de Android");
     Check(ReleaseInfo.PlatformFromTarget("StandaloneWindows64") == ReleasePlatform.Windows && ReleaseInfo.PlatformFromTarget("StandaloneOSX") == ReleasePlatform.Mac && ReleaseInfo.PlatformFromTarget("Android") == ReleasePlatform.Android && ReleaseInfo.PlatformFromTarget("PS5") == null, "Objetivo de Unity → plataforma (desconocido → nulo)");
 
+    Check(ReleaseInfo.RequiredScenes.Length == 7 && ReleaseInfo.RequiredScenes[0].EndsWith("MenuPrincipal.unity"), "La release necesita el menú y las 6 fases");
+    var some = new System.Collections.Generic.List<string>(ReleaseInfo.RequiredScenes); some.RemoveAt(3);
+    Check(ReleaseInfo.MissingScenes(some).Length == 1 && ReleaseInfo.MissingScenes(ReleaseInfo.RequiredScenes).Length == 0, "Detecta la escena que falta (una fase sin construir)");
     string rb = File.ReadAllText("Assets/_Nexus7/Scripts/Editor/ReleaseBuild.cs");
     Check(rb.Contains("public static void BuildFromCommandLine()") && rb.Contains("EditorApplication.Exit(ok ? 0 : 1)") && rb.Contains("EditorApplication.Exit(1)"), "Desde GameCI: sale con código 0 si compila y 1 si falla");
-    Check(rb.Contains("BuildAllScenes.BuildAll()") && rb.Contains("BuildPipeline.BuildPlayer("), "Construye todas las escenas antes de compilar");
+    Check(rb.Contains("BuildAllScenes.BuildAll()") && rb.Contains("BuildPipeline.BuildPlayer(") && rb.Contains("ReleaseInfo.MissingScenes("), "Construye todas las escenas y no compila si falta alguna");
     Check(rb.Contains("ScriptingImplementation.IL2CPP") && rb.Contains("AndroidArchitecture.ARM64") && rb.Contains("ReleaseInfo.AndroidPackage") && rb.Contains("allowedAutorotateToPortrait = false") && rb.Contains("buildAppBundle = false"), "Android: IL2CPP, ARM64, paquete, solo horizontal y APK (no AAB)");
     Check(rb.Contains("-androidKeystoreName") && rb.Contains("useCustomKeystore"), "Firma del APK con la clave de los secretos si GameCI la pasa");
     Check(rb.Contains("\"Nexus-7/Compilar versión/Windows\"") && rb.Contains("\"Nexus-7/Compilar versión/Mac\"") && rb.Contains("\"Nexus-7/Compilar versión/Android\""), "Menú para compilar cada sistema desde Unity");
