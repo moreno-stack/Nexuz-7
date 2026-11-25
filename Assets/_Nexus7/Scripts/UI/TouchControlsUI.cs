@@ -49,6 +49,8 @@ namespace Nexus7.UI
             if (!TouchInput.Enabled || instance != null) return;
             Input.simulateMouseWithTouches = false;   // un toque no es un clic (si no, cualquier toque dispararía)
             Input.multiTouchEnabled = true;
+            Screen.sleepTimeout = SleepTimeout.NeverSleep;   // jugando con los dedos no se toca la pantalla «para que no se apague»
+            Application.targetFrameRate = 60;
             var go = new GameObject("ControlesTactiles");
             DontDestroyOnLoad(go);
             instance = go.AddComponent<TouchControlsUI>();

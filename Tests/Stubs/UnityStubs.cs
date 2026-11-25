@@ -167,7 +167,8 @@ namespace UnityEngine
     public class Camera : Behaviour { public static Camera main; public bool allowHDR; public float farClipPlane, nearClipPlane, fieldOfView; public CameraClearFlags clearFlags; public Color backgroundColor; public Vector3 WorldToScreenPoint(Vector3 p) { return p; } }
     public class AudioListener : Behaviour { public static float volume = 1f; }
     public enum FullScreenMode { ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed }
-    public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; public static Rect safeArea = new Rect(0, 0, 1920, 1080); }
+    public static class Screen { public static FullScreenMode fullScreenMode; public static bool fullScreen; public static int width = 1920, height = 1080; public static Rect safeArea = new Rect(0, 0, 1920, 1080); public static int sleepTimeout; }
+    public static class SleepTimeout { public const int NeverSleep = -1, SystemSetting = -2; }
     // Existe en Unity (obsoleto): cualquier enum propio con este nombre choca con él
     public enum QualityLevel { Fastest, Fast, Simple, Good, Beautiful, Fantastic }
     public static class QualitySettings { public static string[] names = { "Mobile", "PC" }; static int level = 1; public static int GetQualityLevel() { return level; } public static void SetQualityLevel(int i, bool e) { level = i; } }
@@ -185,7 +186,7 @@ namespace UnityEngine
     }
     public class AsyncOperation { public bool isDone = true; public float progress = 1f; public bool allowSceneActivation = true; }
     public static class Resources { public static T Load<T>(string path) where T : Object { return null; } }
-    public static class Application { public static string persistentDataPath = System.IO.Path.GetTempPath(); public static bool isPlaying, isBatchMode, isEditor, isMobilePlatform; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
+    public static class Application { public static string persistentDataPath = System.IO.Path.GetTempPath(); public static bool isPlaying, isBatchMode, isEditor, isMobilePlatform; public static int targetFrameRate; public static void Quit() {} public static bool CanStreamedLevelBeLoaded(string s) { return true; } }
     public enum FogMode { Linear, Exponential, ExponentialSquared }
     public static class RenderSettings {
         public static Material skybox; public static Rendering.AmbientMode ambientMode; public static Color ambientLight, fogColor;
@@ -301,7 +302,23 @@ namespace UnityEditor {
     public static class EditorPrefs { public static bool GetBool(string k, bool d) { return d; } public static void SetBool(string k, bool v) {} }
     public class SceneAsset : Object {}
     public class InitializeOnLoadAttribute : Attribute {}
-    public static class EditorApplication { public static Action delayCall; public static bool isPlayingOrWillChangePlaymode; }
+    public static class EditorApplication { public static Action delayCall; public static bool isPlayingOrWillChangePlaymode; public static void Exit(int code) {} }
+    public enum BuildTarget { StandaloneWindows64, StandaloneOSX, Android, StandaloneLinux64, iOS }
+    public enum BuildTargetGroup { Standalone, Android, iOS }
+    [Flags] public enum BuildOptions { None = 0 }
+    public struct BuildPlayerOptions { public string[] scenes; public string locationPathName; public BuildTarget target; public BuildTargetGroup targetGroup; public BuildOptions options; }
+    public static class BuildPipeline { public static UnityEditor.Build.Reporting.BuildReport BuildPlayer(BuildPlayerOptions o) { return null; } }
+    public enum ScriptingImplementation { Mono2x, IL2CPP }
+    [Flags] public enum AndroidArchitecture { None = 0, ARMv7 = 1, ARM64 = 2 }
+    public enum UIOrientation { Portrait, PortraitUpsideDown, LandscapeRight, LandscapeLeft, AutoRotation }
+    public static class PlayerSettings {
+        public static string bundleVersion, companyName, productName; public static UIOrientation defaultInterfaceOrientation;
+        public static bool allowedAutorotateToPortrait, allowedAutorotateToPortraitUpsideDown, allowedAutorotateToLandscapeLeft, allowedAutorotateToLandscapeRight;
+        public static void SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget t, string id) {}
+        public static void SetScriptingBackend(UnityEditor.Build.NamedBuildTarget t, ScriptingImplementation s) {}
+        public static class Android { public static AndroidArchitecture targetArchitectures; public static int bundleVersionCode; public static bool useCustomKeystore; public static string keystoreName, keystorePass, keyaliasName, keyaliasPass; }
+    }
+    public static class EditorUserBuildSettings { public static bool buildAppBundle; public static BuildTarget activeBuildTarget; }
     public static class SessionState { public static bool GetBool(string k, bool d) { return d; } public static void SetBool(string k, bool v) {} }
     public static class AssetDatabase {
         public static bool IsValidFolder(string p) { return true; } public static string CreateFolder(string a, string b) { return ""; }
@@ -315,10 +332,10 @@ namespace UnityEditor {
     public enum TextureImporterType { Default, NormalMap }
     public class TextureImporter : AssetImporter { public TextureImporterType textureType; public bool sRGBTexture; public TextureWrapMode wrapMode; public int anisoLevel; }
     public enum SerializedPropertyType { Generic, Integer, ObjectReference }
-    public static class EditorUtility { public static void SetDirty(Object o) {} public static bool DisplayDialog(string t, string m, string ok, string cancel) { return false; } public static bool DisplayDialog(string t, string m, string ok) { return true; } public static void DisplayProgressBar(string t, string i, float p) {} public static void ClearProgressBar() {} }
+    public static class EditorUtility { public static void SetDirty(Object o) {} public static void RevealInFinder(string p) {} public static bool DisplayDialog(string t, string m, string ok, string cancel) { return false; } public static bool DisplayDialog(string t, string m, string ok) { return true; } public static void DisplayProgressBar(string t, string i, float p) {} public static void ClearProgressBar() {} }
     public enum InteractionMode { AutomatedAction, UserAction }
     public static class PrefabUtility { public static GameObject SaveAsPrefabAssetAndConnect(GameObject g, string p, InteractionMode m) { return null; } }
-    public class EditorBuildSettingsScene { public string path; public EditorBuildSettingsScene(string p, bool e) {} }
+    public class EditorBuildSettingsScene { public string path; public bool enabled; public EditorBuildSettingsScene(string p, bool e) { path = p; enabled = e; } }
     public static class EditorBuildSettings { public static EditorBuildSettingsScene[] scenes; }
     public static class Selection { public static GameObject activeGameObject; }
     public class SerializedProperty {
@@ -328,6 +345,12 @@ namespace UnityEditor {
         public SerializedProperty GetArrayElementAtIndex(int i) { return null; } public SerializedProperty FindPropertyRelative(string n) { return null; }
     }
     public class SerializedObject : IDisposable { public void Dispose() {} public SerializedObject(Object o) {} public SerializedProperty FindProperty(string n) { return null; } public SerializedProperty GetIterator() { return new SerializedProperty(); } public bool ApplyModifiedPropertiesWithoutUndo() { return true; } }
+}
+namespace UnityEditor.Build { public struct NamedBuildTarget { public static NamedBuildTarget Android, Standalone; } }
+namespace UnityEditor.Build.Reporting {
+    public enum BuildResult { Unknown, Succeeded, Failed, Cancelled }
+    public struct BuildSummary { public BuildResult result; public int totalErrors; public string outputPath; }
+    public class BuildReport { public BuildSummary summary; }
 }
 namespace UnityEditor.SceneManagement {
     using UnityEngine.SceneManagement;
