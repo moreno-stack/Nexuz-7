@@ -45,7 +45,8 @@ namespace Nexus7.UI
         private static void Boot()
         {
             TouchInput.Clock = () => Time.frameCount;
-            TouchInput.Enabled = Application.isMobilePlatform;
+            // UnityEngine.Device: en el editor lo imita el Device Simulator (UnityEngine.Application no)
+            TouchInput.Enabled = UnityEngine.Device.Application.isMobilePlatform;
             if (!TouchInput.Enabled || instance != null) return;
             Input.simulateMouseWithTouches = false;   // un toque no es un clic (si no, cualquier toque dispararía)
             Input.multiTouchEnabled = true;
@@ -80,7 +81,7 @@ namespace Nexus7.UI
                 player != null);
 
             // Zona segura (muesca de la cámara): los botones y los toques se miden dentro de ella
-            Rect area = Screen.safeArea;
+            Rect area = UnityEngine.Device.Screen.safeArea;
             touches.Clear();
             for (int i = 0; i < Input.touchCount; i++)
             {

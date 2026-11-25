@@ -55,7 +55,7 @@ namespace Nexus7.Core
         {
             loaded = true;
             master = DefaultMaster; music = DefaultMusic; sfx = DefaultSfx;
-            quality = DefaultQualityFor(Application.isMobilePlatform); fullscreen = DefaultFullscreen;
+            quality = DefaultQualityFor(UnityEngine.Device.Application.isMobilePlatform); fullscreen = DefaultFullscreen;
             PlayerPrefs.SetFloat(MasterKey, master); PlayerPrefs.SetFloat(MusicKey, music); PlayerPrefs.SetFloat(SfxKey, sfx);
             PlayerPrefs.SetInt(QualityKey, (int)quality); PlayerPrefs.SetInt(FullscreenKey, 1);
             Save();
@@ -88,7 +88,7 @@ namespace Nexus7.Core
             master = Clamp01(PlayerPrefs.GetFloat(MasterKey, DefaultMaster));
             music = Clamp01(PlayerPrefs.GetFloat(MusicKey, DefaultMusic));
             sfx = Clamp01(PlayerPrefs.GetFloat(SfxKey, DefaultSfx));
-            quality = (GraphicsQuality)Math.Max(0, Math.Min(2, PlayerPrefs.GetInt(QualityKey, (int)DefaultQualityFor(Application.isMobilePlatform))));
+            quality = (GraphicsQuality)Math.Max(0, Math.Min(2, PlayerPrefs.GetInt(QualityKey, (int)DefaultQualityFor(UnityEngine.Device.Application.isMobilePlatform))));
             fullscreen = PlayerPrefs.GetInt(FullscreenKey, DefaultFullscreen ? 1 : 0) == 1;
         }
 
