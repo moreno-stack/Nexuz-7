@@ -17,6 +17,9 @@ namespace Nexus7.Core
         public const string QualityKey = "Nexus7_Calidad", FullscreenKey = "Nexus7_PantallaCompleta";
         public const float DefaultMaster = 0.8f, DefaultMusic = 0.7f, DefaultSfx = 0.8f;
         public const GraphicsQuality DefaultQuality = GraphicsQuality.Alta;
+
+        /// <summary>Calidad por defecto: Media en el móvil (para ir a 60 fps), Alta en PC.</summary>
+        public static GraphicsQuality DefaultQualityFor(bool mobile) => mobile ? GraphicsQuality.Media : DefaultQuality;
         public const bool DefaultFullscreen = true;
 
         /// <summary>Cualquier ajuste ha cambiado (los componentes vuelven a aplicar sus volúmenes).</summary>
@@ -52,7 +55,7 @@ namespace Nexus7.Core
         {
             loaded = true;
             master = DefaultMaster; music = DefaultMusic; sfx = DefaultSfx;
-            quality = DefaultQuality; fullscreen = DefaultFullscreen;
+            quality = DefaultQualityFor(Application.isMobilePlatform); fullscreen = DefaultFullscreen;
             PlayerPrefs.SetFloat(MasterKey, master); PlayerPrefs.SetFloat(MusicKey, music); PlayerPrefs.SetFloat(SfxKey, sfx);
             PlayerPrefs.SetInt(QualityKey, (int)quality); PlayerPrefs.SetInt(FullscreenKey, 1);
             Save();
@@ -85,7 +88,7 @@ namespace Nexus7.Core
             master = Clamp01(PlayerPrefs.GetFloat(MasterKey, DefaultMaster));
             music = Clamp01(PlayerPrefs.GetFloat(MusicKey, DefaultMusic));
             sfx = Clamp01(PlayerPrefs.GetFloat(SfxKey, DefaultSfx));
-            quality = (GraphicsQuality)Math.Max(0, Math.Min(2, PlayerPrefs.GetInt(QualityKey, (int)DefaultQuality)));
+            quality = (GraphicsQuality)Math.Max(0, Math.Min(2, PlayerPrefs.GetInt(QualityKey, (int)DefaultQualityFor(Application.isMobilePlatform))));
             fullscreen = PlayerPrefs.GetInt(FullscreenKey, DefaultFullscreen ? 1 : 0) == 1;
         }
 
