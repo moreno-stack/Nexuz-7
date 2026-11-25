@@ -18,7 +18,8 @@ namespace Nexus7.Controls
 
     /// <summary>
     /// Distribución de los botones de cada contexto (lógica pura). Se diseña a 1920×1080 anclada a las esquinas y se
-    /// escala con el alto de la pantalla, así que funciona en 16:9, 20:9 y 4:3.
+    /// escala con el alto de la pantalla, así que funciona en 16:9, 20:9 y 4:3. Solo usa símbolos de la fuente por
+    /// defecto de TextMeshPro (▲ ▼ ◄ ►).
     /// </summary>
     public static class TouchLayout
     {
@@ -45,9 +46,9 @@ namespace Nexus7.Controls
             new Def("device",   "DISP.",  KeyCode.G,      1f, 1f, -220f, -200f, 50f),
             new Def("inventory","INV.",   KeyCode.Tab,    1f, 1f, -350f, -200f, 50f),
             new Def("camera",   "CÁM.",   KeyCode.V,      1f, 1f, -480f, -200f, 50f),
-            // junto a la barra rápida
-            new Def("prev",     "◄",      KeyCode.JoystickButton4, 0.5f, 0f, -430f, 106f, 40f),
-            new Def("next",     "►",      KeyCode.JoystickButton5, 0.5f, 0f, 430f,  106f, 40f),
+            // a los lados de la fila de iconos de la barra rápida (84–128 px), por encima de su texto
+            new Def("prev",     "◄",      KeyCode.JoystickButton4, 0.5f, 0f, -430f, 120f, 40f),
+            new Def("next",     "►",      KeyCode.JoystickButton5, 0.5f, 0f, 430f,  120f, 40f),
         };
 
         private static readonly Def[] Hack =
@@ -57,7 +58,7 @@ namespace Nexus7.Controls
             new Def("left",   "◄", KeyCode.A, 1f, 0f, -400f, 230f, 70f),
             new Def("right",  "►", KeyCode.D, 1f, 0f, -120f, 230f, 70f),
             new Def("jam",    "¡INTERF.!", KeyCode.Space, 0f, 0f, 220f, 220f, 100f),
-            new Def("cancel", "✕", KeyCode.Q, 1f, 1f, -90f, -120f, 50f),
+            new Def("cancel", "SALIR", KeyCode.Q, 1f, 1f, -90f, -120f, 50f),
         };
 
         private static readonly Def[] Menu =
@@ -65,7 +66,7 @@ namespace Nexus7.Controls
             new Def("up",      "▲",      KeyCode.W, 1f, 0f, -200f, 400f, 65f),
             new Def("down",    "▼",      KeyCode.S, 1f, 0f, -200f, 150f, 65f),
             new Def("confirm", "ACEPTAR", KeyCode.E, 1f, 0f, -420f, 275f, 75f),
-            new Def("back",    "✕",      KeyCode.Q, 1f, 1f, -90f, -120f, 50f),
+            new Def("back",    "VOLVER", KeyCode.Q, 1f, 1f, -90f, -120f, 50f),
         };
 
         private static readonly Def[] Ending =
@@ -75,7 +76,7 @@ namespace Nexus7.Controls
         };
 
         private static readonly Def[] Cinematic = { new Def("skip", "SALTAR ►►", KeyCode.Space, 1f, 0f, -150f, 150f, 70f) };
-        private static readonly Def[] Inventory = { new Def("close", "✕", KeyCode.Tab, 1f, 1f, -90f, -120f, 55f) };
+        private static readonly Def[] Inventory = { new Def("close", "CERRAR", KeyCode.Tab, 1f, 1f, -90f, -120f, 55f) };
         private static readonly Def[] Empty = new Def[0];
 
         public static TouchButton[] For(TouchContext ctx, float width, float height)
