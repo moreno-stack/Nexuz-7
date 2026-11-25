@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -35,12 +36,25 @@ namespace Nexus7.EditorTools
         public static void Build()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            var failed = BuildAll();
+            string report = Nexus7.Core.BuildReport.Describe(failed.ToArray());
+            if (failed.Count == 0) Debug.Log("<color=cyan>[Nexus-7]</color> " + report + " Escena abierta: MenuPrincipal. Pulsa Play.");
+            else Debug.LogError("[Nexus-7] " + report);
+            if (!Application.isBatchMode) EditorUtility.DisplayDialog("Escape Espacial: Nexus-7", report, "Aceptar");
+        }
+
+        /// <summary>
+        /// Construye las 6 fases, el catálogo de objetos y Build Settings sin preguntar nada (también lo usa la
+        /// compilación de la release). Devuelve las fases que fallaron (vacía si todo fue bien).
+        /// </summary>
+        public static List<string> BuildAll()
+        {
             string[] names = { "Fase 1: Sala inicial", "Fase 2: Almacén de carga", "Fase 3: Sala de energía",
                                "Fase 4: Laboratorio", "Fase 5: Centro de control", "Fase 6: Evacuación y menú principal" };
             System.Action[] builds = { SalaInicialBuilder.Build, AlmacenCargaBuilder.Build, SalaEnergiaBuilder.Build,
                                        LaboratorioBuilder.Build, CentroControlBuilder.Build, EvacuacionBuilder.Build };
             // Cada fase por separado: si una falla, se registra y se siguen construyendo las demás
-            var failed = new System.Collections.Generic.List<string>();
+            var failed = new List<string>();
             try
             {
                 for (int i = 0; i < builds.Length; i++)
@@ -61,10 +75,7 @@ namespace Nexus7.EditorTools
 
             if (File.Exists(MenuScenePath)) EditorSceneManager.OpenScene(MenuScenePath, OpenSceneMode.Single);
             PlayFromMenu.Apply();
-            string report = Nexus7.Core.BuildReport.Describe(failed.ToArray());
-            if (failed.Count == 0) Debug.Log("<color=cyan>[Nexus-7]</color> " + report + " Escena abierta: MenuPrincipal. Pulsa Play.");
-            else Debug.LogError("[Nexus-7] " + report);
-            if (!Application.isBatchMode) EditorUtility.DisplayDialog("Escape Espacial: Nexus-7", report, "Aceptar");
+            return failed;
         }
     }
 }
