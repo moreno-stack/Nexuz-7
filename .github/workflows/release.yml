@@ -1,0 +1,167 @@
+# Compila Escape Espacial: Nexus-7 para Windows, Mac y Android y lo publica en Releases.
+# Se lanza al subir una etiqueta de versión (git tag v1.0.0 && git push origin v1.0.0) o a mano desde Actions.
+# Necesita los secretos UNITY_LICENSE, UNITY_EMAIL y UNITY_PASSWORD (ver docs/guias/RELEASE.md).
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a publicar (por ejemplo 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preparar:
+    name: Comprobar secretos y versión
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Comprobar los secretos de Unity
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          missing=""
+          [ -z "$UNITY_LICENSE" ] && missing="$missing UNITY_LICENSE"
+          [ -z "$UNITY_EMAIL" ] && missing="$missing UNITY_EMAIL"
+          [ -z "$UNITY_PASSWORD" ] && missing="$missing UNITY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Faltan los secretos:$missing. Sigue docs/guias/RELEASE.md (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+      - name: Calcular la versión
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then v="${{ github.event.inputs.version }}"; else v="${GITHUB_REF_NAME}"; fi
+          v="${v#v}"
+          if ! echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$'; then
+            echo "::error::'$v' no es una versión válida (usa por ejemplo 1.0.0)."; exit 1
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  compilar:
+    name: Compilar ${{ matrix.name }}
+    needs: preparar
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - targetPlatform: StandaloneWindows64
+            name: Windows
+          - targetPlatform: StandaloneOSX
+            name: Mac
+          - targetPlatform: Android
+            name: Android
+    steps:
+      - name: Liberar disco (las imágenes de Unity ocupan ~15 GB)
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: ${{ matrix.targetPlatform != 'Android' }}
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Caché de Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ matrix.targetPlatform }}-${{ hashFiles('Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ matrix.targetPlatform }}-
+
+      - name: Compilar con Unity (construye las escenas y compila)
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: 6000.6.7f1   # GameCI no tiene imagen de la 6000.6.4f1 del proyecto; la 6000.6.7f1 es compatible
+          targetPlatform: ${{ matrix.targetPlatform }}
+          buildName: Nexus7
+          buildMethod: Nexus7.EditorTools.ReleaseBuild.BuildFromCommandLine
+          versioning: Custom
+          version: ${{ needs.preparar.outputs.version }}
+          allowDirtyBuild: true
+          androidExportType: androidPackage
+          androidKeystoreName: nexus7.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+
+      - name: Empaquetar
+        run: |
+          sudo chown -R "$USER" build
+          case "${{ matrix.targetPlatform }}" in
+            StandaloneWindows64)
+              (cd build/StandaloneWindows64 && zip -qr ../../Nexus7-Windows.zip . -x '*DoNotShip*') ;;
+            StandaloneOSX)
+              # -y conserva los enlaces simbólicos de la .app; zip guarda los permisos de ejecución
+              (cd build/StandaloneOSX && zip -qry ../../Nexus7-Mac.zip ./*.app) ;;
+            Android)
+              cp build/Android/*.apk Nexus7-Android.apk ;;
+          esac
+          ls -la Nexus7-*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: Nexus7-*
+          if-no-files-found: error
+          retention-days: 7
+
+  publicar:
+    name: Publicar la release
+    needs: [preparar, compilar]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: descargas
+          merge-multiple: true
+
+      - name: Crear la release con las 3 descargas
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.preparar.outputs.version }}
+          name: Escape Espacial Nexus-7 v${{ needs.preparar.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          files: |
+            descargas/Nexus7-Windows.zip
+            descargas/Nexus7-Mac.zip
+            descargas/Nexus7-Android.apk
+          body: |
+            ## Descargas
+
+            | Sistema | Archivo | Cómo jugar |
+            |---|---|---|
+            | **Windows** 10/11 (64 bits) | `Nexus7-Windows.zip` | Descomprime y abre `Nexus7.exe`. Si SmartScreen avisa: «Más información» → «Ejecutar de todas formas». |
+            | **Mac** (Intel y Apple Silicon) | `Nexus7-Mac.zip` | Descomprime y arrastra `Nexus7.app` a Aplicaciones. La primera vez: clic derecho → **Abrir** → Abrir (no está firmada por Apple). Si dice que «está dañada»: `xattr -cr /Applications/Nexus7.app` en la Terminal. |
+            | **Android** 8.0 o superior (64 bits) | `Nexus7-Android.apk` | Ábrelo en el móvil y permite «instalar apps desconocidas». Se juega con controles táctiles (o con un mando Bluetooth). |
+
+            Controles en PC: WASD moverse · Shift correr · Ctrl agacharse · Espacio saltar · E usar · clic izquierdo/derecho disparar/apuntar · R recargar · Q cambiar de arma · G dispositivo · Tab inventario · V cámara.
