@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Nexus7.Controls;
 
 namespace Nexus7.Player
 {
@@ -44,7 +45,7 @@ namespace Nexus7.Player
         private void Update()
         {
             bool canToggle = controller == null || controller.InputEnabled;
-            if (canToggle && (Input.GetKeyDown(toggleKey) || Input.GetKeyDown(padToggle)))
+            if (canToggle && (GameInput.GetKeyDown(toggleKey) || GameInput.GetKeyDown(padToggle)))
             {
                 ThirdPerson = !ThirdPerson;
                 PlayerPrefs.SetInt(PrefsKey, ThirdPerson ? 1 : 0);

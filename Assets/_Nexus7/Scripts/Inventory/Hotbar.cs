@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Nexus7.Player;
+using Nexus7.Controls;
 
 namespace Nexus7.Inventory
 {
@@ -55,10 +56,10 @@ namespace Nexus7.Inventory
         {
             if (controller != null && !controller.InputEnabled) return;
             for (int i = 0; i < SlotKeys.Length; i++)
-                if (Input.GetKeyDown(SlotKeys[i])) { Select(i); return; }
-            float wheel = Input.GetAxis("Mouse ScrollWheel");
-            if (wheel > 0.01f || Input.GetKeyDown(padPrevious)) Cycle(-1);
-            else if (wheel < -0.01f || Input.GetKeyDown(padNext)) Cycle(1);
+                if (GameInput.GetKeyDown(SlotKeys[i])) { Select(i); return; }
+            float wheel = GameInput.GetAxis("Mouse ScrollWheel");
+            if (wheel > 0.01f || GameInput.GetKeyDown(padPrevious)) Cycle(-1);
+            else if (wheel < -0.01f || GameInput.GetKeyDown(padNext)) Cycle(1);
         }
 
         public void Select(int index)

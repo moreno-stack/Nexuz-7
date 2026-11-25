@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Nexus7.Player;
 using Nexus7.UI;
+using Nexus7.Controls;
 
 namespace Nexus7.Interaction
 {
@@ -33,7 +34,7 @@ namespace Nexus7.Interaction
             Current = canAct ? FindTarget() : null;
             RefreshPrompt();
 
-            if (Current != null && (Input.GetKeyDown(interactKey) || Input.GetKeyDown(interactPadButtonX)))
+            if (Current != null && (GameInput.GetKeyDown(interactKey) || GameInput.GetKeyDown(interactPadButtonX)))
             {
                 Current.Interact(this);
                 Interacted?.Invoke(Current);

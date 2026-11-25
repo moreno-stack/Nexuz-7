@@ -1,4 +1,5 @@
 using UnityEngine;
+using Nexus7.Controls;
 
 namespace Nexus7.Player
 {
@@ -39,14 +40,19 @@ namespace Nexus7.Player
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape)) SetCursorLocked(false);
-            else if (Input.GetMouseButtonDown(0) && Cursor.lockState != CursorLockMode.Locked) SetCursorLocked(true);
+            // En PC: Esc suelta el cursor y un clic lo vuelve a bloquear. Con controles táctiles no hay cursor
+            // (la tecla Atrás de Android es Esc y no debe dejar la cámara quieta).
+            if (!TouchInput.Enabled)
+            {
+                if (GameInput.GetKeyDown(KeyCode.Escape)) SetCursorLocked(false);
+                else if (GameInput.GetMouseButtonDown(0) && Cursor.lockState != CursorLockMode.Locked) SetCursorLocked(true);
+            }
 
-            if (Cursor.lockState != CursorLockMode.Locked) return;
+            if (!GameInput.PointerCaptured) return;
             if (player != null && !player.InputEnabled) return;
 
-            float yaw = Input.GetAxis("Mouse X") * mouseSensitivity;
-            float pitchDelta = Input.GetAxis("Mouse Y") * mouseSensitivity;
+            float yaw = GameInput.GetAxis("Mouse X") * mouseSensitivity;
+            float pitchDelta = GameInput.GetAxis("Mouse Y") * mouseSensitivity;
 
             if (gamepadLook)
             {

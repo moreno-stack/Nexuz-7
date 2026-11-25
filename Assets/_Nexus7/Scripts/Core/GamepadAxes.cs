@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Nexus7.Controls;
 
 namespace Nexus7.Core
 {
@@ -23,7 +24,7 @@ namespace Nexus7.Core
             if (string.IsNullOrEmpty(axis) || missing.Contains(axis)) return 0f;
             try
             {
-                float v = Input.GetAxisRaw(axis);
+                float v = GameInput.GetAxisRaw(axis);
                 present.Add(axis);
                 return v;
             }

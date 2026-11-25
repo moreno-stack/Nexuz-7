@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Nexus7.Core;
+using Nexus7.Controls;
 
 namespace Nexus7.Player
 {
@@ -138,9 +139,9 @@ namespace Nexus7.Player
             bool jumpPressed = false;
             if (InputEnabled && Time.frameCount != lockReleasedFrame)
             {
-                jumpPressed = Input.GetKeyDown(jumpKey) || Input.GetKeyDown(jumpPadButton);
-                input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-                runHeld = Input.GetKey(runKey) || Input.GetKey(runPadButton);
+                jumpPressed = GameInput.GetKeyDown(jumpKey) || GameInput.GetKeyDown(jumpPadButton);
+                input = new Vector2(GameInput.GetAxisRaw("Horizontal"), GameInput.GetAxisRaw("Vertical"));
+                runHeld = GameInput.GetKey(runKey) || GameInput.GetKey(runPadButton);
                 HandleCrouchInput();
             }
             input = Vector2.ClampMagnitude(input, 1f); // evita que la diagonal sea más rápida
@@ -193,12 +194,12 @@ namespace Nexus7.Player
         {
             if (toggleCrouch)
             {
-                if (Input.GetKeyDown(crouchKey) || Input.GetKeyDown(crouchKeyAlt) || Input.GetKeyDown(crouchPadButton))
+                if (GameInput.GetKeyDown(crouchKey) || GameInput.GetKeyDown(crouchKeyAlt) || GameInput.GetKeyDown(crouchPadButton))
                     wantsCrouch = !wantsCrouch;
             }
             else
             {
-                wantsCrouch = Input.GetKey(crouchKey) || Input.GetKey(crouchKeyAlt) || Input.GetKey(crouchPadButton);
+                wantsCrouch = GameInput.GetKey(crouchKey) || GameInput.GetKey(crouchKeyAlt) || GameInput.GetKey(crouchPadButton);
             }
         }
 
