@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Nexus7.Audio;
 using Nexus7.Core;
+using Nexus7.Controls;
 
 namespace Nexus7.UI
 {
@@ -93,7 +94,7 @@ namespace Nexus7.UI
 
         private void Update()
         {
-            if (IsOpen && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1)))
+            if (IsOpen && (GameInput.GetKeyDown(KeyCode.Escape) || GameInput.GetKeyDown(KeyCode.JoystickButton1)))
             {
                 UISounds.Play(UiSound.Back);
                 Close();

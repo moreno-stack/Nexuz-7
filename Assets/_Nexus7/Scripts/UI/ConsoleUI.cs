@@ -8,6 +8,7 @@ using Nexus7.Gameplay;
 using Nexus7.Interaction;
 using Nexus7.Player;
 using Nexus7.Security;
+using Nexus7.Controls;
 
 namespace Nexus7.UI
 {
@@ -76,17 +77,17 @@ namespace Nexus7.UI
             if (!IsOpen || waitingHack || console == null || Time.frameCount == openedFrame) return;
             int count = console.Actions.Count;
 
-            if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.JoystickButton1)) { Close(); return; }
+            if (GameInput.GetKeyDown(KeyCode.Q) || GameInput.GetKeyDown(KeyCode.Backspace) || GameInput.GetKeyDown(KeyCode.JoystickButton1)) { Close(); return; }
 
             int move = 0;
-            if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow)) move = -1;
-            if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow)) move = 1;
+            if (GameInput.GetKeyDown(KeyCode.W) || GameInput.GetKeyDown(KeyCode.UpArrow)) move = -1;
+            if (GameInput.GetKeyDown(KeyCode.S) || GameInput.GetKeyDown(KeyCode.DownArrow)) move = 1;
             axisCooldown -= Time.deltaTime;
-            float axis = Input.GetAxisRaw("Vertical");
+            float axis = GameInput.GetAxisRaw("Vertical");
             if (move == 0 && Mathf.Abs(axis) > 0.6f && axisCooldown <= 0f) { move = axis > 0f ? -1 : 1; axisCooldown = 0.25f; }
             if (move != 0 && count > 0) { selected = (selected + move + count) % count; infoOverride = null; }
 
-            if (count > 0 && (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.JoystickButton0)))
+            if (count > 0 && (GameInput.GetKeyDown(KeyCode.E) || GameInput.GetKeyDown(KeyCode.Return) || GameInput.GetKeyDown(KeyCode.JoystickButton0)))
                 Execute(console.Actions[selected]);
 
             Render();

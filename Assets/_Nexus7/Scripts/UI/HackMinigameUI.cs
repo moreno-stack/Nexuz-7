@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using Nexus7.Core;
 using Nexus7.Gameplay;
 using Nexus7.Security;
+using Nexus7.Controls;
 
 namespace Nexus7.UI
 {
@@ -106,9 +107,9 @@ namespace Nexus7.UI
             spaceCooldown -= Time.deltaTime;
             if (Time.frameCount != startFrame)
             {
-                if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.JoystickButton6)) { Finish(false, false); return; }
+                if (GameInput.GetKeyDown(KeyCode.Q) || GameInput.GetKeyDown(KeyCode.Backspace) || GameInput.GetKeyDown(KeyCode.JoystickButton6)) { Finish(false, false); return; }
 
-                bool spacePressed = Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton5);
+                bool spacePressed = GameInput.GetKeyDown(KeyCode.Space) || GameInput.GetKeyDown(KeyCode.JoystickButton5);
                 if (spacePressed && !interference.Active) spaceCooldown = 0.6f;   // pulsado sin motivo: no responde en 0,6 s
 
                 if (interference.Active)
@@ -121,10 +122,10 @@ namespace Nexus7.UI
                 }
 
                 HackSymbol? pressed = null;
-                if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.JoystickButton3)) pressed = HackSymbol.Up;
-                else if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.JoystickButton2)) pressed = HackSymbol.Left;
-                else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.JoystickButton0)) pressed = HackSymbol.Down;
-                else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.JoystickButton1)) pressed = HackSymbol.Right;
+                if (GameInput.GetKeyDown(KeyCode.W) || GameInput.GetKeyDown(KeyCode.UpArrow) || GameInput.GetKeyDown(KeyCode.JoystickButton3)) pressed = HackSymbol.Up;
+                else if (GameInput.GetKeyDown(KeyCode.A) || GameInput.GetKeyDown(KeyCode.LeftArrow) || GameInput.GetKeyDown(KeyCode.JoystickButton2)) pressed = HackSymbol.Left;
+                else if (GameInput.GetKeyDown(KeyCode.S) || GameInput.GetKeyDown(KeyCode.DownArrow) || GameInput.GetKeyDown(KeyCode.JoystickButton0)) pressed = HackSymbol.Down;
+                else if (GameInput.GetKeyDown(KeyCode.D) || GameInput.GetKeyDown(KeyCode.RightArrow) || GameInput.GetKeyDown(KeyCode.JoystickButton1)) pressed = HackSymbol.Right;
 
                 if (pressed.HasValue)
                 {

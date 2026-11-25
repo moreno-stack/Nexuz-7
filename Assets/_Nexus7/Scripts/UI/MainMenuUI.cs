@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Nexus7.Core;
+using Nexus7.Controls;
 
 namespace Nexus7.UI
 {
@@ -130,14 +131,14 @@ namespace Nexus7.UI
 
         private void Update()
         {
-            if (ConfirmOpen && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1))) { CloseConfirm(); return; }
+            if (ConfirmOpen && (GameInput.GetKeyDown(KeyCode.Escape) || GameInput.GetKeyDown(KeyCode.JoystickButton1))) { CloseConfirm(); return; }
             if (!MenuState.AcceptsMainInput(SettingsOpen, ConfirmOpen, Time.frameCount, lastPanelChangeFrame)) return;
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.JoystickButton0)) { OnNewGame(); return; }
-            if (Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.JoystickButton3)) { OnContinue(); return; }
-            if (Input.GetKeyDown(KeyCode.O) || Input.GetKeyDown(KeyCode.JoystickButton7)) { OpenSettings(); return; }
+            if (GameInput.GetKeyDown(KeyCode.Return) || GameInput.GetKeyDown(KeyCode.KeypadEnter) || GameInput.GetKeyDown(KeyCode.JoystickButton0)) { OnNewGame(); return; }
+            if (GameInput.GetKeyDown(KeyCode.C) || GameInput.GetKeyDown(KeyCode.JoystickButton3)) { OnContinue(); return; }
+            if (GameInput.GetKeyDown(KeyCode.O) || GameInput.GetKeyDown(KeyCode.JoystickButton7)) { OpenSettings(); return; }
             int d = (int)DifficultySettings.Current;
-            int dir = Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.JoystickButton4) ? -1
-                    : Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.JoystickButton5) ? 1 : 0;   // ←/→ o LB/RB
+            int dir = GameInput.GetKeyDown(KeyCode.LeftArrow) || GameInput.GetKeyDown(KeyCode.JoystickButton4) ? -1
+                    : GameInput.GetKeyDown(KeyCode.RightArrow) || GameInput.GetKeyDown(KeyCode.JoystickButton5) ? 1 : 0;   // ←/→ o LB/RB
             if (dir != 0 && NextDifficulty((Difficulty)d, dir) != (Difficulty)d) { SelectDifficulty(NextDifficulty((Difficulty)d, dir)); RefreshDifficulty(); }
         }
 

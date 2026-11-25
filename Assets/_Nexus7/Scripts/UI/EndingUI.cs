@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Nexus7.Core;
 using Nexus7.Gameplay;
+using Nexus7.Controls;
 
 namespace Nexus7.UI
 {
@@ -79,8 +80,8 @@ namespace Nexus7.UI
         private void Update()
         {
             if (!shown) return;
-            if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.JoystickButton0)) GameFlow.Restart();
-            else if (Input.GetKeyDown(KeyCode.M) || Input.GetKeyDown(KeyCode.JoystickButton1)) GameFlow.ReturnToMenu();
+            if (GameInput.GetKeyDown(KeyCode.R) || GameInput.GetKeyDown(KeyCode.JoystickButton0)) GameFlow.Restart();
+            else if (GameInput.GetKeyDown(KeyCode.M) || GameInput.GetKeyDown(KeyCode.JoystickButton1)) GameFlow.ReturnToMenu();
         }
 
         public void Show(ScoreResult r, ScoreInput i, string story, bool newRecord)

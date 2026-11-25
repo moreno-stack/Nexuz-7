@@ -4,6 +4,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using Nexus7.Inventory;
+using Nexus7.Controls;
 
 namespace Nexus7.UI
 {
@@ -61,7 +62,7 @@ namespace Nexus7.UI
 
         private void Update()
         {
-            if (Input.GetKeyDown(toggleKey) || Input.GetKeyDown(toggleKeyAlt) || Input.GetKeyDown(togglePadButton))
+            if (GameInput.GetKeyDown(toggleKey) || GameInput.GetKeyDown(toggleKeyAlt) || GameInput.GetKeyDown(togglePadButton))
             {
                 if (panel != null) panel.SetActive(!panel.activeSelf);
                 Refresh();
