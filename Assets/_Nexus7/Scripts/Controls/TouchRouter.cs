@@ -21,7 +21,10 @@ namespace Nexus7.Controls
     public class TouchRouter
     {
         public const int MaxFingers = 10;
-        public const float StickRadius = 110f, DeadZone = 0.12f, RunThreshold = 0.9f;
+        public const float StickRadius = 110f, DeadZone = 0.12f;
+        /// <summary>Se corre solo arrastrando el dedo más allá del borde (× radio): a fondo dentro del círculo se camina
+        /// (correr hace ruido y levanta al jugador agachado, mal asunto en un juego de sigilo).</summary>
+        public const float RunThreshold = 1.25f;
         /// <summary>Unidades de «Mouse X/Y» por píxel de referencia (1080 p) arrastrado.</summary>
         public const float LookScale = 0.08f;
         /// <summary>Margen para acertar un botón con el dedo (× radio).</summary>
@@ -89,11 +92,11 @@ namespace Nexus7.Controls
                     {
                         float vx = (t.X - f.OriginX) / (StickRadius * scale), vy = (t.Y - f.OriginY) / (StickRadius * scale);
                         float mag = (float)Math.Sqrt(vx * vx + vy * vy);
+                        bool run = mag > RunThreshold;
                         if (mag > 1f) { vx /= mag; vy /= mag; mag = 1f; }
                         float k = mag <= DeadZone ? 0f : (mag - DeadZone) / (1f - DeadZone) / mag;
                         sx = vx * k; sy = vy * k; stick = true;
                         StickOrigin = new Vector2(f.OriginX, f.OriginY);
-                        bool run = mag > RunThreshold;
                         if (run && !f.Running) TouchInput.Press(RunKey, RunSourceOffset + t.Id);
                         else if (!run && f.Running) TouchInput.Release(RunKey, RunSourceOffset + t.Id);
                         f.Running = run;
