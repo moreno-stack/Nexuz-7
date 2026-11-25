@@ -6,6 +6,7 @@ using Nexus7.Enemies;
 using Nexus7.Environment;
 using Nexus7.Player;
 using Nexus7.UI;
+using Nexus7.Controls;
 
 namespace Nexus7.Cinematics
 {
@@ -155,7 +156,7 @@ namespace Nexus7.Cinematics
                     if (line >= 0) subtitles.Show(shot.lines[line].speaker, shot.lines[line].text); else subtitles.Hide();
                 }
 
-                bool held = Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.JoystickButton0);
+                bool held = GameInput.GetKey(KeyCode.Space) || GameInput.GetKey(KeyCode.JoystickButton0);
                 bool done = skip.Update(held, dt);
                 if (subtitles != null) subtitles.SetSkipProgress(skip.Progress);
                 if (done) break;

@@ -5,6 +5,7 @@ using Nexus7.Inventory;
 using Nexus7.Player;
 using Nexus7.Stealth;
 using Nexus7.UI;
+using Nexus7.Controls;
 
 namespace Nexus7.Devices
 {
@@ -65,9 +66,9 @@ namespace Nexus7.Devices
 
             var device = Selected;
             // El primer clic solo captura el ratón. Con un arma en la mano el clic es para disparar: los dispositivos van con [G]
-            bool mouseOk = Cursor.lockState == CursorLockMode.Locked && !Nexus7.Combat.PlayerWeapon.ClaimsMouse;
-            bool down = Input.GetKeyDown(useKey) || (mouseOk && Input.GetKeyDown(useMouse)) || Input.GetKeyDown(padUseButton);
-            bool held = Input.GetKey(useKey) || (mouseOk && Input.GetKey(useMouse)) || Input.GetKey(padUseButton);
+            bool mouseOk = GameInput.PointerCaptured && !Nexus7.Combat.PlayerWeapon.ClaimsMouse;
+            bool down = GameInput.GetKeyDown(useKey) || (mouseOk && GameInput.GetKeyDown(useMouse)) || GameInput.GetKeyDown(padUseButton);
+            bool held = GameInput.GetKey(useKey) || (mouseOk && GameInput.GetKey(useMouse)) || GameInput.GetKey(padUseButton);
 
             if (device == null)
             {

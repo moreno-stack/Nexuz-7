@@ -6,6 +6,7 @@ using Nexus7.Gameplay;
 using Nexus7.Enemies;
 using Nexus7.Player;
 using Nexus7.UI;
+using Nexus7.Controls;
 
 namespace Nexus7.Director
 {
@@ -124,7 +125,7 @@ namespace Nexus7.Director
 
         private void Update()
         {
-            if (Input.GetKeyDown(overlayKey)) overlay = !overlay;
+            if (GameInput.GetKeyDown(overlayKey)) overlay = !overlay;
             timer += Time.deltaTime;
             if (timer < tickInterval) return;
             float dt = timer;

@@ -4,6 +4,7 @@ using Nexus7.Enemies;
 using Nexus7.Gameplay;
 using Nexus7.Player;
 using Nexus7.UI;
+using Nexus7.Controls;
 
 namespace Nexus7.Combat
 {
@@ -125,7 +126,7 @@ namespace Nexus7.Combat
             dpad.Update(GamepadAxes.Read(GamepadAxes.DpadX), GamepadAxes.Read(GamepadAxes.DpadY));
 
             bool canAct = controller.InputEnabled && !controller.InputReleasedThisFrame && !EnemyPatrol.Paused && !GameHud.Hidden
-                          && Cursor.lockState == CursorLockMode.Locked && Time.timeScale > 0f;
+                          && GameInput.PointerCaptured && Time.timeScale > 0f;
             if (!canAct)
             {
                 w.TryFire(t, false);
@@ -134,12 +135,12 @@ namespace Nexus7.Combat
                 return;
             }
 
-            if (Input.GetKeyDown(nextWeaponKey) || dpad.Right) Arsenal.Cycle(1, t);
+            if (GameInput.GetKeyDown(nextWeaponKey) || dpad.Right) Arsenal.Cycle(1, t);
             else if (dpad.Left) Arsenal.Cycle(-1, t);
-            if (Input.GetKeyDown(reloadKey) || dpad.Down) w.StartReload(t);
+            if (GameInput.GetKeyDown(reloadKey) || dpad.Down) w.StartReload(t);
             w = Arsenal.Current;
 
-            SetAim(Input.GetKey(aimKey) || padAim, dt);
+            SetAim(GameInput.GetKey(aimKey) || padAim, dt);
             CurrentSpread = SpreadModel.Current(w.Spec, IsAiming, moving, w.Bloom);
 
             if (w.State == WeaponState.Reloading && lastState != WeaponState.Reloading) CombatSfx.Play(CombatSound.Reload, 0.6f);
@@ -148,7 +149,7 @@ namespace Nexus7.Combat
 
             if (Arsenal.IsSwitching(t)) { w.TryFire(t, false); return; }
 
-            bool trigger = Input.GetKey(fireKey) || padFire;
+            bool trigger = GameInput.GetKey(fireKey) || padFire;
             var result = w.TryFire(t, trigger);
             if (result == FireResult.Fired) Shoot(w, moving);
             else if (result == FireResult.Empty && t - lastEmptyClick > 0.3f)

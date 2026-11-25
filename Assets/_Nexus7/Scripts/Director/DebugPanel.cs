@@ -6,6 +6,7 @@ using Nexus7.Core;
 using Nexus7.Gameplay;
 using Nexus7.Inventory;
 using Nexus7.UI;
+using Nexus7.Controls;
 
 namespace Nexus7.Director
 {
@@ -56,10 +57,10 @@ namespace Nexus7.Director
 
         private void Update()
         {
-            if (Input.GetKeyDown(ToggleKey)) open = !open;
+            if (GameInput.GetKeyDown(ToggleKey)) open = !open;
             if (!open) return;
             for (int i = 0; i < actionKeys.Length; i++)
-                if (Input.GetKeyDown(actionKeys[i]) && DebugPanelModel.FromKey(DebugPanelModel.FirstKey + i, out DebugAction a))
+                if (GameInput.GetKeyDown(actionKeys[i]) && DebugPanelModel.FromKey(DebugPanelModel.FirstKey + i, out DebugAction a))
                     Run(a);
         }
 
