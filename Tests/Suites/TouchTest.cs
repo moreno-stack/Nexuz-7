@@ -1,4 +1,4 @@
-using System; using System.Linq; using System.Collections.Generic;
+using System; using System.IO; using System.Linq; using System.Collections.Generic; using System.Text.RegularExpressions;
 using UnityEngine; using Nexus7.Controls;
 static class T {
   static int fails=0; static void Check(bool c,string m){ Console.WriteLine((c?"OK   ":"FAIL ")+m); if(!c) fails++; }
@@ -8,7 +8,7 @@ static class T {
   static bool Near(float a, float b, float eps = 0.02f){ return Math.Abs(a-b) < eps; }
   static void Main(){
     TouchInput.Clock = () => frame;
-    TouchInputTests(); LayoutTests(); RouterTests();
+    TouchInputTests(); LayoutTests(); RouterTests(); GameInputTests();
     Console.WriteLine(fails==0?"\nTODAS LAS PRUEBAS PASAN":"\nFALLOS: "+fails);
   }
 
@@ -158,5 +158,38 @@ static class T {
     Next(); r.Update(TouchContext.Gameplay, new RawTouch[0], W, H);
     r.Reset();
     Check(r.TrackedFingers == 0, "Reset olvida todos los dedos");
+  }
+
+  // ---------------------------------------------------------------- Tarea 3: GameInput
+  static void GameInputTests(){
+    TouchInput.ReleaseAll(); Next();
+    TouchInput.Enabled = true;
+    Check(!GameInput.GetKey(KeyCode.Space) && !GameInput.GetKeyDown(KeyCode.Space), "Sin teclado ni toques: nada pulsado");
+    TouchInput.Press(KeyCode.Space, 1);
+    Check(GameInput.GetKey(KeyCode.Space) && GameInput.GetKeyDown(KeyCode.Space), "GameInput ve la tecla que pulsa lo táctil");
+    Next(); TouchInput.Release(KeyCode.Space, 1);
+    Check(GameInput.GetKeyUp(KeyCode.Space), "GameInput ve cuándo se suelta");
+    TouchInput.Press(KeyCode.Mouse0, 2);
+    Check(GameInput.GetMouseButtonDown(0) && !GameInput.GetMouseButtonDown(1), "El botón de disparar cuenta como clic izquierdo");
+    TouchInput.AddAxis("Horizontal", 0.6f); TouchInput.AddAxis("Mouse Y", 2.5f);
+    Check(Near(GameInput.GetAxisRaw("Horizontal"), 0.6f) && Near(GameInput.GetAxis("Mouse Y"), 2.5f), "Los ejes táctiles se suman a los del Input Manager");
+    Check(GameInput.PointerCaptured, "Con controles táctiles la mirada y el disparo no dependen del cursor");
+    TouchInput.Enabled = false; Cursor.lockState = CursorLockMode.None;
+    Check(!GameInput.PointerCaptured, "En PC dependen del cursor bloqueado, como antes");
+    Cursor.lockState = CursorLockMode.Locked;
+    Check(GameInput.PointerCaptured, "En PC con el cursor bloqueado: sí");
+    Next(); TouchInput.ReleaseAll(); Next();
+
+    // Ningún script del juego lee Input directamente (todo pasa por GameInput)
+    var bad = new List<string>();
+    var rx = new Regex(@"(?<![A-Za-z])Input\.(GetKey|GetKeyDown|GetKeyUp|GetAxis|GetAxisRaw|GetMouseButton|GetMouseButtonDown|GetMouseButtonUp)\(");
+    foreach (var f in Directory.GetFiles("Assets/_Nexus7/Scripts", "*.cs", SearchOption.AllDirectories)){
+      string n = f.Replace('\\','/');
+      if (n.Contains("/Editor/") || n.Contains("/Controls/")) continue;
+      if (rx.IsMatch(File.ReadAllText(f))) bad.Add(Path.GetFileName(f));
+    }
+    Check(bad.Count == 0, "Todos los scripts leen los controles con GameInput" + (bad.Count > 0 ? " (faltan: " + string.Join(", ", bad) + ")" : ""));
+    foreach (var f in new[]{ "Player/PlayerLook.cs", "Combat/PlayerWeapon.cs", "Devices/DeviceQuickbar.cs" })
+      Check(File.ReadAllText("Assets/_Nexus7/Scripts/" + f).Contains("GameInput.PointerCaptured") && !File.ReadAllText("Assets/_Nexus7/Scripts/" + f).Contains("Cursor.lockState == CursorLockMode.Locked"), f + ": usa GameInput.PointerCaptured en lugar del cursor");
   }
 }
