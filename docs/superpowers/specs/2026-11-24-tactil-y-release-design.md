@@ -39,10 +39,10 @@ Que cualquiera pueda descargar el juego desde **Releases** del repositorio, en t
 
 | Archivo | Responsabilidad |
 |---|---|
-| `Core/Input/TouchInput.cs` | Estado de teclas y ejes imitados (lógica pura con fotograma inyectable) |
-| `Core/Input/TouchRouter.cs` | Asignación de dedos a controles, joystick y mirar (lógica pura) |
-| `Core/Input/TouchLayout.cs` | Controles de cada contexto y sus rectángulos (lógica pura) |
-| `Core/Input/GameInput.cs` | Fachada `Input` + táctil |
+| `Controls/TouchInput.cs` | Estado de teclas y ejes imitados (lógica pura con fotograma inyectable) |
+| `Controls/TouchRouter.cs` | Asignación de dedos a controles, joystick y mirar (lógica pura) |
+| `Controls/TouchLayout.cs` | Controles de cada contexto y sus rectángulos (lógica pura) |
+| `Controls/GameInput.cs` | Fachada `Input` + táctil |
 | `UI/TouchControlsUI.cs` | Lee `Input.touches`, decide el contexto, alimenta el router y dibuja |
 | `Editor/ReleaseBuild.cs` | Compilar desde el menú y desde GameCI |
 | `.github/workflows/release.yml` | Compilación y release |

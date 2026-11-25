@@ -29,7 +29,7 @@
 
 ### Tarea 1: `TouchInput` (teclas y ejes imitados)
 
-**Archivos:** crear `Core/Input/TouchInput.cs`; prueba `Tests/Suites/TouchTest.cs`.
+**Archivos:** crear `Controls/TouchInput.cs`; prueba `Tests/Suites/TouchTest.cs`.
 
 **Produce:** `TouchInput.Enabled`, `BeginFrame(int frame)`, `Press(KeyCode, int source)`, `Release(KeyCode, int source)`, `ReleaseAll()`, `GetKey/GetKeyDown/GetKeyUp(KeyCode)`, `AddAxis(string axis, float v)`, `Axis(string) → float` (acotado −1…1 para Horizontal/Vertical; sin límite para Mouse X/Y).
 
@@ -37,7 +37,7 @@
 
 ### Tarea 2: `TouchLayout` y `TouchRouter`
 
-**Archivos:** crear `Core/Input/TouchLayout.cs`, `Core/Input/TouchRouter.cs`; prueba en `TouchTest.cs`.
+**Archivos:** crear `Controls/TouchLayout.cs`, `Controls/TouchRouter.cs`; prueba en `TouchTest.cs`.
 
 **Produce:** `enum TouchContext { None, Gameplay, Inventory, Menu, Hack, Ending, Cinematic }`, `TouchButton { Id, Label, Key, Center(x,y en px de referencia), Radius, LooksWhileHeld, Hold }`, `TouchLayout.For(TouchContext, float w, float h) → TouchButton[]`, `TouchLayout.HasStick/HasLook(ctx)`; `TouchRouter.Update(ctx, touches[], screenW, screenH)` con `RawTouch { id, x, y, phase }`, `StickVector`, `StickOrigin`, `StickActive`, `PressedButtons`.
 
@@ -46,9 +46,9 @@
 
 ### Tarea 3: `GameInput` y migración de los 18 scripts
 
-**Archivos:** crear `Core/Input/GameInput.cs`; modificar los 18 scripts (`Input.X(` → `GameInput.X(`); `PlayerLook` (sin cursor en móvil); prueba en `TouchTest.cs` (combinación) y comprobación de código.
+**Archivos:** crear `Controls/GameInput.cs`; modificar los 18 scripts (`Input.X(` → `GameInput.X(`); `PlayerLook` (sin cursor en móvil); prueba en `TouchTest.cs` (combinación) y comprobación de código.
 
-- [ ] Prueba: `GameInput.GetKeyDown(Space)` es verdad si lo pulsa lo táctil; `GetAxisRaw("Horizontal")` suma el joystick y se acota; ningún script fuera de `Core/Input` y `Editor` llama a `Input.GetKey`, `GetAxis` o `GetMouseButton`. Ver que falla.
+- [ ] Prueba: `GameInput.GetKeyDown(Space)` es verdad si lo pulsa lo táctil; `GetAxisRaw("Horizontal")` suma el joystick y se acota; ningún script fuera de `Controls` y `Editor` llama a `Input.GetKey`, `GetAxis` o `GetMouseButton`. Ver que falla.
 - [ ] Implementar y migrar (un commit por grupo: jugador, combate y objetos, interfaces); pasa la suite completa.
 
 ### Tarea 4: `TouchControlsUI` y contextos
